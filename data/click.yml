@@ -1,0 +1,18 @@
+version: "3.0"
+
+nlu:
+
+- intent: click
+  examples: |
+    - can you click that button
+    - click
+    - select
+    - choose that option
+    - click button
+    - select option
+
+stories:
+- story: clicking where the pointer is placed
+  steps:
+  - intent: click
+  - action: utter_click

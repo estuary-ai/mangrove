@@ -4,11 +4,13 @@
 # See this guide on how to implement these action:
 # https://rasa.com/docs/rasa/custom-actions
 
-
+#Standard Packages
 from typing import Any, Text, Dict, List
 
+#Rasa Packages
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
+from rasa_sdk.events import Restarted
 
 
 class ActionHelloWorld(Action):
@@ -23,3 +25,11 @@ class ActionHelloWorld(Action):
         dispatcher.utter_message(text="Hello World!")
 
         return []
+
+class ActionRestart(Action):
+
+    def name(self) -> Text:
+        return "action_restart"
+
+    def run(self, dispatcher, tracker, domain):
+        return [Restarted()]

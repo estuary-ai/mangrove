@@ -6,3 +6,8 @@ stories:
   steps:
   - intent: greet
   - action: action_greet
+
+- story: Fallback
+  steps:
+  - intent: fallback
+  - action: utter_fallback

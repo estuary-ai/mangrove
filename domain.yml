@@ -2,7 +2,10 @@ version: "3.0"
 
 intents:
   - affirm
+  - click
+  - declutter
   - deny
+  - fallback
   - goodbye
   - greet
   - toggle_component
@@ -18,15 +21,31 @@ slots:
     - type: from_entity
       entity: feature
   switch:
-    type: categorical
-    values:
-      - on
-      - off
+    type: text
     mappings:
     - type: from_entity
       entity: switch
 
 responses:
+
+  utter_ask_feature:
+  - text: "Which feature would you like turn on or off?"
+
+  utter_ask_switch:
+  - text: "Would you like to turn it on or off?"
+
+  utter_click:
+  - custom:
+      click: true
+
+  utter_declutter:
+  - custom:
+      clear_screen: true
+
+  utter_fallback:
+  - text: "Sorry, I didn't quite catch that. Could you try again?"
+  - text: "Could you repeat that?"
+  - text: "Please try again."
 
   utter_goodbye:
   - text: "Bye"
@@ -36,11 +55,13 @@ responses:
 
   utter_toggle_component:
   - custom:
+      toggle: true
       feature: "{feature}"
       switch: "{switch}"
 
 actions:
   - action_greet
+  - action_restart
 
 session_config:
   session_expiration_time: 60

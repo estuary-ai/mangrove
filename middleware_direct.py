@@ -29,8 +29,12 @@ while True:
     for i in response.json()['entities']:
         entities[i['entity']] = i['value']
 
-    #Working on the intent
-    response = requests.post(f'http://localhost:5005/conversations/{conversation_id}/trigger_intent', json = {'name': intent, 'entities': entities})
+    #Fallback condition where the confidence is less than 0.5
+    if confidence < 0.5:
+        response = requests.post(f'http://localhost:5005/conversations/{conversation_id}/trigger_intent', json = {'name': '/fallback', 'entities': entities})
+    else:
+        #Working on the intent
+        response = requests.post(f'http://localhost:5005/conversations/{conversation_id}/trigger_intent', json = {'name': intent, 'entities': entities})
     messages = response.json()['messages']
 
     #Printing the response

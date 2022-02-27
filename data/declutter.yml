@@ -1,0 +1,19 @@
+version: "3.0"
+
+nlu:
+
+- intent: declutter
+  examples: |
+    - clear my screen
+    - declutter the screen
+    - can you hide all the windows
+    - minimize dashboards
+    - clear all
+    - hide all pages
+    - hide everything
+
+stories:
+- story: clear screen
+  steps:
+  - intent: declutter
+  - action: utter_declutter
