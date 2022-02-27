@@ -1,0 +1,30 @@
+version: "3.0"
+
+nlu:
+
+- lookup: feature
+  examples: |
+    - wifi
+    - bluetooth
+    - location services
+    - mobile data
+
+- intent: toggle_component
+  examples: |
+    - can you switch [on](switch) [wifi](feature)?
+    - switch [on](switch) [wifi](feature)
+    - turn [wifi](feature) [on](switch)
+    - turn [wifi](feature) [off](switch)
+    - turn [off](switch) [bluetooth](feature)
+    - switch [bluetooth](feature) [off](switch)
+    - [bluetooth](feature) can be turned [off](switch)
+    - [bluetooth](feature) should be switched [on](switch)
+
+stories:
+- story: toggle a component with feature and switch known
+  steps:
+  - intent: toggle_component
+    entities:
+    - switch
+    - feature
+  - action: utter_toggle_component

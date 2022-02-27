@@ -1,0 +1,47 @@
+version: "3.0"
+
+intents:
+  - affirm
+  - deny
+  - goodbye
+  - greet
+  - toggle_component
+
+entities:
+  - feature
+  - switch
+
+slots:
+  feature:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: feature
+  switch:
+    type: categorical
+    values:
+      - on
+      - off
+    mappings:
+    - type: from_entity
+      entity: switch
+
+responses:
+
+  utter_goodbye:
+  - text: "Bye"
+
+  utter_greet:
+  - text: "Hi!"
+
+  utter_toggle_component:
+  - custom:
+      feature: "{feature}"
+      switch: "{switch}"
+
+actions:
+  - action_greet
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

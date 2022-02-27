@@ -1,0 +1,8 @@
+#cache
+actions/__pycache__/
+env/
+.rasa/
+
+#rasa bloat
+credentials.yml
+tests/

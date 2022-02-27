@@ -1,0 +1,8 @@
+version: "3.0"
+
+rules:
+
+- rule: Say goodbye anytime the user says goodbye
+  steps:
+  - intent: goodbye
+  - action: utter_goodbye
