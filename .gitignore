@@ -2,6 +2,7 @@
 actions/__pycache__/
 env/
 .rasa/
+.vs/
 
 #rasa bloat
 credentials.yml

@@ -1,4 +1,4 @@
-#Simulating how the frontend can speak to the Rasa server directly
+#Simulating how the frontend can speak to the Rasa server directly using API calls
 
 import requests
 
