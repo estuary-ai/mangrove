@@ -8,10 +8,12 @@ intents:
   - fallback
   - goodbye
   - greet
-  - toggle_component
+  - show_panel
+  - toggle_feature
 
 entities:
   - feature
+  - panel
   - switch
 
 slots:
@@ -20,6 +22,11 @@ slots:
     mappings:
     - type: from_entity
       entity: feature
+  panel:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: panel
   switch:
     type: text
     mappings:
@@ -53,7 +60,12 @@ responses:
   utter_greet:
   - text: "Hi!"
 
-  utter_toggle_component:
+  utter_show_panel:
+  - custom:
+      show: true
+      panel: "{panel}"
+
+  utter_toggle_feature:
   - custom:
       toggle: true
       feature: "{feature}"
@@ -61,7 +73,6 @@ responses:
 
 actions:
   - action_greet
-  - action_restart
 
 session_config:
   session_expiration_time: 60

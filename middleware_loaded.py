@@ -5,7 +5,7 @@ import asyncio
 from rasa.core.agent import Agent
 from rasa.utils.endpoints import EndpointConfig
 
-agent = Agent.load("models/20220226-222433-long-material.tar.gz", action_endpoint=EndpointConfig('http://localhost:5055/webhook'))
+agent = Agent.load("models/20220312-161232-cyan-limit.tar.gz", action_endpoint=EndpointConfig('http://localhost:5055/webhook'))
 
 while True:
 
