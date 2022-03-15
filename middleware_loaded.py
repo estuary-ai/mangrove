@@ -1,7 +1,9 @@
 #Simulating how the frontend can speak to the Rasa server directly by loading the model
 
 import asyncio
+from flask import Flask, request
 import pyttsx3
+import sys
 
 from rasa.core.agent import Agent
 from rasa.utils.endpoints import EndpointConfig
@@ -12,15 +14,23 @@ engine.setProperty('rate', 120)
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id)
 
-while True:
+app = Flask(__name__)
 
-    user_message = input('Enter: ')
+if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+@app.route("/", methods=["POST"])
+def sendUserMessage():
+
+    user_message = request.values.get('Body')
+    conversation_id = request.values.get('From')
+
     if user_message == 'stop':
-        break
+        return "End"
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    messages = loop.run_until_complete(agent.handle_text(user_message))
+    messages = loop.run_until_complete(agent.handle_text(user_message, sender_id=conversation_id))
     loop.close()
     
     #Printing the response
@@ -28,9 +38,14 @@ while True:
         if 'text' in message:
             text = message['text']
             print (text)
-            engine.say(text)
+            engine.save_to_file(text , 'output.wav')
             engine.runAndWait()
         if 'image' in message:
             print(message['image'])
         if 'custom' in message:
             print(message['custom'])
+
+    return "Success"
+
+if __name__ == '__main__':
+    app.run()
