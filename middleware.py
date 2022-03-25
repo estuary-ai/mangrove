@@ -1,9 +1,23 @@
-#Flask app to receive messages from frontend
+#Simulating how the frontend can speak to the Rasa server directly by loading the model
 
+import asyncio
 from flask import Flask, request
-import requests
+import pyttsx3
+import sys
+
+from rasa.core.agent import Agent
+from rasa.utils.endpoints import EndpointConfig
+
+agent = Agent.load("models/20220312-161232-cyan-limit.tar.gz", action_endpoint=EndpointConfig('http://localhost:5055/webhook'))
+engine = pyttsx3.init()
+engine.setProperty('rate', 120)
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)
 
 app = Flask(__name__)
+
+if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 @app.route("/", methods=["POST"])
 def sendUserMessage():
@@ -11,24 +25,21 @@ def sendUserMessage():
     user_message = request.values.get('Body')
     conversation_id = request.values.get('From')
 
-    #Getting the intent
-    response = requests.post('http://localhost:5005/model/parse', json = {'text': user_message, 'message_id': conversation_id})
-    intent = response.json()['intent']['name']
-    confidence = response.json()['intent']['confidence']
-    entities = {}
-    for i in response.json()['entities']:
-        entities[i['entity']] = i['value']
+    if user_message == 'stop':
+        return "End"
 
-    print(intent, confidence)
-
-    #Working on the intent
-    response = requests.post(f'http://localhost:5005/conversations/{conversation_id}/trigger_intent', json = {'name': intent, 'entities': entities})
-    messages = response.json()['messages']
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    messages = loop.run_until_complete(agent.handle_text(user_message, sender_id=conversation_id))
+    loop.close()
     
     #Printing the response
     for message in messages:
         if 'text' in message:
-            print (message['text'])
+            text = message['text']
+            print (text)
+            engine.save_to_file(text , 'output.wav')
+            engine.runAndWait()
         if 'image' in message:
             print(message['image'])
         if 'custom' in message:
@@ -37,14 +48,4 @@ def sendUserMessage():
     return "Success"
 
 if __name__ == '__main__':
-    #Checking whether the rasa server is running
-    try:
-        response = requests.get('http://localhost:5005/')
-        if response.status_code != 200:
-            print('Error: RASA server might not be available')
-            exit()
-    except:
-        print('Error: RASA server might not be available')
-        exit()
-
     app.run()
