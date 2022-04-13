@@ -1,0 +1,5 @@
+deepspeech==0.9.3
+Flask==1.1.4
+Flask_SocketIO==4.3.2
+numpy==1.17.0
+webrtcvad==2.0.10
