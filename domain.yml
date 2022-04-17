@@ -8,6 +8,7 @@ intents:
   - fallback
   - goodbye
   - greet
+  - sample_tagging
   - show_panel
   - toggle_feature
 
@@ -32,6 +33,48 @@ slots:
     mappings:
     - type: from_entity
       entity: switch
+  lighting_conditions:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: form_sample_tagging
+        requested_slot: lighting_conditions
+  outcrop_appearance:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: form_sample_tagging
+        requested_slot: outcrop_appearance
+  mechanism_used:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: form_sample_tagging
+        requested_slot: mechanism_used
+  size_and_shape:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: form_sample_tagging
+        requested_slot: size_and_shape
+  sample_appearance:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: form_sample_tagging
+        requested_slot: sample_appearance
+  geo_interpretation:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: form_sample_tagging
+        requested_slot: geo_interpretation
 
 responses:
 
@@ -40,6 +83,27 @@ responses:
 
   utter_ask_switch:
   - text: "Would you like to turn it on or off?"
+
+  utter_ask_lighting_conditions:
+  - text: "What are the lighting conditions?"
+
+  utter_ask_outcrop_appearance:
+  - text: "How does the outcrop appear?"
+
+  utter_ask_mechanism_used:
+  - text: "What mechanism are you using to sample?"
+
+  utter_ask_size_and_shape:
+  - text: "What is the sample's size and shape?"
+
+  utter_ask_sample_appearance:
+  - text: "What is the sample's appearance?"
+
+  utter_ask_geo_interpretation:
+  - text: "What is your initial geologic interpretation of this sample?"
+
+  utter_sample_tagged:
+  - text: "Your sample has been succesfully tagged!"
 
   utter_click:
   - custom:
@@ -71,8 +135,18 @@ responses:
       feature: "{feature}"
       switch: "{switch}"
 
+forms:
+  form_sample_tagging:
+    required_slots:
+    - lighting_conditions
+    - outcrop_appearance
+    - mechanism_used
+    - size_and_shape
+    - sample_appearance
+    - geo_interpretation
+
 actions:
-  - action_greet
+  - action_sample_tagging
 
 session_config:
   session_expiration_time: 60

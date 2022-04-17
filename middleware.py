@@ -8,7 +8,7 @@ import sys
 from rasa.core.agent import Agent
 from rasa.utils.endpoints import EndpointConfig
 
-agent = Agent.load("models/20220312-161232-cyan-limit.tar.gz", action_endpoint=EndpointConfig('http://localhost:5055/webhook'))
+agent = Agent.load("models/model.tar.gz", action_endpoint=EndpointConfig('http://localhost:5055/webhook'))
 engine = pyttsx3.init()
 engine.setProperty('rate', 120)
 voices = engine.getProperty('voices')
@@ -40,9 +40,7 @@ def sendUserMessage():
             print (text)
             engine.save_to_file(text , 'output.wav')
             engine.runAndWait()
-        if 'image' in message:
-            print(message['image'])
-        if 'custom' in message:
+        elif 'custom' in message:
             print(message['custom'])
 
     return "Success"

@@ -1,0 +1,36 @@
+version: "3.0"
+
+nlu:
+
+- intent: sample_tagging
+  examples: |
+    - tag a rock sample
+    - tag a regolith sample
+    - I wanna tag a sample
+    - I want to tag a regolith sample
+    - I want to tag a rock sample
+    - help me tag this sample
+    - tag this rock
+    - sample tagger
+    - being up sample tagging
+    - can you help me tag this sample
+    - can you help me tag this rock
+    - tag this sample
+    - start tagging process
+
+rules:
+- rule: Basic sample tagging flow
+  steps:
+  - intent: sample_tagging
+  - action: form_sample_tagging
+  - active_loop: form_sample_tagging
+
+- rule: Submit sample tagging form
+  condition:
+  - active_loop: form_sample_tagging
+  steps:
+  - action: form_sample_tagging
+  - active_loop: null
+  - slot_was_set:
+    - requested_slot: null
+  - action: action_sample_tagging
