@@ -1,4 +1,4 @@
-version: "3.0"
+version: "2.0"
 
 intents:
   - affirm
@@ -20,61 +20,22 @@ entities:
 slots:
   feature:
     type: text
-    mappings:
-    - type: from_entity
-      entity: feature
   panel:
     type: text
-    mappings:
-    - type: from_entity
-      entity: panel
   switch:
     type: text
-    mappings:
-    - type: from_entity
-      entity: switch
   lighting_conditions:
     type: text
-    mappings:
-    - type: from_text
-      conditions:
-      - active_loop: form_sample_tagging
-        requested_slot: lighting_conditions
   outcrop_appearance:
     type: text
-    mappings:
-    - type: from_text
-      conditions:
-      - active_loop: form_sample_tagging
-        requested_slot: outcrop_appearance
   mechanism_used:
     type: text
-    mappings:
-    - type: from_text
-      conditions:
-      - active_loop: form_sample_tagging
-        requested_slot: mechanism_used
   size_and_shape:
     type: text
-    mappings:
-    - type: from_text
-      conditions:
-      - active_loop: form_sample_tagging
-        requested_slot: size_and_shape
   sample_appearance:
     type: text
-    mappings:
-    - type: from_text
-      conditions:
-      - active_loop: form_sample_tagging
-        requested_slot: sample_appearance
   geo_interpretation:
     type: text
-    mappings:
-    - type: from_text
-      conditions:
-      - active_loop: form_sample_tagging
-        requested_slot: geo_interpretation
 
 responses:
 
@@ -137,13 +98,18 @@ responses:
 
 forms:
   form_sample_tagging:
-    required_slots:
-    - lighting_conditions
-    - outcrop_appearance
-    - mechanism_used
-    - size_and_shape
-    - sample_appearance
-    - geo_interpretation
+    lighting_conditions:
+    - type: from_text
+    outcrop_appearance:
+    - type: from_text
+    mechanism_used:
+    - type: from_text
+    size_and_shape:
+    - type: from_text
+    sample_appearance:
+    - type: from_text
+    geo_interpretation:
+    - type: from_text
 
 actions:
   - action_sample_tagging

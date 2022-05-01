@@ -176,7 +176,7 @@ def handle_stream_data(data):
     # print('audiostream', len(data))
     results = process_audio_stream(data)
     if results:
-        print('results', results, flush=True)
+        print('results', results['text'], flush=True)
 
         #Assuming that results is a string containing transcripted speech
         response = sendUserMessage({'Body': results, 'From': 'Neil'})       #get correct user ID

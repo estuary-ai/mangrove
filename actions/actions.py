@@ -26,4 +26,4 @@ class ActionSampleTagging(Action):
 
         dispatcher.utter_message(response="utter_sample_tagged")
         dispatcher.utter_message(custom=sample_details)
-        return []
+        return [Restarted()]
