@@ -30,7 +30,42 @@ rules:
   - active_loop: form_sample_tagging
   steps:
   - action: form_sample_tagging
-  - active_loop: null
   - slot_was_set:
     - requested_slot: null
+  - active_loop: null
+  - action: action_sample_tagging
+
+stories:
+- story: interactive_story_1
+  steps:
+  - intent: sample_tagging
+  - action: form_sample_tagging
+  - active_loop: form_sample_tagging
+  - slot_was_set:
+    - requested_slot: lighting_conditions
+  - slot_was_set:
+    - lighting_conditions: it is bright and sunny
+  - slot_was_set:
+    - requested_slot: outcrop_appearance
+  - slot_was_set:
+    - outcrop_appearance: This is a boulder on the outskirts of a crater rim
+  - slot_was_set:
+    - requested_slot: mechanism_used
+  - slot_was_set:
+    - mechanism_used: I picked up a sample within range; no tools were used
+  - slot_was_set:
+    - requested_slot: size_and_shape
+  - slot_was_set:
+    - size_and_shape: This is a fist-sized rock
+  - slot_was_set:
+    - requested_slot: sample_appearance
+  - slot_was_set:
+    - sample_appearance: This rock is dark gray
+  - slot_was_set:
+    - requested_slot: geo_interpretation
+  - slot_was_set:
+    - geo_interpretation: This sample is volcanic in origin
+  - slot_was_set:
+    - requested_slot: null
+  - active_loop: null
   - action: action_sample_tagging

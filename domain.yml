@@ -74,6 +74,9 @@ responses:
   - custom:
       clear_screen: true
 
+  utter_declutter_text:
+  - text: "Clearing your screen"
+
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
   - text: "Could you repeat that?"

@@ -1,4 +1,6 @@
 #Standard Packages
+import json
+import os
 from typing import Any, Text, Dict, List
 
 #Rasa Packages
@@ -24,6 +26,8 @@ class ActionSampleTagging(Action):
             }
         }
 
+        count = len(os.listdir("samples"))
+        json.dump(sample_details, open(f'samples/sample_{count + 1}.json', 'w'))
+
         dispatcher.utter_message(response="utter_sample_tagged")
-        dispatcher.utter_message(custom=sample_details)
         return [Restarted()]

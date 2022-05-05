@@ -17,3 +17,4 @@ stories:
   steps:
   - intent: declutter
   - action: utter_declutter
+  - action: utter_declutter_text
