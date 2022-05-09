@@ -18,6 +18,14 @@ nlu:
     - tag this sample
     - start tagging process
 
+- intent: exit
+  examples: |
+    - exit
+    - quit
+    - main menu
+    - exit please
+    - please quit
+
 rules:
 - rule: Basic sample tagging flow
   steps:
@@ -69,3 +77,8 @@ stories:
     - requested_slot: null
   - active_loop: null
   - action: action_sample_tagging
+
+- story: exit without active form
+  steps:
+  - intent: exit
+  - action: utter_fallback

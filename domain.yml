@@ -5,6 +5,7 @@ intents:
   - click
   - declutter
   - deny
+  - exit
   - fallback
   - goodbye
   - greet
@@ -77,6 +78,9 @@ responses:
   utter_declutter_text:
   - text: "Clearing your screen"
 
+  utter_exit:
+  - text: "Exited current flow. Let me know if I can help you in any other way."
+
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
   - text: "Could you repeat that?"
@@ -115,6 +119,7 @@ forms:
     - type: from_text
 
 actions:
+  - validate_form_sample_tagging
   - action_sample_tagging
 
 session_config:
