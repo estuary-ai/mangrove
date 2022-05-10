@@ -23,37 +23,42 @@ nlu:
     - switch [fan](feature) [off](switch)
     - [fan](feature) can be turned [off](switch)
     - [fan](feature) should be switched [on](switch)
+    - turn [on](switch) the [headlights](feature)
+    - turn [off](switch) the [headlights](feature)
+    - turn [on](switch) the [fan](feature)
+    - turn [off](switch) the [fan](feature)
 
 stories:
 - story: toggle a component with feature and switch known
   steps:
   - intent: toggle_feature
   - slot_was_set:
-    - feature
     - switch
-  - action: utter_toggle_feature
-  - action: action_restart
-
-- story: toggle a component when only the switch is known
-  steps:
-  - intent: toggle_feature
-  - slot_was_set:
-    - switch
-  - action: utter_ask_feature
-  - intent: toggle_feature
   - slot_was_set:
     - feature
   - action: utter_toggle_feature
   - action: action_restart
 
-- story: toggle a component when only the feature is known
-  steps:
-  - intent: toggle_feature
-  - slot_was_set:
-    - feature
-  - action: utter_ask_switch
-  - intent: toggle_feature
-  - slot_was_set:
-    - switch
-  - action: utter_toggle_feature
-  - action: action_restart
+# - story: toggle a component when only the switch is known
+#   steps:
+#   - intent: toggle_feature
+#   - slot_was_set:
+#     - switch
+#   - action: utter_ask_feature
+#   - intent: toggle_feature
+#   - slot_was_set:
+#     - feature
+#   - action: utter_toggle_feature
+#   - action: action_restart
+
+# - story: toggle a component when only the feature is known
+#   steps:
+#   - intent: toggle_feature
+#   - slot_was_set:
+#     - feature
+#   - action: utter_ask_switch
+#   - intent: toggle_feature
+#   - slot_was_set:
+#     - switch
+#   - action: utter_toggle_feature
+#   - action: action_restart

@@ -9,8 +9,10 @@ intents:
   - fallback
   - goodbye
   - greet
+  - navigation
   - sample_tagging
   - show_panel
+  - terrain
   - toggle_feature
 
 entities:
@@ -92,10 +94,24 @@ responses:
   utter_greet:
   - text: "Hi!"
 
+  utter_navigation:
+  - custom:
+      navigation: true
+
+  utter_navigation_text:
+  - text: "Opening up the navigation menu for you"
+
   utter_show_panel:
   - custom:
       show: true
       panel: "{panel}"
+
+  utter_terrain:
+  - custom:
+      terrain: true
+
+  utter_terrain_text:
+  - text: "Toggling the terrain markers for you"
 
   utter_toggle_feature:
   - custom:

@@ -1,0 +1,26 @@
+version: "2.0"
+
+nlu:
+
+- intent: navigation
+  examples: |
+    - show navigation
+    - view navigation
+    - navigation
+    - show me the map
+    - open up the map for me
+    - can I see the map
+    - can you show me the map
+    - bring up the map
+    - show me the map
+    - navigate me
+    - navigate me to the destination
+    - show me the way
+    - how do I reach there?
+
+stories:
+- story: displaying navigation menu
+  steps:
+  - intent: navigation
+  - action: utter_navigation
+  - action: utter_navigation_text

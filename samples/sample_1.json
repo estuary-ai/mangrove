@@ -1,10 +1,8 @@
 {
-    "Sample Details": {
-        "Lighting Conditions": "it is bright and sunny",
-        "Outcrop Appearance": "This is a boulder on the outskirts of a crater rim",
-        "Mechanism Used": "I picked up a sample within range; no tools were used",
-        "Size and Shape": "This is a fist-sized rock",
-        "Sample Appearance": "This rock is dark gray",
-        "Geological Interpretation": "This sample is volcanic in origin"
-    }
+    "Lighting Conditions": "it is bright and sunny",
+    "Outcrop Appearance": "This is a boulder on the outskirts of a crater rim",
+    "Mechanism Used": "I picked up a sample within range; no tools were used",
+    "Size and Shape": "This is a fist-sized rock",
+    "Sample Appearance": "This rock is dark gray",
+    "Geological Interpretation": "This sample is volcanic in origin"
 }

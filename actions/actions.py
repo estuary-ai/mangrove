@@ -82,7 +82,9 @@ class ActionSampleTagging(Action):
             }
 
             count = len(os.listdir("samples"))
-            json.dump(sample_details, open(f'samples/sample_{count + 1}.json', 'w'))
+            json.dump(sample_details['Sample Details'], open(f'samples/sample_{count + 1}.json', 'w'))
+            sample_details['File Name'] = f'sample_{count + 1}.json'
+            dispatcher.utter_message(custom=sample_details)
             dispatcher.utter_message(response="utter_sample_tagged")
 
         else:

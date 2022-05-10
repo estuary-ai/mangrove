@@ -1,0 +1,20 @@
+version: "2.0"
+
+nlu:
+
+- intent: terrain
+  examples: |
+    - show terrain markers
+    - show me the terrain markers
+    - bring up the terrain markers
+    - what is the terrain like?
+    - view terrain
+    - terrain
+    - is the terrain uneven
+
+stories:
+- story: displaying terrain markers
+  steps:
+  - intent: terrain
+  - action: utter_terrain
+  - action: utter_terrain_text
