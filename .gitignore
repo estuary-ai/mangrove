@@ -7,3 +7,6 @@ env/
 #rasa bloat
 credentials.yml
 tests/
+
+models/ds-model/*
+web_microphone_websocket
