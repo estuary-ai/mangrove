@@ -1,5 +1,5 @@
 #cache
-actions/__pycache__/
+*/__pycache__/
 env/
 .rasa/
 .vs/

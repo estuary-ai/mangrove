@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-# import sounddevice as sd
+import sounddevice as sd
 from STTController import STTController
 
 stt = STTController()
@@ -8,15 +8,16 @@ stt = STTController()
 f = open("sample_audio_binary.txt", mode='rb')
 audio = f.read()
 
-audio = np.frombuffer(audio, dtype=np.int16)
-
-# sd.play(audio, 16000)
+# sd.play(np.frombuffer(audio, dtype=np.int16), 16000)
 
 stt.create_stream()
-frame_size = 320*3
+frame_size = 1024//2//3
+print(frame_size)
 text = ""
 for i in range(0, len(audio), frame_size):
     chunk = audio[i:i+frame_size]
     if len(chunk) < frame_size:
         break
-    stt.process_audio_stream(chunk)
+    result = stt.process_audio_stream(chunk)
+    if result is not None:
+        print("result", result)
