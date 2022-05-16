@@ -1,5 +1,5 @@
 #cache
-actions/__pycache__/
+*/__pycache__/
 env/
 .rasa/
 .vs/
@@ -7,3 +7,6 @@ env/
 #rasa bloat
 credentials.yml
 tests/
+
+models/ds-model/*
+web_microphone_websocket
