@@ -1,5 +1,6 @@
 #Simulating how the frontend can call the Flask app
-
+import sys
+sys.path.insert(1, '../')
 import requests
 
 while True:

@@ -1,9 +1,10 @@
 #Simulating how the frontend can speak to the Rasa server directly by loading the model
+import sys
+sys.path.insert(1, '../')
 
 import asyncio
 from flask import Flask, request
 import pyttsx3
-import sys
 
 from rasa.core.agent import Agent
 from rasa.utils.endpoints import EndpointConfig

@@ -1,7 +1,10 @@
+import sys
+sys.path.insert(1, '../')
+
 from flask import Flask
 from flask_socketio import SocketIO
 from STTController import STTController
-import sys
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'

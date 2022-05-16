@@ -33,6 +33,10 @@ class STTController:
         self.vad = webrtcvad.Vad(vad_aggressiveness)
         self.verbose=verbose
 
+        self.debug_total = 0
+        self.debug_silence = 0
+        self.debug_voice = 0
+
     def create_stream(self):
         self.stream_context = self.model.createStream()
         self.recorded_chunks = 0
@@ -121,22 +125,23 @@ class STTController:
             self.log('.') # silence detected while not recording
             self.silence_buffers.append(data)
             
-    def process_audio_stream(self, new_data): 
+    def process_audio_stream(self, new_data):         
         i = 0
         data_stream = self.buffered_data + new_data 
         outcomes = [] 
         while i < len(data_stream):
             sub_data = data_stream[i:i+self.frame_size]
+
+            # Process only proper frame sizes
             if len(sub_data) < self.frame_size:
                 break
 
-            # audio = np.frombuffer(sub_data, dtype=np.int16)
-
-            # Process only proper frame sizes
             is_speech = self.vad.is_speech(sub_data, self.SAMPLE_RATE)
             if is_speech:
+                self.debug_voice += len(sub_data)
                 self.process_voice(sub_data)
             else:
+                self.debug_silence += len(sub_data)
                 result = self.process_silence(sub_data)
                 if result is not None:
                     outcomes.append(result)

@@ -1,5 +1,5 @@
 #cache
-*/__pycache__/
+*__pycache__/
 env/
 .rasa/
 .vs/
@@ -9,4 +9,4 @@ credentials.yml
 tests/
 
 models/ds-model/*
-web_microphone_websocket
+debug-and-drafts/web_microphone_websocket
