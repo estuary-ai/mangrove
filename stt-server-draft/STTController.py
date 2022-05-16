@@ -13,7 +13,8 @@ class STTController:
                  load_scorer=True,
                  silence_threshold=500,
                  vad_aggressiveness=1,
-                 frame_size = 320):
+                 frame_size = 320,
+                 verbose=False):
         
         self.frame_size = frame_size
         self.SAMPLE_RATE = sample_rate
@@ -30,6 +31,7 @@ class STTController:
         self.silence_buffers = collections.deque(maxlen=2)
         self.silence_start = None
         self.vad = webrtcvad.Vad(vad_aggressiveness)
+        self.verbose=verbose
 
     def create_stream(self):
         self.stream_context = self.model.createStream()
@@ -48,8 +50,7 @@ class STTController:
 
             transcription = self.stream_context.finishStream()
             if transcription:
-                sys.stdout.write("")
-                sys.stdout.write("Recognized Text:" +  str(transcription))
+                self.log("Recognized Text:" +  str(transcription))
                 recog_time = round(time.time() * 1000) - start
 
                 return { 
@@ -83,9 +84,9 @@ class STTController:
     def process_voice(self, data):
         self.silence_start = None
         if self.recorded_chunks == 0:
-            sys.stdout.write('\n[start]') # recording started
+            self.log('\n[start]') # recording started
         else:
-            sys.stdout.write('=') # still recording
+            self.log('=') # still recording
         self.recorded_chunks += 1
         data = self.add_buffered_silence(data)
         self.feed_audio_content(data)
@@ -100,7 +101,7 @@ class STTController:
 
     def process_silence(self, data):
         if self.recorded_chunks > 0: # recording is on
-            sys.stdout.write('-') # silence detected while recording
+            self.log('-') # silence detected while recording
             self.feed_audio_content(data)
             
             if self.silence_start is None:
@@ -109,7 +110,7 @@ class STTController:
                 now = round(time.time() * 1000)
                 if now - self.silence_start > self.SILENCE_THRESHOLD:
                     self.silence_start = None
-                    sys.stdout.write("\n[end]")
+                    self.log("\n[end]")
                     results = self.intermediate_decode()
                     return results
         else:
@@ -117,7 +118,7 @@ class STTController:
             # from the start of a recording
             # so keep a buffer of that first bit of audio and 
             # in addBufferedSilence() reattach it to the beginning of the recording
-            sys.stdout.write('.') # silence detected while not recording
+            self.log('.') # silence detected while not recording
             self.silence_buffers.append(data)
             
     def process_audio_stream(self, new_data): 
@@ -127,7 +128,6 @@ class STTController:
         while i < len(data_stream):
             sub_data = data_stream[i:i+self.frame_size]
             if len(sub_data) < self.frame_size:
-                # print("put a side", len(sub_data))
                 break
 
             # audio = np.frombuffer(sub_data, dtype=np.int16)
@@ -146,7 +146,7 @@ class STTController:
         self.buffered_data = data_stream[i:]
 
         if len(outcomes) > 0:
-            self.process_data_buffer
+            self.process_data_buffer()
             return self._combine_outcomes(outcomes)
         
 
@@ -180,7 +180,7 @@ class STTController:
 
     def reset_audio_stream(self):
         # clearTimeout(endTimeout)
-        sys.stdout.write('\n[reset]')
+        self.log('\n[reset]')
         self.intermediate_decode() # ignore results
         self.recorded_chunks = 0
         self.silence_start = None
@@ -190,3 +190,7 @@ class STTController:
 
     def reset_data_buffer(self):
         self.buffered_data = b""
+
+    def log(self, msg, force=False):
+        if self.verbose or force:
+            sys.stdout.write(msg)
