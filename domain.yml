@@ -135,6 +135,7 @@ forms:
     - type: from_text
 
 actions:
+  - action_initiate_sample
   - validate_form_sample_tagging
   - action_sample_tagging
 

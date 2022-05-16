@@ -8,6 +8,17 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted
 
+class ActionInitiateSample(Action):
+
+    def name(self) -> Text:
+        return "action_initiate_sample"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        count = len(os.listdir('samples'))
+        os.mkdir(f'samples/sample_{count + 1}')
+        dispatcher.utter_message(custom={'sample': f'sample_{count + 1}'})
+        return []
+
 class ValidateFormSampleTagging(FormValidationAction):
 
     def name(self) -> Text:
@@ -82,8 +93,8 @@ class ActionSampleTagging(Action):
             }
 
             count = len(os.listdir("samples"))
-            json.dump(sample_details['Sample Details'], open(f'samples/sample_{count + 1}.json', 'w'))
-            sample_details['File Name'] = f'sample_{count + 1}.json'
+            json.dump(sample_details['Sample Details'], open(f'samples/sample_{count}/sample_details.json', 'w'))
+            sample_details['File Name'] = f'sample_{count}/sample_details.json'
             dispatcher.utter_message(custom=sample_details)
             dispatcher.utter_message(response="utter_sample_tagged")
 

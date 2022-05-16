@@ -30,6 +30,7 @@ rules:
 - rule: Basic sample tagging flow
   steps:
   - intent: sample_tagging
+  - action: action_initiate_sample
   - action: form_sample_tagging
   - active_loop: form_sample_tagging
 
@@ -47,6 +48,7 @@ stories:
 - story: interactive_story_1
   steps:
   - intent: sample_tagging
+  - action: action_initiate_sample
   - action: form_sample_tagging
   - active_loop: form_sample_tagging
   - slot_was_set:
