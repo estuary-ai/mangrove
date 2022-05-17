@@ -1,12 +1,11 @@
 # Aegis-ML
-*This repository hosts a server implementation where some ML-Tasks modules are deployed and will be communicating with the Hololens through a local network connection.*
+*This repository hosts a server implementation hosting the Senva Digital Assistant backend, which is deployed on a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts SUITs; created as part of Team AEGIS project of University of Southern California (USC) with University of Arizona (UA) at the NASA-SUITs Competition 2022 *
 
-## Modules are:
-* Speech to Text Engine
-* Natural Language Processor
-* Dialogue Management Unit
-* Text to Speech Engine
-
+## Main Modules are:
+* Speech to Text (STTController.py)
+* NLP + Dialogue Management (BotController.py)
+* Text to Speech (TTSController.py)
+* Hosting Server (main.py)
 ## Functionality:
 The RASA model is able to handle the following types of requests from the user:
 * Clicking on the screen

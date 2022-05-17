@@ -5,7 +5,8 @@ import numpy as np
 import sounddevice as sd
 from STTController import STTController
 
-stt = STTController()
+stt = STTController(
+                 model_path='../models/ds-model/deepspeech-0.9.3-models')
 
 f = open("sample_audio_binary.txt", mode='rb')
 audio = f.read()

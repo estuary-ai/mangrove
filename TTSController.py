@@ -1,27 +1,39 @@
 import os
+import time
 import pyttsx3
 
 class TTSController:
 
-    def __init__(self):
-
+    def __init__(self, voice_rate=120, voice_id=1, storage_path='res-speech'):
         self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 120)
+        self.engine.setProperty('rate', voice_rate)
         voices = self.engine.getProperty('voices')
-        self.engine.setProperty('voice', voices[1].id)
+        self.engine.setProperty('voice', voices[voice_id].id)
+        self.storage_path = storage_path
+        if not os.path.exists(storage_path):
+            os.mkdirs(storage_path)
+        self.recent_created_audio_files = []
 
     def create_audio_files(self, texts):
-
-        self.audio_files = []
-
+        generation_id = str(int(time.time()))
+        self.recent_created_audio_files = []
         for id, text in enumerate(texts):
-            self.engine.save_to_file(text, f'audio_{id}.wav')
+            filepath = f'{self.storage_path}/{generation_id}_audio_{id}.wav'
+            self.engine.save_to_file(text, filepath)
             self.engine.runAndWait()
-            self.audio_files.append(f'audio_{id}.wav')
+            self.recent_created_audio_files.append(filepath)
+        return self.recent_created_audio_files
 
-        return self.audio_files
+    def get_audio_bytes_stream(self, texts=None):
+        if texts is not None:
+            self.create_audio_files(texts)
+        audio_files_bytes = []
+        for audio_file in self.recent_created_audio_files:
+            with open(audio_file, 'rb') as f:
+                audio_files_bytes.append(f.read())
+        return audio_files_bytes
 
     def delete_audio_files(self):
-
-        for audio_file in self.audio_files:
+        for audio_file in self.recent_created_audio_files:
             os.remove(audio_file)
+        self.recent_created_audio_files = []

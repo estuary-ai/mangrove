@@ -9,7 +9,7 @@ class STTController:
 
     def __init__(self, 
                  sample_rate=16000,
-                 model_path='../models/ds-model/deepspeech-0.9.3-models',
+                 model_path='models/ds-model/deepspeech-0.9.3-models',
                  load_scorer=True,
                  silence_threshold=500,
                  vad_aggressiveness=1,

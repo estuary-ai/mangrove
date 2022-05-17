@@ -8,5 +8,6 @@ env/
 credentials.yml
 tests/
 
+models/rasa-model/*
 models/ds-model/*
 debug-and-drafts/web_microphone_websocket
