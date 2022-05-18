@@ -96,19 +96,24 @@ responses:
 
   utter_navigation:
   - custom:
-      navigation: true
+      toggle: true
+      feature: "navigation"
+      switch: "on"
 
   utter_navigation_text:
   - text: "Opening up the navigation menu for you"
 
   utter_show_panel:
   - custom:
-      show: true
-      panel: "{panel}"
+      toggle: true
+      feature: "{panel}"
+      switch: "{switch}"
 
   utter_terrain:
   - custom:
-      terrain: true
+      toggle: true
+      feature: "terrain"
+      switch: "on"
 
   utter_terrain_text:
   - text: "Toggling the terrain markers for you"
