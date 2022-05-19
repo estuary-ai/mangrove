@@ -1,11 +1,9 @@
 version: "2.0"
 
 intents:
-  - affirm
   - click
   - collapse_alert
   - declutter
-  - deny
   - exit
   - expand_alert
   - goodbye
@@ -111,10 +109,7 @@ responses:
   - custom:
       toggle: true
       feature: "navigation"
-      switch: "on"
-
-  utter_navigation_text:
-  - text: "Opening up the navigation menu for you"
+      switch: "{switch}"
 
   utter_omw:
   - custom:
@@ -142,10 +137,7 @@ responses:
   - custom:
       toggle: true
       feature: "terrain"
-      switch: "on"
-
-  utter_terrain_text:
-  - text: "Toggling the terrain markers for you"
+      switch: "{switch}"
 
   utter_toggle_feature:
   - custom:
@@ -169,6 +161,8 @@ forms:
     - type: from_text
 
 actions:
+  - action_navigation_text
+  - action_terrain_text
   - action_initiate_sample
   - validate_form_sample_tagging
   - action_sample_tagging

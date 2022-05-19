@@ -8,6 +8,32 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted
 
+class ActionNavigationText(Action):
+
+    def name(self) -> Text:
+        return 'action_navigation_text'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        switch = tracker.get_slot('switch')
+        if switch is None or switch == 'on':
+            dispatcher.utter_message(text='Opening up the navigation menu for you')
+        else:
+            dispatcher.utter_message(text='Closing the navigation menu for you')
+        return [Restarted()]
+
+class ActionTerrainText(Action):
+
+    def name(self) -> Text:
+        return 'action_terrain_text'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        switch = tracker.get_slot('switch')
+        if switch is None or switch == 'on':
+            dispatcher.utter_message(text='Displaying terrain markers')
+        else:
+            dispatcher.utter_message(text='Hiding terrain markers')
+        return [Restarted()]
+
 class ActionInitiateSample(Action):
 
     def name(self) -> Text:
