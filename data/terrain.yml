@@ -4,17 +4,20 @@ nlu:
 
 - intent: terrain
   examples: |
-    - show terrain markers
-    - show me the terrain markers
+    - [show](switch:on) terrain markers
+    - [show](switch:on) me the terrain markers
     - bring up the terrain markers
     - what is the terrain like?
     - view terrain
     - terrain
     - is the terrain uneven
+    - [hide](switch:off) the terrain markers
+    - [hide](switch:off) terrain markers
+    - [hide](switch:off) terrain
 
 stories:
 - story: displaying terrain markers
   steps:
   - intent: terrain
   - action: utter_terrain
-  - action: utter_terrain_text
+  - action: action_terrain_text

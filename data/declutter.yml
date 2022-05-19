@@ -6,11 +6,12 @@ nlu:
   examples: |
     - clear my screen
     - declutter the screen
-    - can you hide all the windows
+    - can you [hide](switch:off) all the windows
     - minimize dashboards
     - clear all
-    - hide all pages
-    - hide everything
+    - [hide](switch:off) all pages
+    - [hide](switch:off) everything
+    - [close](switch:off) all panels
 
 stories:
 - story: clear screen

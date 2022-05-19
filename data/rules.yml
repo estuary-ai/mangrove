@@ -6,3 +6,8 @@ rules:
   steps:
   - intent: goodbye
   - action: utter_goodbye
+
+- rule: Fallback
+  steps:
+  - intent: nlu_fallback
+  - action: utter_fallback

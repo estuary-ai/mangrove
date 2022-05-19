@@ -1,17 +1,22 @@
 version: "2.0"
 
 intents:
-  - affirm
   - click
+  - collapse_alert
   - declutter
-  - deny
   - exit
-  - fallback
+  - expand_alert
   - goodbye
   - greet
+  - map_placement
   - navigation
+  - omw
+  - place_map
+  - read_condition
+  - roger
   - sample_tagging
   - show_panel
+  - standby
   - terrain
   - toggle_feature
 
@@ -73,6 +78,10 @@ responses:
   - custom:
       click: true
 
+  utter_collapse_alert:
+  - custom:
+      LSAR: "collapse_alert"
+
   utter_declutter:
   - custom:
       clear_screen: true
@@ -82,6 +91,10 @@ responses:
 
   utter_exit:
   - text: "Exited current flow. Let me know if I can help you in any other way."
+
+  utter_expand_alert:
+  - custom:
+      LSAR: "expand_alert"
 
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
@@ -94,24 +107,47 @@ responses:
   utter_greet:
   - text: "Hi!"
 
+  utter_map_placement:
+  - custom:
+      map_placement: True
+
   utter_navigation:
   - custom:
-      navigation: true
+      toggle: true
+      feature: "navigation"
+      switch: "{switch}"
 
-  utter_navigation_text:
-  - text: "Opening up the navigation menu for you"
+  utter_omw:
+  - custom:
+      LSAR: "omw"
+
+  utter_place_map:
+  - custom:
+      place_map: True
+
+  utter_read_condition:
+  - custom:
+      LSAR: "read_condition"
+
+  utter_roger:
+  - custom:
+      LSAR: "roger"
 
   utter_show_panel:
   - custom:
-      show: true
-      panel: "{panel}"
+      toggle: true
+      feature: "{panel}"
+      switch: "{switch}"
+
+  utter_standby:
+  - custom:
+      LSAR: "standby"
 
   utter_terrain:
   - custom:
-      terrain: true
-
-  utter_terrain_text:
-  - text: "Toggling the terrain markers for you"
+      toggle: true
+      feature: "terrain"
+      switch: "{switch}"
 
   utter_toggle_feature:
   - custom:
@@ -135,6 +171,8 @@ forms:
     - type: from_text
 
 actions:
+  - action_navigation_text
+  - action_terrain_text
   - action_initiate_sample
   - validate_form_sample_tagging
   - action_sample_tagging

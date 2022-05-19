@@ -18,6 +18,14 @@ nlu:
     - oxygen saturation
     - radiation monitoring
     - warnings
+    - heads up display
+    - road
+    - geology
+    - vitals
+    - suit
+    - checklist
+    - alerts
+    - suit pressure
 
 - intent: show_panel
   examples: |
@@ -26,103 +34,103 @@ nlu:
     - [battery](panel) percentage
     - [battery](panel) percentage please
     - whats my [battery](panel) like?
-    - show me [battery](panel) percentage
-    - show me [suit temperature](panel) value
+    - [show](switch:on) me [battery](panel) percentage
+    - [show](switch:on) me [suit temperature](panel) value
     - can you tell me [atmosphere](panel) readings
-    - show me [heart rate](panel) readings
-    - display [respiratory rate](panel) reading
-    - show me [carbon dioxide](panel)
-    - can you show me [carbon dioxide](panel) reading
+    - [show](switch:on) me [heart rate](panel) readings
+    - [display](switch:on) [respiratory rate](panel) reading
+    - [show](switch:on) me [carbon dioxide](panel)
+    - can you [show](switch:on) me [carbon dioxide](panel) reading
     - what is my [heart rate](panel)
     - what is my [body temperature](panel)
     - how much is [secondary oxygen](panel)
-    - show me [warnings](panel)
-    - show me [feedwater count](panel) reading
+    - [show](switch:on) me [warnings](panel)
+    - [show](switch:on) me [feedwater count](panel) reading
     - can you tell me [oxygen saturation](panel) readings
     - can you tell me [oxygen saturation](panel) reading
     - what is my [feedwater count](panel)
     - what is my [blood pressure](panel)
     - how much is my [body temperature](panel)
-    - display [blood pressure](panel) readings
-    - show me [water gas pressure](panel)
+    - [display](switch:on) [blood pressure](panel) readings
+    - [show](switch:on) me [water gas pressure](panel)
     - what is the [secondary oxygen](panel)
     - how much is my [respiratory rate](panel)
-    - can you show me [water gas pressure](panel)
+    - can you [show](switch:on) me [water gas pressure](panel)
     - what is [heart rate](panel)
-    - display [blood pressure](panel) value
-    - display [suit temperature](panel) value
+    - [display](switch:on) [blood pressure](panel) value
+    - [display](switch:on) [suit temperature](panel) value
     - what is my [secondary oxygen](panel)
-    - can you show me [oxygen saturation](panel) value
+    - can you [show](switch:on) me [oxygen saturation](panel) value
     - how much is my [carbon dioxide](panel)
     - what is the [suit temperature](panel)
-    - show me [oxygen saturation](panel)
+    - [show](switch:on) me [oxygen saturation](panel)
     - can you tell me [body temperature](panel) value
     - how much is [blood pressure](panel)
-    - display [heart rate](panel) value
+    - [display](switch:on) [heart rate](panel) value
     - how much is my [oxygen saturation](panel)
     - how much is [suit temperature](panel)
     - how much is my [water gas pressure](panel)
     - how much is my [atmosphere](panel)
     - what is [respiratory rate](panel)
-    - display [body temperature](panel) reading
+    - [display](switch:on) [body temperature](panel) reading
     - what is [secondary oxygen](panel)
-    - show me [radiation monitoring](panel)
+    - [show](switch:on) me [radiation monitoring](panel)
     - what is the [radiation monitoring](panel)
     - what is the [atmosphere](panel)
-    - display [carbon dioxide](panel)
+    - [display](switch:on) [carbon dioxide](panel)
     - how much is my [radiation monitoring](panel)
-    - show me [atmosphere](panel) reading
+    - [show](switch:on) me [atmosphere](panel) reading
     - can you tell me [radiation monitoring](panel) value
     - how much is my [feedwater count](panel)
     - how much is [radiation monitoring](panel)
     - what is the [oxygen saturation](panel)
     - what is [water gas pressure](panel)
     - can you tell me [respiratory rate](panel) value
-    - show me [suit temperature](panel)
+    - [show](switch:on) me [suit temperature](panel)
     - can you tell me [heart rate](panel) reading
-    - show me [suit temperature](panel) reading
-    - can you show me [respiratory rate](panel) value
-    - show me [radiation monitoring](panel) value
-    - display [carbon dioxide](panel) readings
+    - [show](switch:on) me [suit temperature](panel) reading
+    - can you [show](switch:on) me [respiratory rate](panel) value
+    - [show](switch:on) me [radiation monitoring](panel) value
+    - [display](switch:on) [carbon dioxide](panel) readings
     - how much is [respiratory rate](panel)
     - can you tell me [heart rate](panel) value
     - what is [suit temperature](panel)
-    - display [respiratory rate](panel) value
-    - show me [water gas pressure](panel) reading
-    - display [heart rate](panel) readings
-    - display [blood pressure](panel)
-    - can you show me [oxygen saturation](panel) reading
-    - display [feedwater count](panel)
+    - [display](switch:on) [respiratory rate](panel) value
+    - [show](switch:on) me [water gas pressure](panel) reading
+    - [display](switch:on) [heart rate](panel) readings
+    - [display](switch:on) [blood pressure](panel)
+    - can you [show](switch:on) me [oxygen saturation](panel) reading
+    - [display](switch:on) [feedwater count](panel)
     - how much is [oxygen saturation](panel)
     - how much is [atmosphere](panel)
-    - display [body temperature](panel) readings
+    - [display](switch:on) [body temperature](panel) readings
     - can you tell me [body temperature](panel)
-    - display [oxygen saturation](panel) reading
+    - [display](switch:on) [oxygen saturation](panel) reading
     - what is the [carbon dioxide](panel)
     - what is the [water gas pressure](panel)
-    - display [respiratory rate](panel)
-    - can you show me [feedwater count](panel) readings
-    - show me [secondary oxygen](panel)
-    - can you show me [carbon dioxide](panel)
+    - [display](switch:on) [respiratory rate](panel)
+    - can you [show](switch:on) me [feedwater count](panel) readings
+    - [show](switch:on) me [secondary oxygen](panel)
+    - can you [show](switch:on) me [carbon dioxide](panel)
     - what is my [oxygen saturation](panel)
     - what is my [water gas pressure](panel)
-    - can you show me [secondary oxygen](panel) reading
+    - can you [show](switch:on) me [secondary oxygen](panel) reading
     - how much is my [heart rate](panel)
-    - display [carbon dioxide](panel) reading
+    - [display](switch:on) [carbon dioxide](panel) reading
     - what is [blood pressure](panel)
     - how much is my [blood pressure](panel)
-    - can you show me [radiation monitoring](panel) readings
+    - can you [show](switch:on) me [radiation monitoring](panel) readings
     - can you tell me [respiratory rate](panel) readings
     - can you tell me [heart rate](panel) readings
-    - show me [blood pressure](panel) value
-    - display [body temperature](panel) value
+    - [show](switch:on) me [blood pressure](panel) value
+    - [display](switch:on) [body temperature](panel) value
     - can you tell me [carbon dioxide](panel) readings
-    - can you show me [water gas pressure](panel) value
+    - can you [show](switch:on) me [water gas pressure](panel) value
     - can you tell me [blood pressure](panel) reading
-    - display [warnings](panel)
-    - can you show me [blood pressure](panel) reading
-    - display [feedwater count](panel) reading
-    - display [feedwater count](panel) readings
+    - [display](switch:on) [warnings](panel)
+    - can you [show](switch:on) me [blood pressure](panel) reading
+    - [display](switch:on) [feedwater count](panel) reading
+    - [display](switch:on) [feedwater count](panel) readings
     - can you tell me [feedwater count](panel) readings
     - what is [carbon dioxide](panel)
     - can you tell me [body temperature](panel) readings
@@ -130,30 +138,174 @@ nlu:
     - can you tell me [carbon dioxide](panel) reading
     - how much is [body temperature](panel)
     - what is my [suit temperature](panel)
-    - display [radiation monitoring](panel) reading
+    - [display](switch:on) [radiation monitoring](panel) reading
     - what is [feedwater count](panel)
-    - can you show me [body temperature](panel) reading
+    - can you [show](switch:on) me [body temperature](panel) reading
     - what is the [blood pressure](panel)
     - can you tell me [heart rate](panel)
-    - can you show me [secondary oxygen](panel) value
-    - show me [secondary oxygen](panel) value
+    - can you [show](switch:on) me [secondary oxygen](panel) value
+    - [show](switch:on) me [secondary oxygen](panel) value
     - what is the [body temperature](panel)
     - how much is [carbon dioxide](panel)
     - can you tell me [blood pressure](panel) value
     - can you tell me [water gas pressure](panel) readings
-    - can you show me [feedwater count](panel) value
-    - can you show me [feedwater count](panel) reading
+    - can you [show](switch:on) me [feedwater count](panel) value
+    - can you [show](switch:on) me [feedwater count](panel) reading
     - what is my [atmosphere](panel)
-    - can you show me [warnings](panel)
+    - can you [show](switch:on) me [warnings](panel)
     - can you tell me [secondary oxygen](panel) value
     - what is [radiation monitoring](panel)
     - can you tell me [blood pressure](panel)
-    - can you show me [atmosphere](panel)
-    - can you show me [warnings](panel)
+    - can you [show](switch:on) me [atmosphere](panel)
+    - can you [show](switch:on) me [warnings](panel)
     - can you tell me [warnings](panel)
     - can you tell me [suit temperature](panel) reading
-    - can you show me [respiratory rate](panel)
-    - can you show me [feedwater count](panel)
+    - can you [show](switch:on) me [respiratory rate](panel)
+    - can you [show](switch:on) me [feedwater count](panel)
+    - [show](switch:on) me the [heads up display](panel)
+    - where is the [heads up display](panel)
+    - pull up the [heads up display](panel) for me
+    - pull up the [heads up display](panel)
+    - [show](switch:on) me [road](panel) panel please
+    - [display](switch:on) [suit](panel) panel
+    - [show](switch:on) me [alerts](panel) panel
+    - can you [show](switch:on) me [vitals](panel) panel
+    - [display](switch:on) [checklist](panel)
+    - [show](switch:on) me [geology](panel)
+    - [display](switch:on) [vitals](panel)
+    - [display](switch:on) [checklist](panel) panel please
+    - [show](switch:on) me [suit](panel) panel
+    - [display](switch:on) [alerts](panel)
+    - can you [show](switch:on) me [checklist](panel)
+    - [show](switch:on) me [geology](panel) panel
+    - [show](switch:on) me [alerts](panel)
+    - can you [show](switch:on) me [geology](panel)
+    - [display](switch:on) [road](panel) panel
+    - [show](switch:on) me [road](panel)
+    - can you [show](switch:on) me [vitals](panel)
+    - [display](switch:on) [geology](panel) panel
+    - [display](switch:on) [checklist](panel) panel
+    - [display](switch:on) [suit](panel)
+    - [display](switch:on) [road](panel)
+    - can you [show](switch:on) me [suit](panel) panel
+    - can you [show](switch:on) me [vitals](panel) panel please
+    - [display](switch:on) [road](panel) panel please
+    - can you [show](switch:on) me [checklist](panel) panel
+    - [show](switch:on) me [vitals](panel) panel
+    - can you [show](switch:on) me [checklist](panel) panel please
+    - can you [show](switch:on) me [geology](panel) panel please
+    - can you [show](switch:on) me [suit](panel)
+    - [show](switch:on) me [vitals](panel) panel please
+    - can you [show](switch:on) me [alerts](panel) panel please
+    - can you [show](switch:on) me [road](panel)
+    - can you [show](switch:on) me [alerts](panel) panel
+    - can you [show](switch:on) me [alerts](panel)
+    - can you [show](switch:on) me [geology](panel) panel
+    - [display](switch:on) [geology](panel) panel please
+    - [show](switch:on) me [suit](panel) panel please
+    - [show](switch:on) me [vitals](panel)
+    - [display](switch:on) [alerts](panel) panel
+    - [display](switch:on) [vitals](panel) panel please
+    - [hide](switch:off) the [suit temperature](panel) panel please
+    - [close](switch:off) [warnings](panel) panel
+    - [hide](switch:off) [heart rate](panel) panel
+    - [close](switch:off) [feedwater count](panel)
+    - [hide](switch:off) [heart rate](panel)
+    - [hide](switch:off) the [heads up display](panel)
+    - [hide](switch:off) the [heads up display](panel) panel
+    - [hide](switch:off) the [vitals](panel) panel please
+    - [close](switch:off) the [respiratory rate](panel)
+    - [hide](switch:off) [road](panel)
+    - [close](switch:off) [battery](panel) panel
+    - [close](switch:off) [warnings](panel)
+    - [close](switch:off) [respiratory rate](panel)
+    - [close](switch:off) [warnings](panel) panel please
+    - [close](switch:off) the [body temperature](panel) panel
+    - [close](switch:off) [suit](panel) panel please
+    - [close](switch:off) [battery](panel)
+    - [hide](switch:off) the [warnings](panel) panel
+    - [hide](switch:off) the [suit temperature](panel) panel
+    - [hide](switch:off) [suit](panel)
+    - [close](switch:off) the [feedwater count](panel) panel
+    - [close](switch:off) [radiation monitoring](panel)
+    - [hide](switch:off) the [vitals](panel)
+    - [hide](switch:off) the [radiation monitoring](panel)
+    - [close](switch:off) [checklist](panel) panel
+    - [hide](switch:off) the [atmosphere](panel)
+    - [hide](switch:off) [atmosphere](panel) panel
+    - [close](switch:off) [carbon dioxide](panel)
+    - [hide](switch:off) [radiation monitoring](panel) panel
+    - [close](switch:off) the [battery](panel) panel please
+    - [hide](switch:off) [body temperature](panel) panel
+    - [hide](switch:off) the [blood pressure](panel) panel please
+    - [close](switch:off) the [heart rate](panel)
+    - [hide](switch:off) [water gas pressure](panel) panel please
+    - [close](switch:off) the [heads up display](panel) panel
+    - [close](switch:off) the [battery](panel)
+    - [close](switch:off) [body temperature](panel) panel please
+    - [hide](switch:off) [alerts](panel)
+    - [close](switch:off) the [geology](panel)
+    - [hide](switch:off) [blood pressure](panel) panel please
+    - [hide](switch:off) [vitals](panel)
+    - [hide](switch:off) the [body temperature](panel) panel
+    - [hide](switch:off) the [atmosphere](panel) panel
+    - [close](switch:off) [suit temperature](panel)
+    - [close](switch:off) the [vitals](panel)
+    - [hide](switch:off) the [oxygen saturation](panel)
+    - [hide](switch:off) [battery](panel)
+    - [close](switch:off) the [heads up display](panel) panel please
+    - [hide](switch:off) the [suit temperature](panel)
+    - [hide](switch:off) the [feedwater count](panel) panel please
+    - [hide](switch:off) the [suit](panel) panel
+    - [close](switch:off) the [suit temperature](panel) panel
+    - [hide](switch:off) [secondary oxygen](panel)
+    - [close](switch:off) the [feedwater count](panel)
+    - [close](switch:off) the [secondary oxygen](panel) panel
+    - [hide](switch:off) the [secondary oxygen](panel) panel please
+    - [close](switch:off) [vitals](panel) panel
+    - [hide](switch:off) [blood pressure](panel)
+    - [close](switch:off) the [suit temperature](panel)
+    - [hide](switch:off) the [vitals](panel) panel
+    - [close](switch:off) [road](panel) panel
+    - [hide](switch:off) [vitals](panel) panel
+    - [hide](switch:off) the [water gas pressure](panel)
+    - [close](switch:off) [secondary oxygen](panel)
+    - [hide](switch:off) [radiation monitoring](panel) panel please
+    - [hide](switch:off) the [blood pressure](panel) panel
+    - [hide](switch:off) [heads up display](panel) panel please
+    - [close](switch:off) the [atmosphere](panel)
+    - [close](switch:off) [suit temperature](panel) panel
+    - [hide](switch:off) [water gas pressure](panel)
+    - [hide](switch:off) the [checklist](panel) panel
+    - [hide](switch:off) the [checklist](panel)
+    - [close](switch:off) [atmosphere](panel) panel please
+    - [close](switch:off) [respiratory rate](panel) panel
+    - [hide](switch:off) the [geology](panel)
+    - [close](switch:off) the [road](panel) panel
+    - [hide](switch:off) the [battery](panel)
+    - [close](switch:off) [geology](panel) panel please
+    - [hide](switch:off) [oxygen saturation](panel) panel
+    - [hide](switch:off) the [battery](panel) panel
+    - [close](switch:off) the [atmosphere](panel) panel please
+    - [close](switch:off) the [carbon dioxide](panel)
+    - [hide](switch:off) [warnings](panel)
+    - [close](switch:off) [water gas pressure](panel) panel please
+    - [close](switch:off) [heart rate](panel) panel
+    - [close](switch:off) [vitals](panel) panel please
+    - [close](switch:off) [vitals](panel)
+    - [hide](switch:off) [feedwater count](panel) panel
+    - [close](switch:off) [road](panel) panel please
+    - [close](switch:off) the [battery](panel) panel
+    - [close](switch:off) the [heads up display](panel)
+    - [close](switch:off) the [atmosphere](panel) panel
+    - [hide](switch:off) the [body temperature](panel)
+    - [close](switch:off) [atmosphere](panel) panel
+    - [hide](switch:off) [checklist](panel) panel
+    - [close](switch:off) [body temperature](panel)
+    - [hide](switch:off) [oxygen saturation](panel)
+    - [close](switch:off) the [blood pressure](panel)
+    - [hide](switch:off) the [carbon dioxide](panel) panel
+    - [hide](switch:off) [geology](panel) panel
 
 stories:
 - story: show a panel when the panel is known
