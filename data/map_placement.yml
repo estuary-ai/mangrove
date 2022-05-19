@@ -1,0 +1,15 @@
+version: "2.0"
+
+nlu:
+- intent: map_placement
+  examples: |
+    - start map placement
+    - open up map placement
+    - start up map placement
+    - bring up the map placement helper
+
+stories:
+- story: starts the look at ground map placement helper
+  steps:
+  - intent: map_placement
+  - action: utter_map_placement

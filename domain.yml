@@ -8,8 +8,10 @@ intents:
   - expand_alert
   - goodbye
   - greet
+  - map_placement
   - navigation
   - omw
+  - place_map
   - read_condition
   - roger
   - sample_tagging
@@ -105,6 +107,10 @@ responses:
   utter_greet:
   - text: "Hi!"
 
+  utter_map_placement:
+  - custom:
+      map_placement: True
+
   utter_navigation:
   - custom:
       toggle: true
@@ -114,6 +120,10 @@ responses:
   utter_omw:
   - custom:
       LSAR: "omw"
+
+  utter_place_map:
+  - custom:
+      place_map: True
 
   utter_read_condition:
   - custom:
