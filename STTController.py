@@ -5,8 +5,16 @@ import sys
 import collections
 import webrtcvad
 
-class STTController:
+from enum import Enum
 
+class FocusLevel(Enum):
+    POS_HIGH = 10.0
+    POS_MEDIUM = 5.0
+    POS_LOW = 1.0
+    NEG_LOW = -1.0
+    NEG_MEDIUM = -4.0
+    NEG_HIGH = -9.0
+class STTController:
     def __init__(self, 
                  sample_rate=16000,
                  model_path='models/ds-model/deepspeech-0.9.3-models',
@@ -22,8 +30,6 @@ class STTController:
         if load_scorer:
             self.model.enableExternalScorer(model_path + ".scorer")
 
-        # self.model.addHotWord("sample", 15)
-
         self.buffered_data = b""
 
         # ms of inactivity at the end of the command before processing
@@ -36,11 +42,18 @@ class STTController:
         self.debug_total = 0
         self.debug_silence = 0
         self.debug_voice = 0
+        self.debug_feed = 0
+
+        self.init_words_focus_assets()
+
 
     def create_stream(self):
         self.stream_context = self.model.createStream()
         self.recorded_chunks = 0
         self.recorded_audio_length = 0
+
+    def remove_focus(self):
+        self.model.clearHotWords()
 
     def is_stream_context_running(self):
         return (self.stream_context is not None)
@@ -68,6 +81,10 @@ class STTController:
 
     def add_buffered_silence(self, data):
         if len(self.silence_buffers):
+            # DEBUG START
+            for buf in self.silence_buffers:
+                self.debug_feed -= len(buf)
+            # DEBUG END
             self.silence_buffers.append(data)
             total_length = 0
             for buf in self.silence_buffers:
@@ -82,6 +99,7 @@ class STTController:
         self.silence_buffers = collections.deque(maxlen=2)
         
     def feed_audio_content(self, data):
+        self.debug_feed += len(data)
         self.recorded_audio_length += int((len(data)/2) * (1/self.SAMPLE_RATE) * 1000)
         self.stream_context.feedAudioContent(np.frombuffer(data, np.int16))
 
@@ -106,6 +124,7 @@ class STTController:
     def process_silence(self, data):
         if self.recorded_chunks > 0: # recording is on
             self.log('-') # silence detected while recording
+            self.debug_feed -= len(data)
             self.feed_audio_content(data)
             
             if self.silence_start is None:
@@ -126,9 +145,11 @@ class STTController:
             self.silence_buffers.append(data)
             
     def process_audio_stream(self, new_data):         
-        i = 0
         data_stream = self.buffered_data + new_data 
+        self.reset_data_buffer()
+        
         outcomes = [] 
+        i = 0
         while i < len(data_stream):
             sub_data = data_stream[i:i+self.frame_size]
 
@@ -151,7 +172,6 @@ class STTController:
         self.buffered_data = data_stream[i:]
 
         if len(outcomes) > 0:
-            self.process_data_buffer()
             return self._combine_outcomes(outcomes)
         
 
@@ -179,6 +199,7 @@ class STTController:
 
     def process_data_buffer(self):
         if len(self.buffered_data) > 0:
+            print("process_data_buffer", len(self.buffered_data))
             self.feed_audio_content(self.buffered_data)
             # print("feeding buffered", len(self.buffered_data))
             self.reset_data_buffer()
@@ -199,3 +220,144 @@ class STTController:
     def log(self, msg, force=False):
         if self.verbose or force:
             sys.stdout.write(msg)
+
+    def add_focus(self,
+                words,
+                boostValues=None,
+                defaultBoost=FocusLevel.POS_MEDIUM.value):
+        if boostValues is None:
+            boostValues = [defaultBoost for _ in words]
+        elif not isinstance(boostValues, list):
+            if isinstance(boostValues, FocusLevel):
+                boostValues = boostValues.value
+            boostValues = [boostValues for _ in words]
+            
+        for word, boost in zip(words, boostValues):
+            self.model.addHotWord(word, boost)
+
+
+    
+    def init_words_focus_assets(self):
+        self.regular_neg_lo_focus = [
+            'lo', 'then', 'altaforte', 'generate', 'la',
+            'stan', 'plate', 'his', 'her',
+            'theology', 'once',
+             # maybe not so much ->
+            'and', 'leg', 'so', 'some',
+        ]
+        regular_pos_lo_focus = [
+            'close',
+            'hold',
+            'collapse', 'expand', # worked
+            'geology',
+            'turn', 'on', 'off',
+            'rock', 'show', 'screen',
+            'check',
+            'level', 'read',
+            'measurement',
+            'monitoring', 'heart', 
+            'saturation', 'radiation',
+            'stand',
+            'start', 'recording',
+            'sub',
+            'gas',
+            'place',
+            'red',
+        ]
+
+        regular_pos_med_focus = [
+            'heads', 'up', 'display', 'show',
+            'hide', 'sample', 'tag', 'rate', 'rock',
+            'respiratory', 'note', 'map',
+            'battery', 'oxygen', 'terrain',
+            'green', 'blue', 'pin',
+            'read', 'condition', 'suit',
+            'path', 'uncheck', 
+            'checklist',
+            'data', 
+            'alert',
+            'take', 'photo',
+            'vitals',
+            'road',
+            'audio',
+            'toggle',
+            'set', 'north',
+            'finder',
+        ]
+
+        regular_pos_hi_focus = [
+            'map', 'terrain', 'battery', 'oxygen', 'rate',
+            'pin',
+        ]
+
+        tagging_med_focus = [
+            'measurement', 'rock', 'regolith', 'coordinates', 'sun',
+            'shining', 'shine', 'visbility', 'outcrop', 'poor', 'optimal',
+            'boulder', 'outskirts', 'crater', 'rim',
+            'landslide', 'lava', 'flow', 'PSR', 'contacts', 'lithologies',
+            'pick', 'hammer', 'tools', 'used', 'using', 'use',
+            'fist-sized', 'fist', 'shape', 'dimension', 'measures', 'centimeters',
+            'inches', 'chip off', 'chip', 'fragment', 'scoop', 'material',
+            'range', 'appearance',
+            'color', 'dark', 'gray', 'basalts', 'white', 'anorthosites', 'mottled',
+            'breccias', 'black', 'green', 'glass', 'beads', 
+            'appearance' , 'texture', 'fine', 'grained', 'coarse',
+            'vesiculated', 'coherent', 'brecciated', 'friable',
+            'make out', 'variety', 'clasts', 'shiny', 'ilmenite',
+            'opaque', 'phases', 'initial', 'geologic', 
+            'interpretation', 'origin', 'breccia', 'formed', 'impacts',
+            'anorthosite', 'represents', 'Moon’s', 'primary', 'crust',
+            'secondary', 'rock', 
+        ]
+        tagging_hi_focus = [
+            'volcanic', 'orange'
+        ]
+
+        tmp = self.remove_from([regular_pos_lo_focus,
+                                regular_pos_med_focus,
+                                regular_pos_hi_focus])
+        self.regular_pos_lo_focus = tmp[0]
+        self.regular_pos_med_focus = tmp[1]
+        self.regular_pos_hi_focus = tmp[2]
+
+        tmp = self.remove_from([tagging_med_focus,
+                                tagging_hi_focus,
+                                regular_pos_lo_focus,
+                                regular_pos_med_focus,
+                                regular_pos_hi_focus])
+
+        self.tagging_med_focus = tmp[0]
+        self.tagging_hi_focus = tmp[1]
+
+
+
+
+    def remove_from(self, lists):
+        newListOfSets = []
+        for i in range(len(lists)-1):
+            othersSet = set()
+            for other in lists[i+1:]:
+                othersSet = othersSet.union(set(other))
+            aSet = set(lists[i]).difference(othersSet)
+            newListOfSets.append(aSet)
+        newListOfSets.append(set(lists[-1]))
+        return newListOfSets
+        
+
+    def set_regular_focus(self):
+        self.model.clearHotWords()
+        self.add_focus(self.regular_pos_lo_focus, boostValues=FocusLevel.POS_LOW)
+        self.add_focus(self.regular_pos_med_focus, boostValues=FocusLevel.POS_MEDIUM)
+        self.add_focus(self.regular_pos_hi_focus, boostValues=FocusLevel.POS_HIGH)
+        self.add_focus(self.regular_neg_lo_focus, boostValues=FocusLevel.NEG_LOW)
+    
+    def set_sample_tagging_focus(self):
+        self.model.clearHotWords()
+        self.set_regular_focus()
+        # med_focus = set(self.tagging_med_focus + self.regular_med_focus)
+        # hi_focus = set(self.regular_hi_focus + self.tagging_hi_focus)
+        # med_focus.difference_update(hi_focus)
+        # self.add_focus(med_focus)
+        # self.add_focus(hi_focus, boostValues=FocusLevel.POS_HIGH)
+        self.add_focus(self.tagging_med_focus, boostValues=FocusLevel.POS_MEDIUM)
+        self.add_focus(self.tagging_hi_focus, boostValues=FocusLevel.POS_HIGH)

@@ -10,4 +10,8 @@ tests/
 
 models/rasa-model/*
 models/ds-model/*
+
+*/*/*.wav
+
+
 debug-and-drafts/web_microphone_websocket

@@ -6,16 +6,24 @@ from rasa.utils.endpoints import EndpointConfig
 
 class BotController:
 
-    def __init__(self):
-        self.agent = Agent.load("models/model.tar.gz", action_endpoint=EndpointConfig('http://localhost:5055/webhook'))
+    def __init__(self,
+                 model_path='models/rasa-model/model.tar.gz',
+                 endpoint_config_address='http://localhost:5055/webhook'):
+        
+        self.agent =\
+            Agent.load(
+                model_path,
+                action_endpoint=EndpointConfig(endpoint_config_address))
 
         if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     def send_user_message(self, request):
 
-        user_message = request.get('Body')
-        conversation_id = request.get('From')
+        # user_message = request.get('Body')
+        # conversation_id = request.get('From')
+        conversation_id = 1
+        user_message = request
 
         #Sending message to RASA
         loop = asyncio.new_event_loop()
