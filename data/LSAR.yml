@@ -1,0 +1,89 @@
+version: "2.0"
+
+nlu:
+
+- intent: expand_alert
+  examples: |
+    - show me the alert
+    - display the alert
+    - expand alert
+    - show alert
+    - display alerts
+    - show alerts
+    - expand alerts
+    - can you show me the alert?
+    - can you expand the alert for me?
+
+- intent: collapse_alert
+  examples: |
+    - hide the alert
+    - collapse the alert
+    - hide alert
+    - hide alerts
+    - collapse alert
+    - collapse alerts
+    - please hide the alert
+    - please collapse the alert
+    - can you hide that alert?
+
+- intent: omw
+  examples: |
+    - I'm on my way
+    - on my way
+    - Im on my way
+    - I am on my way
+
+- intent: roger
+  examples: |
+    - roger
+    - roger that
+    - roger that sir
+    - roger that ma'am
+    - acknowledge
+    - acknowledged
+
+- intent: standby
+  examples: |
+    - standby
+    - hold
+    - stand by
+    - please stand by
+
+- intent: read_condition
+  examples: |
+    - can you read that condition for me?
+    - read condition
+    - read out condition
+    - read out the condition
+
+stories:
+
+- story: expand_alert
+  steps:
+  - intent: expand_alert
+  - action: utter_expand_alert
+
+- story: collapse_alert
+  steps:
+  - intent: collapse_alert
+  - action: utter_collapse_alert
+
+- story: omw
+  steps:
+  - intent: omw
+  - action: utter_omw
+
+- story: roger
+  steps:
+  - intent: roger
+  - action: utter_roger
+
+- story: standby
+  steps:
+  - intent: standby
+  - action: utter_standby
+
+- story: read_condition
+  steps:
+  - intent: read_condition
+  - action: utter_read_condition
