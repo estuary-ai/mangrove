@@ -7,11 +7,11 @@ import numpy as np
 import sounddevice as sd
 import time
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = "true"
-import tensorflow as tf
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = "true"
+# import tensorflow as tf
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 SAMPLE_RATE = 16000
@@ -47,11 +47,13 @@ def handle_disconnect():
     write_output('client disconnected')
  
 def setup_sample_tagging():
+    write_output('set in sample tagging')
     global is_sample_tagging
     is_sample_tagging = True
     stt.set_sample_tagging_focus()
 
 def kill_sample_tagging():
+    write_output('kill sample tagging')
     global is_sample_tagging
     is_sample_tagging = False
     stt.set_regular_focus()
@@ -80,10 +82,13 @@ def handle_stream_audio(data):
         global is_sample_tagging
         if is_sample_tagging:
             # TERMINATION SCHEME BY <OVER> IN SAMPLE-TAGGING
-            stt_res_buffer = stt._combine_outcomes([stt_res_buffer, stt_res])
+            if stt_res_buffer is not None:
+                stt_res_buffer = stt._combine_outcomes([stt_res_buffer, stt_res])
+            stt_res_buffer = stt_res
             if stt_res['text'].rstrip().endswith("over"):
                 stt._combine_outcomes()
                 stt_res = stt_res_buffer
+                stt_res_buffer = None
             
 
         bot_res = bot.send_user_message(stt_res['text'])
@@ -135,8 +140,8 @@ if __name__ == '__main__':
                     sample_rate=SAMPLE_RATE,
                     model_path='models/ds-model/deepspeech-0.9.3-models',
                     load_scorer=True,
-                    silence_threshold=400,
-                    vad_aggressiveness=2,
+                    silence_threshold=300,
+                    vad_aggressiveness=3,
                     frame_size = 320
                 )
     stt.set_regular_focus()
