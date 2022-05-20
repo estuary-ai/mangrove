@@ -8,8 +8,7 @@ env/
 credentials.yml
 tests/
 
-models/rasa-model/*
-models/ds-model/*
+models/ds-model/deepspeech*
 
 debug-and-drafts/res-speech
 
