@@ -10,8 +10,10 @@ tests/
 
 models/ds-model/deepspeech*
 
-debug-and-drafts/res-speech
+debug-and-drafts/res-speech/*.*
 
+samples/*.*
+ras-speech/*.*
 
 debug-and-drafts/web_microphone_websocket
-*.txt
+sample-audio-binary*/*.*
