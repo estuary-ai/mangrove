@@ -311,10 +311,10 @@ class STTController:
             'opaque', 'phases', 'initial', 'geologic', 
             'interpretation', 'origin', 'breccia', 'formed', 'impacts',
             'anorthosite', 'represents', 'Moon’s', 'primary', 'crust',
-            'secondary', 'rock', 
+            'secondary', 'rock', 'over', 'exit'
         ]
         tagging_hi_focus = [
-            'volcanic', 'orange'
+            'volcanic', 'orange',
         ]
 
         tmp = self.remove_from([regular_pos_lo_focus,
@@ -358,10 +358,5 @@ class STTController:
     def set_sample_tagging_focus(self):
         self.model.clearHotWords()
         self.set_regular_focus()
-        # med_focus = set(self.tagging_med_focus + self.regular_med_focus)
-        # hi_focus = set(self.regular_hi_focus + self.tagging_hi_focus)
-        # med_focus.difference_update(hi_focus)
-        # self.add_focus(med_focus)
-        # self.add_focus(hi_focus, boostValues=FocusLevel.POS_HIGH)
         self.add_focus(self.tagging_med_focus, boostValues=FocusLevel.POS_MEDIUM)
         self.add_focus(self.tagging_hi_focus, boostValues=FocusLevel.POS_HIGH)
