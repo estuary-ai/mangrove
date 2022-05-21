@@ -9,41 +9,41 @@ nlu:
 
 - intent: toggle_feature
   examples: |
-    - switch it [on](switch)
-    - switch it [off](switch)
-    - turn it [on](switch)
-    - turn it [off](switch)
-    - [on](switch)
-    - [off](switch)
-    - can you switch [on](switch) [headlights](feature)?
-    - switch [on](switch) [headlights](feature)
-    - turn [headlights](feature) [on](switch)
-    - turn [headlights](feature) [off](switch)
-    - turn [off](switch) [fan](feature)
-    - switch [fan](feature) [off](switch)
-    - [fan](feature) can be turned [off](switch)
-    - [fan](feature) should be switched [on](switch)
-    - turn [on](switch) the [headlights](feature)
-    - turn [off](switch) the [headlights](feature)
-    - turn [on](switch) the [fan](feature)
-    - turn [off](switch) the [fan](feature)
+    - switch_ it [on](switch_)
+    - switch_ it [off](switch_)
+    - turn it [on](switch_)
+    - turn it [off](switch_)
+    - [on](switch_)
+    - [off](switch_)
+    - can you switch_ [on](switch_) [headlights](feature)?
+    - switch_ [on](switch_) [headlights](feature)
+    - turn [headlights](feature) [on](switch_)
+    - turn [headlights](feature) [off](switch_)
+    - turn [off](switch_) [fan](feature)
+    - switch_ [fan](feature) [off](switch_)
+    - [fan](feature) can be turned [off](switch_)
+    - [fan](feature) should be switch_ed [on](switch_)
+    - turn [on](switch_) the [headlights](feature)
+    - turn [off](switch_) the [headlights](feature)
+    - turn [on](switch_) the [fan](feature)
+    - turn [off](switch_) the [fan](feature)
 
 stories:
-- story: toggle a component with feature and switch known
+- story: toggle a component with feature and switch_ known
   steps:
   - intent: toggle_feature
   - slot_was_set:
-    - switch
+    - switch_
   - slot_was_set:
     - feature
   - action: utter_toggle_feature
   - action: action_restart
 
-# - story: toggle a component when only the switch is known
+# - story: toggle a component when only the switch_ is known
 #   steps:
 #   - intent: toggle_feature
 #   - slot_was_set:
-#     - switch
+#     - switch_
 #   - action: utter_ask_feature
 #   - intent: toggle_feature
 #   - slot_was_set:
@@ -56,9 +56,9 @@ stories:
 #   - intent: toggle_feature
 #   - slot_was_set:
 #     - feature
-#   - action: utter_ask_switch
+#   - action: utter_ask_switch_
 #   - intent: toggle_feature
 #   - slot_was_set:
-#     - switch
+#     - switch_
 #   - action: utter_toggle_feature
 #   - action: action_restart

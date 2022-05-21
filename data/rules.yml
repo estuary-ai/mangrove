@@ -10,4 +10,5 @@ rules:
 - rule: Fallback
   steps:
   - intent: nlu_fallback
+  - action: utter_fallback_json
   - action: utter_fallback

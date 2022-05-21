@@ -1,0 +1,17 @@
+version: "2.0"
+
+nlu:
+
+- intent: set_north
+  examples: |
+    - set north
+    - set this orientation as north
+    - set as north
+    - set this direction as north
+
+stories:
+- story: calibrate the current orientation of the Hololens to North
+  steps:
+  - intent: set_north
+  - action: utter_set_north
+  - action: utter_set_north_text

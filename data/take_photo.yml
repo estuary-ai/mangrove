@@ -1,0 +1,21 @@
+version: "2.0"
+
+nlu:
+
+- intent: take_photo
+  examples: |
+    - can you take a photo?
+    - take a photo
+    - take photo
+    - click a picture
+    - take a picture
+    - capture a photograph
+    - photograph this scene
+    - take a photo please
+
+stories:
+- story: Taking a photo
+  steps:
+  - intent: take_photo
+  - action: utter_take_photo
+  - action: utter_take_photo_text

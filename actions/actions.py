@@ -14,8 +14,8 @@ class ActionNavigationText(Action):
         return 'action_navigation_text'
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch = tracker.get_slot('switch')
-        if switch is None or switch == 'on':
+        switch_ = tracker.get_slot('switch_')
+        if switch_ is None or switch_ == 'on':
             dispatcher.utter_message(text='Opening up the navigation menu for you')
         else:
             dispatcher.utter_message(text='Closing the navigation menu for you')
@@ -27,8 +27,8 @@ class ActionTerrainText(Action):
         return 'action_terrain_text'
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch = tracker.get_slot('switch')
-        if switch is None or switch == 'on':
+        switch_ = tracker.get_slot('switch_')
+        if switch_ is None or switch_ == 'on':
             dispatcher.utter_message(text='Displaying terrain markers')
         else:
             dispatcher.utter_message(text='Hiding terrain markers')

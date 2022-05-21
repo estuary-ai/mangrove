@@ -1,0 +1,17 @@
+version: "2.0"
+
+nlu:
+
+- intent: capture_audio
+  examples: |
+    - can you record audio
+    - record audio
+    - capture audio
+    - start recording audio
+
+stories:
+- story: Recording audio
+  steps:
+  - intent: capture_audio
+  - action: utter_capture_audio
+  - action: utter_capture_audio_text
