@@ -9,6 +9,7 @@ intents:
   - expand_alert
   - goodbye
   - greet
+  - map
   - navigation
   - omw
   - place_pin
@@ -129,6 +130,12 @@ responses:
   utter_greet:
   - text: "Hi!"
 
+  utter_map:
+  - custom:
+      toggle: True
+      feature: "map"
+      switch_: "{switch_}"
+
   utter_navigation:
   - custom:
       toggle: true
@@ -220,6 +227,7 @@ forms:
     - type: from_text
 
 actions:
+  - action_map_text
   - action_navigation_text
   - action_terrain_text
   - action_initiate_sample

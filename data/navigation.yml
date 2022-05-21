@@ -7,20 +7,20 @@ nlu:
     - [show](switch_:on) navigation
     - view navigation
     - navigation
-    - [show](switch_:on) me the map
-    - [open](switch_:on) up the map for me
-    - can I see the map
-    - can you [show](switch_:on) me the map
-    - bring up the map
-    - [show](switch_:on) me the map
     - navigate me
     - navigate me to the destination
     - [show](switch_:on) me the way
     - how do I reach there?
-    - [hide](switch_:off) the map
-    - [close](switch_:off) the map
     - [hide](switch_:off) navigation menu
-    - [close](switch_:off) map
+    - [close](switch_:off) the navigation menu
+    - [close](switch_:off) the pathfinder
+    - [show](switch_:on) me the path
+    - which path do I take?
+    - [show](switch_:on) me all the paths
+    - which route should I take?
+    - navigate me there using any available path
+    - path finder
+    - pathfinder
 
 stories:
 - story: displaying navigation menu
