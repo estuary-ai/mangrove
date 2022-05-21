@@ -1,0 +1,38 @@
+version: "2.0"
+
+nlu:
+
+- intent: select_pin
+  examples: |
+    - select the [green](color) pin
+    - choose the [red](color) pin
+    - I want to use the [blue](color) pin
+    - select [green](color) pin
+    - choose [red](color) pin
+    - [blue](color) pin please
+    - I want to use the [green](color) pin
+    - select [red](color) pin
+    - use [blue](color) pin
+
+- intent: place_pin
+  examples: |
+    - place the pin there
+    - place the pin here
+    - place pin here
+    - place pin there
+    - place a pin
+    - place the pin
+
+stories:
+- story: Selecting a pin colour
+  steps:
+  - intent: select_pin
+  - slot_was_set:
+    - color: green
+  - action: utter_select_pin
+
+- story: Placing the pin in the current orientation
+  steps:
+  - intent: place_pin
+  - action: utter_place_pin
+  - action: utter_place_pin_text

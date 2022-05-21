@@ -9,13 +9,13 @@ intents:
   - expand_alert
   - goodbye
   - greet
-  - map_placement
   - navigation
   - omw
-  - place_map
+  - place_pin
   - read_condition
   - roger
   - sample_tagging
+  - select_pin
   - set_north
   - show_panel
   - standby
@@ -25,11 +25,18 @@ intents:
   - toggle_follow
 
 entities:
+  - color
   - feature
   - panel
   - switch_
 
 slots:
+  color:
+    type: categorical
+    values:
+      - green
+      - red
+      - blue
   feature:
     type: text
   panel:
@@ -122,10 +129,6 @@ responses:
   utter_greet:
   - text: "Hi!"
 
-  utter_map_placement:
-  - custom:
-      map_placement: True
-
   utter_navigation:
   - custom:
       toggle: true
@@ -136,9 +139,12 @@ responses:
   - custom:
       LSAR: "omw"
 
-  utter_place_map:
+  utter_place_pin:
   - custom:
-      place_map: True
+      place_pin: True
+
+  utter_place_pin_text:
+  - text: "Placing pin in the current direction"
 
   utter_read_condition:
   - custom:
@@ -147,6 +153,11 @@ responses:
   utter_roger:
   - custom:
       LSAR: "roger"
+
+  utter_select_pin:
+  - custom:
+      select_pin: true
+      color: "{color}"
 
   utter_set_north:
   - custom:
