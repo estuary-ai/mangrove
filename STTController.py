@@ -121,6 +121,9 @@ class STTController:
         self.create_stream()
         return results
 
+
+    # TODO make process_silence using samples count or percentge
+    #  instead of time
     def process_silence(self, data):
         if self.recorded_chunks > 0: # recording is on
             self.log('-') # silence detected while recording
@@ -131,6 +134,7 @@ class STTController:
                 self.silence_start = round(time.time() * 1000)
             else:
                 now = round(time.time() * 1000)
+                self.debug_silence_state = now - self.silence_start
                 if now - self.silence_start > self.SILENCE_THRESHOLD:
                     self.silence_start = None
                     self.log("\n[end]")

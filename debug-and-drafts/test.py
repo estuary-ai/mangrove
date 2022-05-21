@@ -19,8 +19,8 @@ stt = STTController(
                     sample_rate=16000,
                     model_path='../models/ds-model/deepspeech-0.9.3-models',
                     load_scorer=True,
-                    silence_threshold=150,
-                    vad_aggressiveness=2,
+                    silence_threshold=300,
+                    vad_aggressiveness=1,
                     frame_size=320
                 )
 stt.set_regular_focus()
@@ -55,10 +55,15 @@ while(True):
     sd.wait()
 
     stt.create_stream()
-    # stt.feed_audio_content(audio)
-    # stt_res = stt.finish_stream()
-    stt_res = stt.process_audio_stream(audio)
+    stt.feed_audio_content(audio)
+    stt_res = stt.finish_stream()
+    # print('audiobuffer: ', len(stt.buffered_data))
+    # print('audiofeed debug', stt.debug_feed)
+    # print('total debug', stt.debug_total)
+    # print('voice debug', stt.debug_voice)
+    # print('silence debug', stt.debug_silence)
     print('User: ' + str(stt_res))
+    # print('silence_start', stt.debug_silence_state)
     bot_res = bot.send_user_message(stt_res['text'])
     print('SENVA: ' + str(bot_res))    
     if bot_res.get('text'):
@@ -81,29 +86,28 @@ while(True):
     else:
         print('no commands')
 
-filename = filenames[int(92)-1]
+# filename = filenames[int(92)-1]
 
-print("filename:", filename)
-f = open(f'{samples_path}/{filename}', mode='rb')
-audio = f.read()
+# print("filename:", filename)
+# f = open(f'{samples_path}/{filename}', mode='rb')
+# audio = f.read()
 
-print("total length in bytes:", len(audio))
-print("playing audio..")
-sd.play(np.frombuffer(audio, dtype=np.int16), 16000)
-# sd.wait()
+# print("total length in bytes:", len(audio))
+# print("playing audio..")
+# sd.play(np.frombuffer(audio, dtype=np.int16), 16000)
+# # sd.wait()
 
-stt.create_stream()
-stt_res = stt.process_audio_stream(audio)
-print('User:', str(stt_res))
-print('audiobuffer: ', len(stt.buffered_data))
-print('audiofeed debug', stt.debug_feed)
-print('total debug', stt.debug_total)
-print('voice debug', stt.debug_voice)
-print('silence debug', stt.debug_silence)
+# stt.create_stream()
+# stt_res = stt.process_audio_stream(audio)
+# print('User:', str(stt_res))
+# print('audiobuffer: ', len(stt.buffered_data))
+# print('audiofeed debug', stt.debug_feed)
+# print('total debug', stt.debug_total)
+# print('voice debug', stt.debug_voice)
+# print('silence debug', stt.debug_silence)
 
 # frame_size = 2048//2//3 + 1
 # print('Frame Size', frame_size)
-# text = ""
 # for i in range(0, len(audio), frame_size):
 #     chunk = audio[i:i+frame_size]
 #     if len(chunk) < frame_size:
