@@ -9,7 +9,7 @@ import time
 
 # import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# # os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = "true"
+# # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
 # import tensorflow as tf
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
@@ -24,18 +24,20 @@ socketio = SocketIO(app,
 @socketio.on('connect')
 def handle_connect():
     global session_audio_buffer
-    session_audio_buffer = b""
     global command_audio_buffer
+    session_audio_buffer = b""
     command_audio_buffer = b""
     stt.create_stream()
     write_output('client connected')
 
 @socketio.on('disconnect')
 def handle_disconnect():
+    global is_sample_tagging
+    is_sample_tagging = False
     sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
     
     session_id = str(int(time.time()*1000))
-    with open(f"{session_id}_binary.txt", mode='wb') as f:
+    with open(f"sample-audio-binary/{session_id}_binary.txt", mode='wb') as f:
         f.write(session_audio_buffer)
 
     write_output('debug, testing the whole audio of the session')
@@ -63,6 +65,7 @@ def kill_sample_tagging():
 @socketio.on('stream-audio')
 def handle_stream_audio(data):
     global stt_res_buffer
+    stt_res_buffer = None
     global command_audio_buffer
     global session_audio_buffer
     if len(command_audio_buffer) == 0:
@@ -75,20 +78,22 @@ def handle_stream_audio(data):
         socketio.emit('stt-response', stt_res)
         write_output('User: ' + str(stt_res))
 
-        with open(f"{stt_res['text'].replace(' ', '_')}_binary.txt", mode='wb') as f:
+        with open(f"sample-audio-binary/{stt_res['text'].replace(' ', '_')}_binary.txt", mode='wb') as f:
             f.write(command_audio_buffer)
         command_audio_buffer = b""
         
         global is_sample_tagging
         if is_sample_tagging:
+            write_output("is sample taggin on..")
             # TERMINATION SCHEME BY <OVER> IN SAMPLE-TAGGING
             if stt_res_buffer is not None:
+                write_output("appending to buffer - sample tagging")
                 stt_res_buffer = stt._combine_outcomes([stt_res_buffer, stt_res])
             stt_res_buffer = stt_res
-            if stt_res['text'].rstrip().endswith("over"):
-                stt._combine_outcomes()
-                stt_res = stt_res_buffer
-                stt_res_buffer = None
+            if not ("over" in stt_res['text'].rstrip()[-30:]):
+                return
+            stt_res = stt_res_buffer
+            stt_res_buffer = None
             
 
         bot_res = bot.send_user_message(stt_res['text'])
@@ -106,10 +111,10 @@ def handle_stream_audio(data):
         if bot_commands:
             sample_command = bot_commands[0].get('sample')
             sample_details_command =  bot_commands[0].get('Sample Details')
-            if sample_command:
+            if sample_command is not None:
                 write_output("tagging a sample scenario")
                 setup_sample_tagging()
-            elif sample_details_command:
+            elif sample_details_command is not None:
                 write_output("sample tagging finished successfully")
                 kill_sample_tagging()
             elif sample_command is not None and sample_command is False:
@@ -140,7 +145,7 @@ if __name__ == '__main__':
                     sample_rate=SAMPLE_RATE,
                     model_path='models/ds-model/deepspeech-0.9.3-models',
                     load_scorer=True,
-                    silence_threshold=300,
+                    silence_threshold=250,
                     vad_aggressiveness=3,
                     frame_size = 320
                 )
