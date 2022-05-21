@@ -4,23 +4,23 @@ nlu:
 
 - intent: navigation
   examples: |
-    - [show](switch:on) navigation
+    - [show](switch_:on) navigation
     - view navigation
     - navigation
-    - [show](switch:on) me the map
-    - [open](switch:on) up the map for me
+    - [show](switch_:on) me the map
+    - [open](switch_:on) up the map for me
     - can I see the map
-    - can you [show](switch:on) me the map
+    - can you [show](switch_:on) me the map
     - bring up the map
-    - [show](switch:on) me the map
+    - [show](switch_:on) me the map
     - navigate me
     - navigate me to the destination
-    - [show](switch:on) me the way
+    - [show](switch_:on) me the way
     - how do I reach there?
-    - [hide](switch:off) the map
-    - [close](switch:off) the map
-    - [hide](switch:off) navigation menu
-    - [close](switch:off) map
+    - [hide](switch_:off) the map
+    - [close](switch_:off) the map
+    - [hide](switch_:off) navigation menu
+    - [close](switch_:off) map
 
 stories:
 - story: displaying navigation menu

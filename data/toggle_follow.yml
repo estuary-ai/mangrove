@@ -1,0 +1,17 @@
+version: "2.0"
+
+nlu:
+
+- intent: toggle_follow
+  examples: |
+    - follow me
+    - click follow me
+    - select follow me
+    - choose follow me
+
+stories:
+- story: Toggles the follow me feature
+  steps:
+  - intent: toggle_follow
+  - action: utter_toggle_follow
+  - action: utter_toggle_follow_text

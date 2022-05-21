@@ -1,6 +1,7 @@
 version: "2.0"
 
 intents:
+  - capture_audio
   - click
   - collapse_alert
   - declutter
@@ -8,29 +9,39 @@ intents:
   - expand_alert
   - goodbye
   - greet
-  - map_placement
   - navigation
   - omw
-  - place_map
+  - place_pin
   - read_condition
   - roger
   - sample_tagging
+  - select_pin
+  - set_north
   - show_panel
   - standby
+  - take_photo
   - terrain
   - toggle_feature
+  - toggle_follow
 
 entities:
+  - color
   - feature
   - panel
-  - switch
+  - switch_
 
 slots:
+  color:
+    type: categorical
+    values:
+      - green
+      - red
+      - blue
   feature:
     type: text
   panel:
     type: text
-  switch:
+  switch_:
     type: text
   lighting_conditions:
     type: text
@@ -50,7 +61,7 @@ responses:
   utter_ask_feature:
   - text: "Which feature would you like turn on or off?"
 
-  utter_ask_switch:
+  utter_ask_switch_:
   - text: "Would you like to turn it on or off?"
 
   utter_ask_lighting_conditions:
@@ -74,6 +85,13 @@ responses:
   utter_sample_tagged:
   - text: "Your sample has been succesfully tagged!"
 
+  utter_capture_audio:
+  - custom:
+      capture_audio: true
+
+  utter_capture_audio_text:
+  - text: "Capturing audio"
+
   utter_click:
   - custom:
       click: true
@@ -96,6 +114,10 @@ responses:
   - custom:
       LSAR: "expand_alert"
 
+  utter_fallback_json:
+  - custom:
+      retry: true
+
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
   - text: "Could you repeat that?"
@@ -107,23 +129,22 @@ responses:
   utter_greet:
   - text: "Hi!"
 
-  utter_map_placement:
-  - custom:
-      map_placement: True
-
   utter_navigation:
   - custom:
       toggle: true
       feature: "navigation"
-      switch: "{switch}"
+      switch_: "{switch_}"
 
   utter_omw:
   - custom:
       LSAR: "omw"
 
-  utter_place_map:
+  utter_place_pin:
   - custom:
-      place_map: True
+      place_pin: True
+
+  utter_place_pin_text:
+  - text: "Placing pin in the current direction"
 
   utter_read_condition:
   - custom:
@@ -133,27 +154,55 @@ responses:
   - custom:
       LSAR: "roger"
 
+  utter_select_pin:
+  - custom:
+      select_pin: true
+      color: "{color}"
+
+  utter_set_north:
+  - custom:
+      set_north: true
+
+  utter_set_north_text:
+  - text: "Setting this orientation as North"
+
   utter_show_panel:
   - custom:
       toggle: true
       feature: "{panel}"
-      switch: "{switch}"
+      switch_: "{switch_}"
 
   utter_standby:
   - custom:
       LSAR: "standby"
 
+  utter_take_photo:
+  - custom:
+      take_photo: true
+
+  utter_take_photo_text:
+  - text: "Capturing a photo"
+
   utter_terrain:
   - custom:
       toggle: true
       feature: "terrain"
-      switch: "{switch}"
+      switch_: "{switch_}"
 
   utter_toggle_feature:
   - custom:
       toggle: true
       feature: "{feature}"
-      switch: "{switch}"
+      switch_: "{switch_}"
+
+  utter_toggle_follow:
+  - custom:
+      toggle: True
+      feature: "{feature}"
+      switch_: "on"
+
+  utter_toggle_follow_text:
+  - text: "Follow me enabled"
 
 forms:
   form_sample_tagging:
