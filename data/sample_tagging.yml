@@ -25,6 +25,9 @@ nlu:
     - main menu
     - exit please
     - please quit
+    - skip please
+    - skip
+    - escape
 
 rules:
 - rule: Basic sample tagging flow

@@ -205,7 +205,7 @@ responses:
   utter_toggle_follow:
   - custom:
       toggle: True
-      feature: "{feature}"
+      feature: "follow"
       switch_: "on"
 
   utter_toggle_follow_text:
