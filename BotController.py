@@ -7,7 +7,7 @@ from rasa.utils.endpoints import EndpointConfig
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20220521-162518.tar.gz',
+                 model_path='models/rasa-model/model.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         self.agent =\
@@ -41,7 +41,7 @@ class BotController:
                 texts.append(text)
             elif 'custom' in message:
                 commands.append(message['custom'])
-
+        
         #Compiling responses
         response = {}
         response['text'] = texts

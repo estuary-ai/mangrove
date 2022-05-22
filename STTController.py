@@ -3,13 +3,16 @@ import numpy as np
 import time
 import sys
 import collections
+from sqlalchemy import false
 import webrtcvad
 
 from enum import Enum
 
+import sounddevice as sd
+
 class FocusLevel(Enum):
-    POS_HIGH = 9.0
-    POS_MEDIUM = 5.0
+    POS_HIGH = 10.0
+    POS_MEDIUM = 6.0
     POS_LOW = 1.0
     NEG_LOW = -1.0
     NEG_MEDIUM = -4.0
@@ -44,14 +47,20 @@ class STTController:
         self.debug_silence = 0
         self.debug_voice = 0
         self.debug_feed = 0
+        self.debug_silence_state = 0
+        self.debug_prev_debug_data_feed = b''
 
         self.init_words_focus_assets()
 
 
     def create_stream(self):
         self.stream_context = self.model.createStream()
+        data = b'\x00\x00'*self.frame_size
+        self.stream_context.feedAudioContent(np.frombuffer(data, np.int16))
         self.recorded_chunks = 0
         self.recorded_audio_length = 0
+        self.debug_data_feed = b''
+
 
     def remove_focus(self):
         self.model.clearHotWords()
@@ -60,14 +69,26 @@ class STTController:
         return (self.stream_context is not None)
 
     def finish_stream(self):
-        if self.stream_context:
+        # print("finish_stream", end="", flush=True)
+        if self.stream_context is not None:
+            # print("self.stream_context is good", end="", flush=True)
             start = round(time.time() * 1000)
 
             # include buffered data
-            self.process_data_buffer()
+            # self.process_data_buffer()
 
             transcription = self.stream_context.finishStream()
+            # if not transcription:
+            #     print( "no transcription:: " + str(transcription), flush=True)
+            #     self.create_stream()
+            #     self.feed_audio_content(self.debug_data_feed)
+            #     transcription = self.stream_context.finishStream()
+
             if transcription:
+                self.debug_prev_debug_data_feed = self.debug_data_feed
+                sd.play(np.frombuffer(self.debug_prev_debug_data_feed, dtype=np.int16), 16000)
+                sd.wait()
+                # print( " " + str(transcription), end="", flush=True)
                 self.log("Recognized Text:" +  str(transcription))
                 recog_time = round(time.time() * 1000) - start
 
@@ -81,7 +102,7 @@ class STTController:
         self.stream_context = None
 
     def add_buffered_silence(self, data):
-        if len(self.silence_buffers):
+        if len(self.silence_buffers) > 0:
             # DEBUG START
             for buf in self.silence_buffers:
                 self.debug_feed -= len(buf)
@@ -102,6 +123,7 @@ class STTController:
     def feed_audio_content(self, data):
         self.debug_feed += len(data)
         self.recorded_audio_length += int((len(data)/2) * (1/self.SAMPLE_RATE) * 1000)
+        self.debug_data_feed += data
         self.stream_context.feedAudioContent(np.frombuffer(data, np.int16))
 
     def process_voice(self, data):
@@ -136,7 +158,8 @@ class STTController:
             else:
                 now = round(time.time() * 1000)
                 self.debug_silence_state = now - self.silence_start
-                if now - self.silence_start > self.SILENCE_THRESHOLD:
+                if (now - self.silence_start) > self.SILENCE_THRESHOLD:
+                    # print("catch", end="", flush=True)
                     self.silence_start = None
                     self.log("\n[end]")
                     results = self.intermediate_decode()
@@ -224,7 +247,7 @@ class STTController:
 
     def log(self, msg, force=False):
         if self.verbose or force:
-            sys.stdout.write(msg)
+            print(msg, flush=True)
 
     def add_focus(self,
                 words,
@@ -282,6 +305,7 @@ class STTController:
             'toggle',
             'set', 'north',
             'finder',
+            'geology'
         ]
 
         regular_pos_hi_focus = [
@@ -306,10 +330,10 @@ class STTController:
             'opaque', 'phases', 'initial', 'geologic', 
             'interpretation', 'origin', 'breccia', 'formed', 'impacts',
             'anorthosite', 'represents', 'Moon’s', 'primary', 'crust',
-            'secondary', 'rock', 'over', 'exit'
+            'secondary', 'rock', 'over',
         ]
         tagging_hi_focus = [
-            'volcanic', 'orange',
+            'volcanic', 'orange', 'exit'
         ]
 
         tmp = self.remove_from([regular_pos_lo_focus,

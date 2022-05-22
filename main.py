@@ -35,7 +35,13 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     global is_sample_tagging
+    global command_audio_buffer
     is_sample_tagging = False
+
+    if len(command_audio_buffer) > 0:
+        sd.play(np.frombuffer(command_audio_buffer, dtype=np.int16), 16000)
+
+
     sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
     
     session_id = str(int(time.time()*1000))
@@ -78,18 +84,23 @@ def handle_stream_audio(data):
     global session_audio_buffer
     if len(command_audio_buffer) == 0:
         write_output("recieving first stream of audio command")
+    
+    data = bytes(data)
     command_audio_buffer += data
     session_audio_buffer += data
 
     stt_res = stt.process_audio_stream(data)
-    if stt_res:
-        socketio.emit('stt-response', stt_res)
+    if(len(command_audio_buffer) % len(data)*20 == 0):
+        write_output(f"={stt.debug_silence_state}=", end="")
+    if stt_res is not None:
+        stt.reset_audio_stream()
         write_output('User: ' + str(stt_res))
+        socketio.emit('stt-response', stt_res)
 
         # Do it in another thread
-        with open(f"sample-audio-binary/{stt_res['text'].replace(' ', '_')}_binary.txt", mode='wb') as f:
-            f.write(command_audio_buffer)
-        command_audio_buffer = b""
+        # with open(f"sample-audio-binary/{stt_res['text'].replace(' ', '_')}_binary.txt", mode='wb') as f:
+        #     f.write(command_audio_buffer)
+        # command_audio_buffer = b""
         
         global is_sample_tagging
         if is_sample_tagging:
@@ -158,9 +169,9 @@ if __name__ == '__main__':
                     sample_rate=SAMPLE_RATE,
                     model_path='models/ds-model/deepspeech-0.9.3-models',
                     load_scorer=True,
-                    silence_threshold=250,
+                    silence_threshold=500,
                     vad_aggressiveness=3,
-                    frame_size = 320
+                    frame_size = 320*3
                 )
     stt.set_regular_focus()
 

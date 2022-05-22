@@ -1,7 +1,6 @@
 from threading import Thread
 import pvporcupine
-
-import struct
+import numpy as np
 
 class WakeUpVoiceDetector(Thread):
 
@@ -25,15 +24,16 @@ class WakeUpVoiceDetector(Thread):
                 keyword_paths=self._keyword_paths,
                 sensitivities=self._sensitivities)
 
-        self.frame_size = 1024
+        self.frame_size = 512
         self.reset_data_buffer()
 
 
     def reset_data_buffer(self):
-            self.buffered_data = b""
+            self.buffered_data = np.array([])
 
-    def process_audio_stream(self, new_data):         
-        data_stream = self.buffered_data + new_data 
+    def process_audio_stream(self, new_data):    
+        new_data_int16 = np.frombuffer(new_data, dtype=np.int16)
+        data_stream = np.concatenate((self.buffered_data, new_data_int16))
         self.reset_data_buffer()
 
         i = 0
@@ -43,11 +43,35 @@ class WakeUpVoiceDetector(Thread):
             if len(sub_data) < self.frame_size:
                 break
             # print("\nProcessing", flush=True)
-            pcm = struct.unpack_from("h" *self.porcupine.frame_length, sub_data)
-            result = self.porcupine.process(pcm)
+            result = self.porcupine.process(sub_data)
             if result >= 0:
                 self.reset_data_buffer()
-                return True
+                return True     
+
             i += self.frame_size
         
         self.buffered_data = data_stream[i:]
+
+
+
+    
+    # def process_audio_stream(self, new_data):    
+    #     new_data_int16 = np.frombuffer(new_data, dtype=np.int16)
+    #     data_stream = np.concatenate((self.buffered_data, new_data_int16))
+    #     self.reset_data_buffer()
+
+    #     i = 0
+    #     while i < len(data_stream):
+    #         sub_data = data_stream[i:i+self.frame_size]
+    #         # Process only proper frame sizes
+    #         if len(sub_data) < self.frame_size:
+    #             break
+    #         # print("\nProcessing", flush=True)
+    #         result = self.porcupine.process(sub_data)
+    #         if result >= 0:
+    #             self.reset_data_buffer()
+    #             return True     
+                
+    #         i += self.frame_size
+        
+    #     self.buffered_data = data_stream[i:]
