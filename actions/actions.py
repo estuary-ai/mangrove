@@ -133,7 +133,7 @@ class ActionSampleTagging(Action):
                 }
             }
 
-            json.dump(sample_details['Sample Details'], open(f'samples/sample_{count}/sample_details.json', 'w'))
+            json.dump(sample_details['sample_details'], open(f'samples/sample_{count}/sample_details.json', 'w'))
             sample_details['file_name'] = f'sample_{count}/sample_details.json'
             dispatcher.utter_message(custom=sample_details)
             dispatcher.utter_message(response='utter_sample_tagged')
