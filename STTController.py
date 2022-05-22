@@ -8,12 +8,13 @@ import webrtcvad
 from enum import Enum
 
 class FocusLevel(Enum):
-    POS_HIGH = 10.0
+    POS_HIGH = 9.0
     POS_MEDIUM = 5.0
     POS_LOW = 1.0
     NEG_LOW = -1.0
     NEG_MEDIUM = -4.0
     NEG_HIGH = -9.0
+
 class STTController:
     def __init__(self, 
                  sample_rate=16000,
@@ -252,20 +253,16 @@ class STTController:
         regular_pos_lo_focus = [
             'close',
             'hold',
-            'collapse', 'expand', # worked
             'geology',
             'turn', 'on', 'off',
             'rock', 'show', 'screen',
-            'check',
             'level', 'read',
             'measurement',
             'monitoring', 'heart', 
-            'saturation', 'radiation',
             'stand',
             'start', 'recording',
             'sub',
             'gas',
-            'place',
             'red',
         ]
 
@@ -276,13 +273,11 @@ class STTController:
             'battery', 'oxygen', 'terrain',
             'green', 'blue', 'pin',
             'read', 'condition', 'suit',
-            'path', 'uncheck', 
+            'path',  
             'checklist',
             'data', 
-            'alert',
             'take', 'photo',
             'vitals',
-            'road',
             'audio',
             'toggle',
             'set', 'north',
@@ -291,7 +286,7 @@ class STTController:
 
         regular_pos_hi_focus = [
             'map', 'terrain', 'battery', 'oxygen', 'rate',
-            'pin',
+            'pin', 'road',
         ]
 
         tagging_med_focus = [

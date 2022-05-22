@@ -9,11 +9,11 @@ import sounddevice as sd
 import time
 
 
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
-# import tensorflow as tf
-# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
+import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 SAMPLE_RATE = 16000
@@ -166,10 +166,10 @@ if __name__ == '__main__':
     stt.set_regular_focus()
 
     is_sample_tagging = False
-    # print("Initializing Bot Controller")
-    # bot = BotController()
-    # print("Initializing TTS Controller")
-    # tts = TTSController()    
+    print("Initializing Bot Controller")
+    bot = BotController()
+    print("Initializing TTS Controller")
+    tts = TTSController()    
     print("Server is about to be Up and Running..")
 
     socketio.run(app, host='0.0.0.0', port=4000)    
