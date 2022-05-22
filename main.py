@@ -9,11 +9,11 @@ import sounddevice as sd
 import time
 
 
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-# # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
-# import tensorflow as tf
-# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
+import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 SAMPLE_RATE = 16000
