@@ -1,0 +1,26 @@
+version: "2.0"
+
+nlu:
+
+- intent: map
+  examples: |
+    - [show](switch_:on) map
+    - view map
+    - map
+    - [show](switch_:on) me the map
+    - [open](switch_:on) up the map for me
+    - can I see the map
+    - can you [show](switch_:on) me the map
+    - bring up the map
+    - [show](switch_:on) me the map
+    - [hide](switch_:off) the map
+    - [close](switch_:off) the map
+    - [hide](switch_:off) map menu
+    - [close](switch_:off) map
+
+stories:
+- story: displaying map menu
+  steps:
+  - intent: map
+  - action: utter_map
+  - action: action_map_text

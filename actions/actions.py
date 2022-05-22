@@ -8,6 +8,19 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted
 
+class ActionMapText(Action):
+
+    def name(self) -> Text:
+        return 'action_map_text'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot('switch_')
+        if switch_ is None or switch_ == 'on':
+            dispatcher.utter_message(text='Opening up the map for you')
+        else:
+            dispatcher.utter_message(text='Closing the map for you')
+        return [Restarted()]
+
 class ActionNavigationText(Action):
 
     def name(self) -> Text:
