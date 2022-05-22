@@ -27,12 +27,8 @@ socketio = SocketIO(app,
 def handle_connect():
     global session_audio_buffer
     global command_audio_buffer
-    global wakeUpWordDetected
-    global leftOver
     session_audio_buffer = b""
     command_audio_buffer = b""
-    wakeUpWordDetected = False
-    leftOver = b""
     stt.create_stream()
     write_output('client connected')
 
@@ -68,7 +64,7 @@ def kill_sample_tagging():
      # TODO consider also case of termination using exit word
 
 @socketio.on('stream-wakeup')
-def handle_stream_audio(data):
+def handle_stream_wakeup(data):
     wakeUpWordDetected = wakeUpWordDetector.process_audio_stream(data)
     if wakeUpWordDetected:
         write_output("detected wakeup word")
@@ -90,6 +86,7 @@ def handle_stream_audio(data):
         socketio.emit('stt-response', stt_res)
         write_output('User: ' + str(stt_res))
 
+        # Do it in another thread
         with open(f"sample-audio-binary/{stt_res['text'].replace(' ', '_')}_binary.txt", mode='wb') as f:
             f.write(command_audio_buffer)
         command_audio_buffer = b""
@@ -111,7 +108,7 @@ def handle_stream_audio(data):
         bot_res = bot.send_user_message(stt_res['text'])
         print('SENVA: ' + str(bot_res))    
         bot_text = bot_res.get('text')
-        if bot_text:
+        if bot_text is not None:
             bot_text = ' '.join(bot_text)
             voice_bytes = tts.get_audio_bytes_stream(bot_text)
             write_output('emmiting voice')
@@ -120,7 +117,7 @@ def handle_stream_audio(data):
             print('no text')
 
         bot_commands = bot_res.get('commands')
-        if bot_commands:
+        if bot_commands is not None and len(bot_commands) > 0:
             sample_command = bot_commands[0].get('sample')
             sample_details_command =  bot_commands[0].get('Sample Details')
             if sample_command is not None:
@@ -135,6 +132,8 @@ def handle_stream_audio(data):
             write_output('emitting commands ' +  str(bot_res.get('commands')))
         else:
             print('no commands')
+
+        write_output("responding bot-response")
         socketio.emit('bot-response', bot_res)
 
 @socketio.on('reset-audio-stream')
@@ -166,10 +165,10 @@ if __name__ == '__main__':
     stt.set_regular_focus()
 
     is_sample_tagging = False
-    # print("Initializing Bot Controller")
-    # bot = BotController()
-    # print("Initializing TTS Controller")
-    # tts = TTSController()    
+    print("Initializing Bot Controller")
+    bot = BotController()
+    print("Initializing TTS Controller")
+    tts = TTSController()    
     print("Server is about to be Up and Running..")
 
     socketio.run(app, host='0.0.0.0', port=4000)    
