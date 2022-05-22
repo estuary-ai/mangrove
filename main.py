@@ -4,17 +4,18 @@ from WakeUpVoiceDetector import WakeUpVoiceDetector
 from STTController import STTController
 from BotController import BotController
 from TTSController import TTSController
+from threading import Thread
+
 import numpy as np
 import sounddevice as sd
 import time
-
+import json
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
 import tensorflow as tf
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
 
 SAMPLE_RATE = 16000
 app = Flask(__name__)
@@ -27,8 +28,10 @@ socketio = SocketIO(app,
 def handle_connect():
     global session_audio_buffer
     global command_audio_buffer
+    global writing_files_threads_list
     session_audio_buffer = b""
     command_audio_buffer = b""
+    writing_files_threads_list = []
     stt.create_stream()
     write_output('client connected')
 
@@ -36,7 +39,11 @@ def handle_connect():
 def handle_disconnect():
     global is_sample_tagging
     global command_audio_buffer
+    global writing_files_threads_list
     is_sample_tagging = False
+
+    for thread in writing_files_threads_list:
+        thread.join()
 
     if len(command_audio_buffer) > 0:
         sd.play(np.frombuffer(command_audio_buffer, dtype=np.int16), 16000)
@@ -69,12 +76,32 @@ def kill_sample_tagging():
     stt.set_regular_focus()
      # TODO consider also case of termination using exit word
 
+
+@socketio.on('read-tts')
+def handle_tts_read(data):
+    data = json.loads(str(data))
+    write_output("request to read data " + str(data))
+    audioBytes = tts.get_feature_read_bytes(data['feature'],
+                                             data['values'],
+                                              data['units'])
+    socketio.emit("bot-voice", audioBytes)
+
 @socketio.on('stream-wakeup')
 def handle_stream_wakeup(data):
     wakeUpWordDetected = wakeUpWordDetector.process_audio_stream(data)
     if wakeUpWordDetected:
         write_output("detected wakeup word")
         socketio.emit('wake-up')    
+
+def write_to_file(text, command_audio_buffer):
+    def write(text, command_audio_buffer):
+        with open(f"sample-audio-binary/{text.replace(' ', '_')}_binary.txt", mode='wb') as f:
+            f.write(command_audio_buffer)
+    thread = Thread(target=write, args=(text, command_audio_buffer))
+    thread.start()
+    writing_files_threads_list.append(thread)
+
+
 
 @socketio.on('stream-audio')
 def handle_stream_audio(data):
@@ -97,10 +124,8 @@ def handle_stream_audio(data):
         write_output('User: ' + str(stt_res))
         socketio.emit('stt-response', stt_res)
 
-        # Do it in another thread
-        # with open(f"sample-audio-binary/{stt_res['text'].replace(' ', '_')}_binary.txt", mode='wb') as f:
-        #     f.write(command_audio_buffer)
-        # command_audio_buffer = b""
+        write_to_file(stt_res['text'], command_audio_buffer)
+        command_audio_buffer = b""
         
         global is_sample_tagging
         if is_sample_tagging:

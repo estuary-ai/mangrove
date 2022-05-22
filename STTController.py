@@ -11,7 +11,7 @@ from enum import Enum
 import sounddevice as sd
 
 class FocusLevel(Enum):
-    POS_HIGH = 10.0
+    POS_HIGH = 10.5
     POS_MEDIUM = 6.0
     POS_LOW = 1.0
     NEG_LOW = -1.0
@@ -271,7 +271,7 @@ class STTController:
             'stan', 'plate', 'his', 'her',
             'theology', 'once',
              # maybe not so much ->
-            'and', 'leg', 'so', 'some',
+            'and', 'leg', 'so', 'some', 'little', 'a'
         ]
         regular_pos_lo_focus = [
             'close',
@@ -279,7 +279,7 @@ class STTController:
             'geology',
             'turn', 'on', 'off',
             'rock', 'show', 'screen',
-            'level', 'read',
+            'read',
             'measurement',
             'monitoring', 'heart', 
             'stand',
@@ -293,7 +293,7 @@ class STTController:
             'heads', 'up', 'display', 'show',
             'hide', 'sample', 'tag', 'rate', 'rock',
             'respiratory', 'note', 'map',
-            'battery', 'oxygen', 'terrain',
+            'battery',  'terrain',
             'green', 'blue', 'pin',
             'read', 'condition', 'suit',
             'path',  
@@ -305,7 +305,7 @@ class STTController:
             'toggle',
             'set', 'north',
             'finder',
-            'geology'
+            'geology', 'level', 
         ]
 
         regular_pos_hi_focus = [

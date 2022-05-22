@@ -1,6 +1,10 @@
 import os
 import time
 import pyttsx3
+import inflect
+import math
+from decimal import Decimal
+
 
 class TTSController:
 
@@ -13,6 +17,8 @@ class TTSController:
         if not os.path.exists(storage_path):
             os.makedirs(storage_path)
         self.recent_created_audio_files = []
+
+        self.number_to_word_converter = inflect.engine()
 
     def create_audio_files(self, texts):
         if not isinstance(texts, list):
@@ -41,3 +47,17 @@ class TTSController:
         for audio_file in self.recent_created_audio_files:
             os.remove(audio_file)
         self.recent_created_audio_files = []
+
+    def get_feature_read_bytes(self, feature, values, units=None):
+        
+        text = feature + " is equal to "
+        if units is None:
+            units = ["" for _ in values]
+
+        for value, unit in zip(values, units):
+            text += self.textify_number(round(Decimal(value), 2)) + " " + unit
+
+        return self.get_audio_bytes_stream(text)
+
+    def textify_number(self, num):
+        return self.number_to_word_converter.number_to_words(num)
