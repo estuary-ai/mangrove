@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_socketio import SocketIO
+from WakeUpVoiceDetector import WakeUpVoiceDetector
 from STTController import STTController
 from BotController import BotController
 from TTSController import TTSController
 import numpy as np
 import sounddevice as sd
 import time
+
 
 # import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -25,8 +27,12 @@ socketio = SocketIO(app,
 def handle_connect():
     global session_audio_buffer
     global command_audio_buffer
+    global wakeUpWordDetected
+    global leftOver
     session_audio_buffer = b""
     command_audio_buffer = b""
+    wakeUpWordDetected = False
+    leftOver = b""
     stt.create_stream()
     write_output('client connected')
 
@@ -61,6 +67,12 @@ def kill_sample_tagging():
     stt.set_regular_focus()
      # TODO consider also case of termination using exit word
 
+@socketio.on('stream-wakeup')
+def handle_stream_audio(data):
+    wakeUpWordDetected = wakeUpWordDetector.process_audio_stream(data)
+    if wakeUpWordDetected:
+        write_output("detected wakeup word")
+        socketio.emit('wake-up')    
 
 @socketio.on('stream-audio')
 def handle_stream_audio(data):
@@ -124,7 +136,6 @@ def handle_stream_audio(data):
         else:
             print('no commands')
         socketio.emit('bot-response', bot_res)
-        # TODO deal with custom sample where the audio will keep going!        
 
 @socketio.on('reset-audio-stream')
 def handle_reset_audio_stream():
@@ -140,6 +151,9 @@ def write_output(msg, end='\n'):
 
 
 if __name__ == '__main__':
+    print("Initializing WakeUpWordDetector")
+    wakeUpWordDetector = WakeUpVoiceDetector()
+
     print("Initializing STT Controller")
     stt = STTController(
                     sample_rate=SAMPLE_RATE,
@@ -152,9 +166,10 @@ if __name__ == '__main__':
     stt.set_regular_focus()
 
     is_sample_tagging = False
-    print("Initializing Bot Controller")
-    bot = BotController()
-    print("Initializing TTS Controller")
-    tts = TTSController()    
+    # print("Initializing Bot Controller")
+    # bot = BotController()
+    # print("Initializing TTS Controller")
+    # tts = TTSController()    
     print("Server is about to be Up and Running..")
+
     socketio.run(app, host='0.0.0.0', port=4000)    
