@@ -328,35 +328,13 @@ nlu:
     - [checklist](panel)
     - [alerts](panel)
     - [suit pressure](panel)
+    - [hide](switch_:off) [oxygen](panel) panel
+    - [hide](switch_:off) [battery](panel) level
+    - [close](switch_:off) [heart rate](panel) monitor
+    - [oxygen](panel) level
 
 rules:
 - rule: A panel or feature is asked to be shown/hidden
   steps:
   - intent: show_panel
-  - slot_was_set:
-    - panel
-  - action: form_show_panel
-  - active_loop: form_show_panel
-
-- rule: Return name of panel after validating
-  condition:
-  - active_loop: form_show_panel
-  steps:
-  - action: form_show_panel
-  - slot_was_set:
-    - requested_slot: null
-  - active_loop: null
-  - action: action_show_panel
-
-stories:
-- story: Interactive story
-  steps:
-  - intent: show_panel
-  - slot_was_set:
-    - panel
-  - action: form_show_panel
-  - active_loop: form_show_panel
-  - slot_was_set:
-    - requested_slot: null
-  - active_loop: null
   - action: action_show_panel
