@@ -156,9 +156,14 @@ class ActionShowPanel(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
+        panel = tracker.get_slot('panel')
         switch_ = tracker.get_slot('switch_')
         if switch_ is None:
             switch_ = 'on'
-        dispatcher.utter_message(custom={'toggle': True, 'feature': tracker.get_slot('panel'), 'switch_': switch_})
+        elif switch_ not in ['on', 'off']:
+            panel = switch_
+            switch_ = 'on'
+
+        dispatcher.utter_message(custom={'toggle': True, 'feature': panel, 'switch_': switch_})
 
         return [Restarted()]

@@ -60,12 +60,6 @@ slots:
 
 responses:
 
-  utter_ask_panel:
-  - text: "Test: which panel/feature"
-
-  utter_ask_switch_:
-  - text: "Test: show/hide? on/off?"
-
   utter_ask_lighting_conditions:
   - text: "What are the lighting conditions?"
 
@@ -226,11 +220,6 @@ forms:
     - type: from_text
     geo_interpretation:
     - type: from_text
-  form_show_panel:
-    switch_:
-    - type: from_entity
-    panel:
-    - type: from_entity
 
 actions:
   - action_map_text
