@@ -86,8 +86,8 @@ class STTController:
 
             if transcription:
                 self.debug_prev_debug_data_feed = self.debug_data_feed
-                sd.play(np.frombuffer(self.debug_prev_debug_data_feed, dtype=np.int16), 16000)
-                sd.wait()
+                # sd.play(np.frombuffer(self.debug_prev_debug_data_feed, dtype=np.int16), 16000)
+                # sd.wait()
                 # print( " " + str(transcription), end="", flush=True)
                 self.log("Recognized Text:" +  str(transcription))
                 recog_time = round(time.time() * 1000) - start
@@ -271,7 +271,8 @@ class STTController:
             'stan', 'plate', 'his', 'her',
             'theology', 'once',
              # maybe not so much ->
-            'and', 'leg', 'so', 'some', 'little', 'a'
+            'and', 'leg', 'so', 'some', 'little', 'a',
+            'simple'
         ]
         regular_pos_lo_focus = [
             'close',

@@ -74,8 +74,8 @@ def kill_sample_tagging():
     global is_sample_tagging
     is_sample_tagging = False
     stt.set_regular_focus()
+    stt.reset_audio_stream()
      # TODO consider also case of termination using exit word
-
 
 @socketio.on('read-tts')
 def handle_tts_read(data):
@@ -102,7 +102,6 @@ def write_to_file(text, command_audio_buffer):
     writing_files_threads_list.append(thread)
 
 
-
 @socketio.on('stream-audio')
 def handle_stream_audio(data):
     global stt_res_buffer
@@ -117,8 +116,8 @@ def handle_stream_audio(data):
     session_audio_buffer += data
 
     stt_res = stt.process_audio_stream(data)
-    if(len(command_audio_buffer) % len(data)*20 == 0):
-        write_output(f"={stt.debug_silence_state}=", end="")
+    # if(len(command_audio_buffer) % len(data)*20 == 0):
+    #     write_output(f"={stt.debug_silence_state}=", end="")
     if stt_res is not None:
         stt.reset_audio_stream()
         write_output('User: ' + str(stt_res))
@@ -136,7 +135,7 @@ def handle_stream_audio(data):
                 stt_res_buffer = stt._combine_outcomes([stt_res_buffer, stt_res])
             stt_res_buffer = stt_res
             if not ("over" in stt_res['text'].rstrip()[-30:]):
-                return
+                return                
             stt_res = stt_res_buffer
             stt_res_buffer = None
             
@@ -152,25 +151,29 @@ def handle_stream_audio(data):
         else:
             print('no text')
 
-        bot_commands = bot_res.get('commands')
-        if bot_commands is not None and len(bot_commands) > 0:
-            sample_command = bot_commands[0].get('sample')
-            sample_details_command =  bot_commands[0].get('Sample Details')
-            if sample_command is not None:
-                write_output("tagging a sample scenario")
-                setup_sample_tagging()
-            elif sample_details_command is not None:
-                write_output("sample tagging finished successfully")
-                kill_sample_tagging()
-            elif sample_command is not None and sample_command is False:
-                write_output("sample tagging exited")
-                kill_sample_tagging()
-            write_output('emitting commands ' +  str(bot_res.get('commands')))
-        else:
-            print('no commands')
+        setupSampleTaggingIfNecesssary(bot_res)
 
         write_output("responding bot-response")
         socketio.emit('bot-response', bot_res)
+
+def setupSampleTaggingIfNecesssary(bot_res):
+    bot_commands = bot_res.get('commands')
+    if bot_commands is not None and len(bot_commands) > 0:
+        sample_command = bot_commands[0].get('sample')
+        sample_details_command =  bot_commands[0].get('Sample Details')
+        if sample_command is not None:
+            write_output("tagging a sample scenario")
+            setup_sample_tagging()
+        elif sample_details_command is not None:
+            write_output("sample tagging finished successfully")
+            kill_sample_tagging()
+        elif sample_command is not None and sample_command is False:
+            write_output("sample tagging exited")
+            kill_sample_tagging()
+        write_output('emitting commands ' +  str(bot_res.get('commands')))
+    else:
+        print('no commands')
+
 
 @socketio.on('reset-audio-stream')
 def handle_reset_audio_stream():
@@ -194,9 +197,9 @@ if __name__ == '__main__':
                     sample_rate=SAMPLE_RATE,
                     model_path='models/ds-model/deepspeech-0.9.3-models',
                     load_scorer=True,
-                    silence_threshold=500,
+                    silence_threshold=350,
                     vad_aggressiveness=3,
-                    frame_size = 320*3
+                    frame_size = 320
                 )
     stt.set_regular_focus()
 
