@@ -11,11 +11,11 @@ import sounddevice as sd
 import time
 import json
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
-import tensorflow as tf
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# import tensorflow as tf
+# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 SAMPLE_RATE = 16000
 app = Flask(__name__)
@@ -29,9 +29,11 @@ def handle_connect():
     global session_audio_buffer
     global command_audio_buffer
     global writing_files_threads_list
+    global indicator_bool
     session_audio_buffer = b""
     command_audio_buffer = b""
     writing_files_threads_list = []
+    indicator_bool = True
     stt.create_stream()
     write_output('client connected')
 
@@ -101,6 +103,13 @@ def write_to_file(text, command_audio_buffer):
     thread.start()
     writing_files_threads_list.append(thread)
 
+def print_feeding_indicator():
+    global indicator_bool
+    indicator = "\\" if indicator_bool else  "/"
+    write_output('=', end="")
+    indicator_bool = not indicator_bool
+
+
 
 @socketio.on('stream-audio')
 def handle_stream_audio(data):
@@ -116,8 +125,10 @@ def handle_stream_audio(data):
     session_audio_buffer += data
 
     stt_res = stt.process_audio_stream(data)
-    # if(len(command_audio_buffer) % len(data)*20 == 0):
-    #     write_output(f"={stt.debug_silence_state}=", end="")
+    if(len(command_audio_buffer) % len(data)*20 == 0):
+        print_feeding_indicator()
+        # write_output(f"={stt.debug_silence_state}=", end="")
+
     if stt_res is not None:
         stt.reset_audio_stream()
         write_output('User: ' + str(stt_res))
@@ -160,7 +171,7 @@ def setupSampleTaggingIfNecesssary(bot_res):
     bot_commands = bot_res.get('commands')
     if bot_commands is not None and len(bot_commands) > 0:
         sample_command = bot_commands[0].get('sample')
-        sample_details_command =  bot_commands[0].get('Sample Details')
+        sample_details_command =  bot_commands[0].get('sample_details')
         if sample_command is not None:
             write_output("tagging a sample scenario")
             setup_sample_tagging()
@@ -191,18 +202,9 @@ def write_output(msg, end='\n'):
 if __name__ == '__main__':
     print("Initializing WakeUpWordDetector")
     wakeUpWordDetector = WakeUpVoiceDetector()
-
     print("Initializing STT Controller")
-    stt = STTController(
-                    sample_rate=SAMPLE_RATE,
-                    model_path='models/ds-model/deepspeech-0.9.3-models',
-                    load_scorer=True,
-                    silence_threshold=350,
-                    vad_aggressiveness=3,
-                    frame_size = 320
-                )
+    stt = STTController()
     stt.set_regular_focus()
-
     is_sample_tagging = False
     print("Initializing Bot Controller")
     bot = BotController()

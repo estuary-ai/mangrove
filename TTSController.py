@@ -8,7 +8,7 @@ from decimal import Decimal
 
 class TTSController:
 
-    def __init__(self, voice_rate=140, voice_id=1, storage_path='res-speech'):
+    def __init__(self, voice_rate=160, voice_id=1, storage_path='res-speech'):
         self.engine = pyttsx3.init()
         self.engine.setProperty('rate', voice_rate)
         voices = self.engine.getProperty('voices')

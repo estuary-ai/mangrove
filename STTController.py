@@ -23,8 +23,8 @@ class STTController:
                  sample_rate=16000,
                  model_path='models/ds-model/deepspeech-0.9.3-models',
                  load_scorer=True,
-                 silence_threshold=500,
-                 vad_aggressiveness=1,
+                 silence_threshold=300,
+                 vad_aggressiveness=3,
                  frame_size = 320,
                  verbose=False):
         
@@ -52,10 +52,10 @@ class STTController:
 
         self.init_words_focus_assets()
 
-
+        
     def create_stream(self):
         self.stream_context = self.model.createStream()
-        data = b'\x00\x00'*self.frame_size
+        data = b'\x00\x00'*640
         self.stream_context.feedAudioContent(np.frombuffer(data, np.int16))
         self.recorded_chunks = 0
         self.recorded_audio_length = 0
@@ -69,7 +69,9 @@ class STTController:
         return (self.stream_context is not None)
 
     def finish_stream(self):
-        # print("finish_stream", end="", flush=True)
+        
+        print("Processing stream", end="\n", flush=True)
+        self.is_feed_locked = True
         if self.stream_context is not None:
             # print("self.stream_context is good", end="", flush=True)
             start = round(time.time() * 1000)
@@ -272,12 +274,11 @@ class STTController:
             'theology', 'once',
              # maybe not so much ->
             'and', 'leg', 'so', 'some', 'little', 'a',
-            'simple'
+            'simple', 'better',
         ]
         regular_pos_lo_focus = [
             'close',
             'hold',
-            'geology',
             'turn', 'on', 'off',
             'rock', 'show', 'screen',
             'read',
