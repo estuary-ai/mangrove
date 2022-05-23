@@ -62,28 +62,34 @@ stories:
   steps:
   - intent: expand_alert
   - action: utter_expand_alert
+  - action: action_restart
 
 - story: collapse_alert
   steps:
   - intent: collapse_alert
   - action: utter_collapse_alert
+  - action: action_restart
 
 - story: omw
   steps:
   - intent: omw
   - action: utter_omw
+  - action: action_restart
 
 - story: roger
   steps:
   - intent: roger
   - action: utter_roger
+  - action: action_restart
 
 - story: standby
   steps:
   - intent: standby
   - action: utter_standby
+  - action: action_restart
 
 - story: read_condition
   steps:
   - intent: read_condition
   - action: utter_read_condition
+  - action: action_restart

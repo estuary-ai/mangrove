@@ -306,12 +306,57 @@ nlu:
     - [close](switch_:off) the [blood pressure](panel)
     - [hide](switch_:off) the [carbon dioxide](panel) panel
     - [hide](switch_:off) [geology](panel) panel
+    - [battery](panel)
+    - [atmosphere](panel)
+    - [suit temperature](panel)
+    - [carbon dioxide](panel)
+    - [feedwater count](panel)
+    - [water gas pressure](panel)
+    - [secondary oxygen](panel)
+    - [heart rate](panel)
+    - [blood pressure](panel)
+    - [body temperature](panel)
+    - [respiratory rate](panel)
+    - [oxygen saturation](panel)
+    - [radiation monitoring](panel)
+    - [warnings](panel)
+    - [heads up display](panel)
+    - [road](panel)
+    - [geology](panel)
+    - [vitals](panel)
+    - [suit](panel)
+    - [checklist](panel)
+    - [alerts](panel)
+    - [suit pressure](panel)
 
-stories:
-- story: show a panel when the panel is known
+rules:
+- rule: A panel or feature is asked to be shown/hidden
   steps:
   - intent: show_panel
   - slot_was_set:
     - panel
-  - action: utter_show_panel
-  - action: action_restart
+  - action: form_show_panel
+  - active_loop: form_show_panel
+
+- rule: Return name of panel after validating
+  condition:
+  - active_loop: form_show_panel
+  steps:
+  - action: form_show_panel
+  - slot_was_set:
+    - requested_slot: null
+  - active_loop: null
+  - action: action_show_panel
+
+stories:
+- story: Interactive story
+  steps:
+  - intent: show_panel
+  - slot_was_set:
+    - panel
+  - action: form_show_panel
+  - active_loop: form_show_panel
+  - slot_was_set:
+    - requested_slot: null
+  - active_loop: null
+  - action: action_show_panel

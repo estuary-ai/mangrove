@@ -6,3 +6,4 @@ stories:
   steps:
   - intent: greet
   - action: utter_greet
+  - action: action_restart

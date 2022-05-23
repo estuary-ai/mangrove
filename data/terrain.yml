@@ -21,3 +21,4 @@ stories:
   - intent: terrain
   - action: utter_terrain
   - action: action_terrain_text
+  - action: action_restart

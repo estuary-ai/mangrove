@@ -87,3 +87,4 @@ stories:
   steps:
   - intent: exit
   - action: utter_fallback
+  - action: action_restart

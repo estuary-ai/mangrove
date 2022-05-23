@@ -148,3 +148,17 @@ class ActionSampleTagging(Action):
 
         dispatcher.utter_message(custom={'sample': False, 'id': count})
         return [Restarted()]
+
+class ActionShowPanel(Action):
+
+    def name(self) -> Text:
+        return 'action_show_panel'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        switch_ = tracker.get_slot('switch_')
+        if switch_ is None:
+            switch_ = 'on'
+        dispatcher.utter_message(custom={'toggle': True, 'feature': tracker.get_slot('panel'), 'switch_': switch_})
+
+        return [Restarted()]
