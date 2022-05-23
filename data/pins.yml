@@ -30,9 +30,11 @@ stories:
   - slot_was_set:
     - color: green
   - action: utter_select_pin
+  - action: action_restart
 
 - story: Placing the pin in the current orientation
   steps:
   - intent: place_pin
   - action: utter_place_pin
   - action: utter_place_pin_text
+  - action: action_restart

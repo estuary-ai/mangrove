@@ -16,3 +16,4 @@ stories:
   steps:
   - intent: click
   - action: utter_click
+  - action: action_restart

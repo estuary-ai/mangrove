@@ -15,3 +15,4 @@ stories:
   - intent: toggle_follow
   - action: utter_toggle_follow
   - action: utter_toggle_follow_text
+  - action: action_restart

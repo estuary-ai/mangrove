@@ -28,3 +28,4 @@ stories:
   - intent: navigation
   - action: utter_navigation
   - action: action_navigation_text
+  - action: action_restart

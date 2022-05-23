@@ -19,3 +19,4 @@ stories:
   - intent: take_photo
   - action: utter_take_photo
   - action: utter_take_photo_text
+  - action: action_restart
