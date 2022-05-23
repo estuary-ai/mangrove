@@ -12,7 +12,7 @@ models/ds-model/deepspeech*
 
 debug-and-drafts/res-speech/*.*
 
-samples/*.*
+samples/
 ras-speech/*.*
 
 debug-and-drafts/web_microphone_websocket

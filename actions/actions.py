@@ -53,6 +53,11 @@ class ActionInitiateSample(Action):
         return 'action_initiate_sample'
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        #create samples folder if it does not exist
+        if not os.path.exists('samples'):
+            os.mkdir('samples')
+
         count = len(os.listdir('samples'))
         os.mkdir(f'samples/sample_{count + 1}')
         dispatcher.utter_message(custom={'sample': f'sample_{count + 1}'})
