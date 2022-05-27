@@ -6,33 +6,17 @@
 * NLP + Dialogue Management (BotController.py)
 * Text to Speech (TTSController.py)
 * Hosting Server (main.py)
+
 ## Functionality:
-The RASA model is able to handle the following types of requests from the user:
-* Clicking on the screen
-* Decluttering the screen
-* Hiding/Showing panels such as heart rate, temperature, etc
-* Toggling features (such as headlights and fans) on and off
+To be revised and re-written.
 
 ## To run the server:
-1. In one terminal/CMD tab, execute `python middleware.py` to run the trained RASA model. It is currently configured to run at localhost on port 5000.
-2. Execute `rasa run actions` on another terminal/CMD tab to run RASA's action server.
-3. Run `python frontend.py` to simulate requests from the Hololens. (Optional)
+1. Make sure you install all dependancies `pip install -r requirements.txt` at a python 3.8 environment as well as CUDA 10.1 and cuDNN v8.05 (for GPU support). 
+2. In one terminal/CMD tab, execute `python main.py` to run the Digital Assistant System. It is currently configured to run at localhost on port 4000.
+3. Execute `rasa run actions` on another terminal/CMD tab to run RASA's action server which RASA running at `main.py` communicates with.
+4. Run frontend project hosted possibly on Microsoft Hololens 2.
+
+
 
 ## API Format:
-Request:
-```json http
-{
-  "method": "POST",
-  "url": "https://localhost:5000/",
-  "data": {
-        "Body": "text", 
-        "From": "Neil"
-    }
-}
-```
-
-Response:
-```
-Success
-```
-> TODO: Configure text/speech data to be returned to Hololens
+Please Look up the source code at `main.py` for SocketIO connections endpoints.
