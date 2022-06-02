@@ -169,3 +169,4 @@ Werkzeug==1.0.1
 wrapt==1.14.0
 yarl==1.5.1
 zipp==3.8.0
+pvporcupine==2.1.3

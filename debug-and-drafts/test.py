@@ -27,14 +27,14 @@ stt.set_regular_focus()
 
 print("Initializing Bot Controller")
 bot = BotController(
-                model_path='../models/rasa-model/model.tar.gz'
+                model_path='../models/rasa-model/20220523-140335.tar.gz'
                 )
 print("Initializing TTS Controller")
 tts = TTSController()    
 print("Server is about to be Up and Running..")
 
 from os import walk
-samples_path = '../sample-audio-binary-old'
+samples_path = '../sample-audio-binary'
 filenames = next(walk(samples_path), (None, None, []))[2]  # [] if no file
 for i, filename in enumerate(filenames):
     print(f'{i+1}. {filename}')
@@ -48,6 +48,7 @@ while(True):
     print("filename:", filename)
     f = open(f'{samples_path}/{filename}', mode='rb')
     audio = f.read()
+    # audio = audio[len(audio)//4:]
     
     print("total length in bytes:", len(audio))
     print("playing audio..")

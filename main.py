@@ -11,8 +11,8 @@ import sounddevice as sd
 import time
 import json
 
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
 # import tensorflow as tf
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -51,17 +51,17 @@ def handle_disconnect():
         sd.play(np.frombuffer(command_audio_buffer, dtype=np.int16), 16000)
 
 
-    sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
+    # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
     
     session_id = str(int(time.time()*1000))
     with open(f"sample-audio-binary/{session_id}_binary.txt", mode='wb') as f:
         f.write(session_audio_buffer)
 
-    write_output('debug, testing the whole audio of the session')
+    # write_output('debug, testing the whole audio of the session')
     stt.reset_audio_stream()
-    stt.create_stream()
-    result = stt.process_audio_stream(session_audio_buffer)
-    write_output(result)
+    # stt.create_stream()
+    # result = stt.process_audio_stream(session_audio_buffer)
+    # write_output(result)
 
     write_output('client disconnected')
  
@@ -125,17 +125,14 @@ def handle_stream_audio(data):
     session_audio_buffer += data
 
     stt_res = stt.process_audio_stream(data)
-    if(len(command_audio_buffer) % len(data)*20 == 0):
+    if(len(command_audio_buffer) % len(data)*5 == 0):
         print_feeding_indicator()
         # write_output(f"={stt.debug_silence_state}=", end="")
 
     if stt_res is not None:
-        stt.reset_audio_stream()
         write_output('User: ' + str(stt_res))
         socketio.emit('stt-response', stt_res)
-
-        write_to_file(stt_res['text'], command_audio_buffer)
-        command_audio_buffer = b""
+        stt.unlock_stream()
         
         global is_sample_tagging
         if is_sample_tagging:
@@ -150,6 +147,10 @@ def handle_stream_audio(data):
             stt_res = stt_res_buffer
             stt_res_buffer = None
             
+        
+        stt.reset_audio_stream()
+        write_to_file(stt_res['text'], command_audio_buffer)
+        command_audio_buffer = b""
 
         bot_res = bot.send_user_message(stt_res['text'])
         print('SENVA: ' + str(bot_res))    
