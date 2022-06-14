@@ -45,6 +45,11 @@ class BotController:
         #Compiling responses
         response = {}
         response['text'] = texts
-        response['commands'] = commands
+        response['commands'] = [{}]
+
+        # Flatten commands
+        for command in commands:
+            for key in command.keys():
+                response['commands'][0][key] = str(command[key])
 
         return response
