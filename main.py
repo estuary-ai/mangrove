@@ -1,21 +1,21 @@
+import os
+import time
+import json
+from threading import Thread
+
+import numpy as np
+import sounddevice as sd
 from flask import Flask
 from flask_socketio import SocketIO
 from WakeUpVoiceDetector import WakeUpVoiceDetector
 from STTController import STTController
 from BotController import BotController
 from TTSController import TTSController
-from threading import Thread
 
-import numpy as np
-import sounddevice as sd
-import time
-import json
-
-import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"
-# import tensorflow as tf
-# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import tensorflow as tf
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 SAMPLE_RATE = 16000
 app = Flask(__name__)
@@ -50,7 +50,6 @@ def handle_disconnect():
     if len(command_audio_buffer) > 0:
         sd.play(np.frombuffer(command_audio_buffer, dtype=np.int16), 16000)
 
-
     # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
     
     session_id = str(int(time.time()*1000))
@@ -64,7 +63,7 @@ def handle_disconnect():
     # write_output(result)
 
     write_output('client disconnected')
- 
+
 def setup_sample_tagging():
     write_output('set in sample tagging')
     global is_sample_tagging
@@ -77,15 +76,15 @@ def kill_sample_tagging():
     is_sample_tagging = False
     stt.set_regular_focus()
     stt.reset_audio_stream()
-     # TODO consider also case of termination using exit word
+    # TODO consider also case of termination using exit word
 
 @socketio.on('read-tts')
 def handle_tts_read(data):
     data = json.loads(str(data))
     write_output("request to read data " + str(data))
     audioBytes = tts.get_feature_read_bytes(data['feature'],
-                                             data['values'],
-                                              data['units'])
+                                            data['values'],
+                                            data['units'])
     socketio.emit("bot-voice", audioBytes)
 
 @socketio.on('stream-wakeup')
@@ -125,14 +124,14 @@ def handle_stream_audio(data):
     session_audio_buffer += data
 
     stt_res = stt.process_audio_stream(data)
-    if(len(command_audio_buffer) % len(data)*5 == 0):
+    if(len(command_audio_buffer) % len(data)*10 == 0):
         print_feeding_indicator()
         # write_output(f"={stt.debug_silence_state}=", end="")
 
     if stt_res is not None:
         write_output('User: ' + str(stt_res))
         socketio.emit('stt-response', stt_res)
-        stt.unlock_stream()
+        # stt.unlock_stream()
         
         global is_sample_tagging
         if is_sample_tagging:
@@ -146,39 +145,38 @@ def handle_stream_audio(data):
                 return                
             stt_res = stt_res_buffer
             stt_res_buffer = None
-            
-        
-        stt.reset_audio_stream()
+                    
         write_to_file(stt_res['text'], command_audio_buffer)
         command_audio_buffer = b""
 
         bot_res = bot.send_user_message(stt_res['text'])
         print('SENVA: ' + str(bot_res))    
-        bot_text = bot_res.get('text')
-        if bot_text is not None:
-            bot_text = ' '.join(bot_text)
-            voice_bytes = tts.get_audio_bytes_stream(bot_text)
-            write_output('emmiting voice')
+        
+        bot_texts = bot_res.get('text')
+        if bot_texts is not None:
+            voice_bytes = tts.get_audio_bytes_stream(' '.join(bot_texts))
+            write_output('emmiting bot-voice')
             socketio.emit('bot-voice', voice_bytes)
         else:
             print('no text')
 
-        setupSampleTaggingIfNecesssary(bot_res)
+        check_bot_commands(bot_res)
 
-        write_output("responding bot-response")
+        write_output("emitting bot-response")
         socketio.emit('bot-response', bot_res)
 
-def setupSampleTaggingIfNecesssary(bot_res):
+
+def check_bot_commands(bot_res):
     bot_commands = bot_res.get('commands')
     if bot_commands is not None and len(bot_commands) > 0:
         sample_command = bot_commands[0].get('sample')
         sample_details_command =  bot_commands[0].get('sample_details')
-        if sample_command is not None:
-            write_output("tagging a sample scenario")
-            setup_sample_tagging()
-        elif sample_details_command is not None:
+        if sample_details_command is not None:
             write_output("sample tagging finished successfully")
             kill_sample_tagging()
+        elif sample_command is not None:
+            write_output("tagging a sample scenario")
+            setup_sample_tagging()
         elif sample_command is not None and sample_command is False:
             write_output("sample tagging exited")
             kill_sample_tagging()
@@ -193,8 +191,13 @@ def handle_reset_audio_stream():
 
 @socketio.on('trial')
 def handle_trial(data):
-    write_output('received trial')
-    write_output(data)
+    write_output('received trial: ' + data)
+
+@socketio.on_error_default  # handles all namespaces without an explicit error handler
+def default_error_handler(e):
+    write_output('error debug', e)
+    stt.reset_audio_stream()
+    # TODO reset anything 
 
 def write_output(msg, end='\n'):
     print(str(msg), end=end, flush=True)
