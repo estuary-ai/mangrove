@@ -7,7 +7,7 @@ import webrtcvad
 import deepspeech
 import numpy as np
 import sounddevice as sd                                         
-from FocusLevel import FocusLevel, init_words_focus_assets
+from stt.FocusLevel import FocusLevel, init_words_focus_assets
 
 def synchronized(wrapped):                                                      
     lock = threading.Lock()                                                     

@@ -7,10 +7,9 @@ import numpy as np
 import sounddevice as sd
 from flask import Flask
 from flask_socketio import SocketIO
-from WakeUpVoiceDetector import WakeUpVoiceDetector
-from STTController import STTController
-from BotController import BotController
-from TTSController import TTSController
+from stt import WakeUpVoiceDetector, STTController
+from bot import BotController
+from tts import TTSController
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # os.environ['TF_FOCE_GPU_ALLOW_GROWTH'] = "true"

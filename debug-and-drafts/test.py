@@ -4,9 +4,9 @@ sys.path.insert(1, '../')
 import numpy as np
 import sounddevice as sd
 
-from STTController import STTController
-from BotController import BotController
-from TTSController import TTSController
+from stt import STTController
+from bot import BotController
+from tts import TTSController
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -15,31 +15,25 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 print("Initializing STT Controller")
-stt = STTController(
-                    sample_rate=16000,
-                    model_path='../models/ds-model/deepspeech-0.9.3-models',
-                    load_scorer=True,
-                    silence_threshold=300,
-                    vad_aggressiveness=1,
-                    frame_size=320
-                )
+stt = STTController(model_path='../models/ds-model/deepspeech-0.9.3-models', verbose=True)
 stt.set_regular_focus()
 
-print("Initializing Bot Controller")
-bot = BotController(
-                model_path='../models/rasa-model/20220523-140335.tar.gz'
-                )
-print("Initializing TTS Controller")
-tts = TTSController()    
-print("Server is about to be Up and Running..")
+# print("Initializing Bot Controller")
+# bot = BotController(
+#                 model_path='../models/rasa-model/20220523-140335.tar.gz'
+#                 )
+# print("Initializing TTS Controller")
+# tts = TTSController()    
+# print("Server is about to be Up and Running..")
 
 from os import walk
 samples_path = '../sample-audio-binary'
-filenames = next(walk(samples_path), (None, None, []))[2]  # [] if no file
-for i, filename in enumerate(filenames):
-    print(f'{i+1}. {filename}')
+
 
 while(True):
+    filenames = next(walk(samples_path), (None, None, []))[2]  # [] if no file
+    for i, filename in enumerate(filenames):
+        print(f'{i+1}. {filename}')
     filenumber = input("Enter 0 for exit or file-number:")
     if int(filenumber) == 0:
         print("Terminating")
@@ -56,36 +50,40 @@ while(True):
     sd.wait()
 
     stt.create_stream()
-    stt.feed_audio_content(audio)
-    stt_res = stt.finish_stream()
-    # print('audiobuffer: ', len(stt.buffered_data))
-    # print('audiofeed debug', stt.debug_feed)
-    # print('total debug', stt.debug_total)
-    # print('voice debug', stt.debug_voice)
-    # print('silence debug', stt.debug_silence)
+    # stt._feed_audio_content(audio)
+    # stt_res = stt._finish_stream()
+    stt_res = stt.process_audio_stream(audio)
+
+    print('audiobuffer: ', len(stt.buffered_data))
+    print('audiofeed debug', stt.debug_feed)
+    print('total debug', stt.debug_total)
+    print('voice debug', stt.debug_voice)
+    print('silence debug', stt.debug_silence)
+    print('debug_silence_state', stt.debug_silence_state)
+
     print('User: ' + str(stt_res))
     # print('silence_start', stt.debug_silence_state)
-    bot_res = bot.send_user_message(stt_res['text'])
-    print('SENVA: ' + str(bot_res))    
-    if bot_res.get('text'):
-        bot_text = ' '.join(bot_res['text'])
-        voice_bytes = tts.get_audio_bytes_stream(bot_text)
-        print("playing audio.. / emmitting voice")
-        sd.play(np.frombuffer(voice_bytes, dtype=np.int16), 22000)
-    else:
-        print('no text')
-    bot_commands = bot_res.get('commands')
-    if bot_commands:
-        if bot_commands[0].get('sample'):
-            print("tagging a sample scenario")
-            stt.set_sample_tagging_focus()
-        elif bot_commands[0].get('Sample Details'):
-            print("sample tagging finished")
-            # TODO consider case of termination
-            stt.set_regular_focus()
-        print('emitting action', bot_res.get('commands'))
-    else:
-        print('no commands')
+    # bot_res = bot.send_user_message(stt_res['text'])
+    # print('SENVA: ' + str(bot_res))    
+    # if bot_res.get('text'):
+    #     bot_text = ' '.join(bot_res['text'])
+    #     voice_bytes = tts.get_audio_bytes_stream(bot_text)
+    #     print("playing audio.. / emmitting voice")
+    #     sd.play(np.frombuffer(voice_bytes, dtype=np.int16), 22000)
+    # else:
+    #     print('no text')
+    # bot_commands = bot_res.get('commands')
+    # if bot_commands:
+    #     if bot_commands[0].get('sample'):
+    #         print("tagging a sample scenario")
+    #         stt.set_sample_tagging_focus()
+    #     elif bot_commands[0].get('Sample Details'):
+    #         print("sample tagging finished")
+    #         # TODO consider case of termination
+    #         stt.set_regular_focus()
+    #     print('emitting action', bot_res.get('commands'))
+    # else:
+    #     print('no commands')
 
 # filename = filenames[int(92)-1]
 

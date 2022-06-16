@@ -7,6 +7,6 @@ eval "$(conda shell.bash hook)"
 conda activate $ENV_NAME
 
 echo "Running Rasa Action server"
-rasa run actions &
+cd bot && rasa run actions &
 echo "Running EVA main server"
 python main.py   

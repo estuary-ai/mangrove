@@ -7,7 +7,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import asyncio
 from flask import Flask, request
-from BotController import BotController
+from bot import BotController
 
 app = Flask(__name__)
 

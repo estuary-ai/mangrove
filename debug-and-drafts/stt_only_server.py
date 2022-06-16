@@ -3,7 +3,7 @@ sys.path.insert(1, '../')
 
 from flask import Flask
 from flask_socketio import SocketIO
-from STTController import STTController
+from stt import STTController
 
 
 app = Flask(__name__)

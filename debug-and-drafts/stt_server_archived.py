@@ -16,7 +16,7 @@ import asyncio
 import pyttsx3
 import os
 
-from STTController import STTController
+from stt import STTController
 from rasa.core.agent import Agent
 from rasa.utils.endpoints import EndpointConfig
 
