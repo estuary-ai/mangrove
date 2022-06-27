@@ -1,5 +1,14 @@
 @echo off
 
+echo %1
+
+IF NOT EXIST "filename" (
+  echo "STT Model Exists"
+) ELSE (
+  echo "Downloading STT Model, Please Wait.."
+  call download_stt_model.bat
+)
+
 IF "%ENV_NAME%" == "" (
     SET ENV_NAME=senva
 )
