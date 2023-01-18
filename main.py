@@ -1,3 +1,11 @@
+"""
+TODO logic to be transfered to the following files:
+- `assistant_controller.py`
+- `receiver.py`
+- `storage_manager.py`
+
+"""
+
 import os
 import time
 import json

@@ -1,4 +1,44 @@
-# Eva - SENVA's Digital Assistant
+# UNDER CONSTRUCTION
+
+## Checklist
+- [ ] Implement project `setup.py` and Update Requirements.txt
+- [x] Init directories and files according to new architecture.
+- [ ] Transfer `main.py` logic according to new architecture to `server.py`, `assistant_controller.py`, and `storage_manager.py`.
+- [ ] Clean up EVA transcripts 
+    - [ ] Download [NASA Appolo 11 html version of the transcripts](https://www.hq.nasa.gov/alsj/a11/a11trans.html)
+    - [ ] Clean up and Build a txt version of each file.
+    - [ ] Include cleaning code in utils directory
+- [ ] Push `WakeUpVoiceDetector.py` to client (Hololens) end, and Adapt logic here. 
+    - Option 1: Use [Procupine](https://picovoice.ai/docs/quick-start/porcupine-unity/) (Need to build Unity Package for ARM64 on Windows UWP)
+    - Option 2: Attept to User [PhraseRecognitionSubsystem](https://learn.microsoft.com/en-us/windows/mixed-reality/mrtk-unity/mrtk3-core/packages/core/subsystems/phraserecognitionsubsystem#using-phraserecognitionsubsystem-manually) (Need to ensure that Raw MicStream is still valid)
+- [ ] Update [SocketIO](https://python-socketio.readthedocs.io/en/latest/server.html) to latest version (v5)
+- [ ] Update/Replace [RASA](https://rasa.com/docs/rasa/playground) to (v3) latest version 
+    - Options: [Bloom](https://towardsdatascience.com/run-bloom-the-largest-open-access-ai-model-on-your-desktop-computer-f48e1e2a9a32)
+- [ ] Reformat STT DeepSpeech Logic to modularize
+- [ ] Replace DeepSpeech if Necesssary (Kaldi), otherwise modify intermediate decoding and convert into module
+    - Options: [Kaldi](https://github.com/kaldi-asr/kaldi), [Wav2letter](https://github.com/flashlight/flashlight/tree/main/flashlight/app/asr), [DeepSpeech](https://github.com/mozilla/DeepSpeech)
+- [ ] Fine-tune langauge model for STT
+    - [DeepSpeech's lm building](https://deepspeech.readthedocs.io/en/r0.9/Scorer.html?highlight=lm#building-your-own-scorer)
+    - [Kaldi's lm building](https://github.com/gooofy/kaldi-adapt-lm)
+    - [Wav2letter](https://github.com/BasRizk/Wav2letter-Evaluation/blob/master/prepare_lexicon.py)
+- [ ] Fine-tune language model for NLU
+- [ ] Update [Commands List](https://docs.google.com/document/d/1imwBTMl7zrfe3JI7tawAWQIjmCSQEWGUukNfRw1EG_w/edit?usp=sharing)
+- [ ] Ensure/Add commands list to the Bot
+- [ ] Ensure UIA Egress Procedure is implemented appropriately
+- [ ] Attempt to use TTS on Hololens-End instead of on server.
+
+### Computer Vision
+- [ ] Pull online NASA UIA [suitable images for processing](https://www.google.com/search?q=uia%20nasa&tbm=isch&tbs=isz:l&rlz=1C1ONGR_enUS1011US1011&hl=en&sa=X&ved=0CAIQpwVqFwoTCJjP_8WI0PwCFQAAAAAdAAAAABAX&biw=1519&bih=746#imgrc=XRxwiyfzAccKoM)
+- [ ] Setup a model that detect and segment UIA Images in `visual_processor`
+- [ ] Add listening event for the visual signal in `server.py`
+- [ ] Hook CV model with Procedural scenario according to obective mission (Depicted in Figure A.5 in Proposal) in `assistant_controller.py`
+- [ ] Complete CV TODOs or Modify  appropriately..
+
+### Pathplanning
+- [ ] Implement Pathplanning
+- [ ] Write TODOs..
+
+# Eva - SENVA's Digital Assistant (Outdated Description - Currently Updating)
 This repository hosts a server implementation hosting the **Senva Project** Digital Assistant (**Eva**) backend, which is deployed on a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts **SUITs**; created as part of **Team AEGIS** project of **University of Southern California (USC)** with **University of Arizona (UA)** at the **NASA-SUITs** Competition 2022.
 
 
