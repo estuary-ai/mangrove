@@ -1,6 +1,7 @@
 # UNDER CONSTRUCTION
 
 ## Checklist
+
 - [ ] Implement project `setup.py` and Update Requirements.txt
 - [x] Init directories and files according to new architecture.
 - [ ] Transfer `main.py` logic according to new architecture to `server.py`, `assistant_controller.py`, and `storage_manager.py`.
@@ -28,15 +29,26 @@
 - [ ] Attempt to use TTS on Hololens-End instead of on server.
 
 ### Computer Vision
+
 - [ ] Pull online NASA UIA [suitable images for processing](https://www.google.com/search?q=uia%20nasa&tbm=isch&tbs=isz:l&rlz=1C1ONGR_enUS1011US1011&hl=en&sa=X&ved=0CAIQpwVqFwoTCJjP_8WI0PwCFQAAAAAdAAAAABAX&biw=1519&bih=746#imgrc=XRxwiyfzAccKoM)
 - [ ] Setup a model that detect and segment UIA Images in `visual_processor`
 - [ ] Add listening event for the visual signal in `server.py`
 - [ ] Hook CV model with Procedural scenario according to obective mission (Depicted in Figure A.5 in Proposal) in `assistant_controller.py`
-- [ ] Complete CV TODOs or Modify  appropriately..
+- [ ] Find datasets for object detection model (also terrain detetction)
+- [ ] POC for multi-object detection model most-likely start with YoLo architecture
+- [ ] Setup a model for multi-object detection through HoloLens video stream
+- [ ] Update the `requirements.txt` and finalize `setup.py`
+- [ ] Export objects, terrains, vision markers and obstacles for path planning and UI components
 
 ### Pathplanning
-- [ ] Implement Pathplanning
-- [ ] Write TODOs..
+
+- [ ] Discuss with Spencer and Prashant about Hololens mesh maps
+- [ ] *Implement and test any path planning algorithm on a dummy/test terrain
+- [ ] Try and test which path planning algorithm to use for global and local planning
+- [ ] Analyse the trade-off for having path planning on or off Hololens
+- [ ] Get input from CV model for local planning
+- [ ] Export path for UI components
+- [ ] Integrate NLP pipeline for voice commands and outputs
 
 # Eva - SENVA's Digital Assistant (Outdated Description - Currently Updating)
 This repository hosts a server implementation hosting the **Senva Project** Digital Assistant (**Eva**) backend, which is deployed on a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts **SUITs**; created as part of **Team AEGIS** project of **University of Southern California (USC)** with **University of Arizona (UA)** at the **NASA-SUITs** Competition 2022.
