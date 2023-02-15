@@ -4,7 +4,7 @@
 
 - [ ] Implement project `setup.py` and Update Requirements.txt
 - [x] Init directories and files according to new architecture.
-- [ ] Transfer `main.py` logic according to new architecture to `server.py`, `assistant_controller.py`, and `storage_manager.py`.
+- [x] Transfer `main.py` logic according to new architecture to `server.py`, `assistant_controller.py`, and `storage_manager.py`.
 - [ ] Clean up EVA transcripts 
     - [ ] Download [NASA Appolo 11 html version of the transcripts](https://www.hq.nasa.gov/alsj/a11/a11trans.html)
     - [ ] Clean up and Build a txt version of each file.
@@ -50,8 +50,8 @@
 - [ ] Export path for UI components
 - [ ] Integrate NLP pipeline for voice commands and outputs
 
-# Eva - SENVA's Digital Assistant (Outdated Description - Currently Updating)
-This repository hosts a server implementation hosting the **Senva Project** Digital Assistant (**Eva**) backend, which is deployed on a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts **SUITs**; created as part of **Team AEGIS** project of **University of Southern California (USC)** with **University of Arizona (UA)** at the **NASA-SUITs** Competition 2022.
+# Eva - SENVA's Digital Assistant:
+This repository hosts a server implementation hosting the **Senva Project** Digital Assistant (**Eva**) backend, which is deployed on a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts **SUITs**; originally created as part of **Team AEGIS** project of **University of Southern California (USC)** with **University of Arizona (UA)** at the **NASA-SUITs** Competition 2022; Currently under further construction to be extended as part of the project of **USC** with **University of Berkley (UCBerkley)** in Competition 2023.
 
 
 
@@ -59,8 +59,10 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 
 - Speech to Text (`STTController`) employing **Mozilla DeepSpeech v0.9.3** and **Porcupine Wake word engine** for Wake-Up word detection.
 - Dialogue Management + Natural Language Processor (`BotController`) employing **Rasa v2.0.0**
-- Text to Speech (`TTS Controller`) employing **pyttsx3** and **inflect**.
-* Hosting Server (`main.py`)
+- Text to Speech (`TTSController`) employing **pyttsx3** and **inflect**.
+* `AssistantController`: contains logic of utilizing the above modules.
+* `StorageManager`: singleton responsible for threading background files writing as well as logging end-points.
+* Hosting `SocketIO` Server (`server.py`)
 
 
 
@@ -95,7 +97,7 @@ Run one of these two scripts accordingly (Note that download_stt_model.bat) will
 ### Manually:
 0. Ensure that STT model is downloaded, call `./download_stt_model.bat`. 
 1. In one terminal/CMD tab, execute `python main.py` to run the Digital Assistant System. It is currently configured to run at localhost on port 4000.
-2. Execute `rasa run actions` on another terminal/CMD tab to run RASA's action server which RASA running at `main.py` communicates with.
+2. Execute `rasa run actions` on another terminal/CMD tab to run RASA's action server which RASA running at `server.py` communicates with.
 3. Run frontend project hosted possibly on Microsoft Hololens 2.
    
 

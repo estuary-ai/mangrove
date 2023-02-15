@@ -3,9 +3,8 @@ import typing
 from stt import WakeUpVoiceDetector, STTController
 from bot import BotController
 from tts import TTSController
-from utils import write_output
 from threading import Thread
-
+from storage_manager import StorageManager, write_output
 
 class AssistantController:
     
@@ -39,8 +38,7 @@ class AssistantController:
         self.stt.create_stream()
         
     def destroy_stream(self):
-        for thread in self.writing_files_threads_list:
-            thread.join()
+        StorageManager.ensure_completion()
         self.is_sample_tagging = False
         self.stt.reset_audio_stream()
         
@@ -69,7 +67,7 @@ class AssistantController:
             if(len(self.command_audio_buffer) % len(data)*10 == 0):
                 self.print_feeding_indicator()
                 
-        self.write_audio_file(
+        StorageManager.write_audio_file(
             stt_res['text'],
             command_audio_buffer
         )
@@ -97,15 +95,6 @@ class AssistantController:
             stt_res = self.stt_res_buffer
             self.stt_res_buffer = None
             return False
-        
-        
-    def write_audio_file(self, text, command_audio_buffer):
-        def write(text, command_audio_buffer):
-            with open(f"sample-audio-binary/{text.replace(' ', '_')}_binary.txt", mode='wb') as f:
-                f.write(command_audio_buffer)
-        thread = Thread(target=write, args=(text, command_audio_buffer))
-        thread.start()
-        self.writing_command_audio_threads_list.append(thread)
         
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
         bot_res = self.bot.send_user_message(text)

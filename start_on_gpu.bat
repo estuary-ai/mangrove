@@ -19,4 +19,4 @@ call conda activate senva
 echo "Running Rasa Action server"
 call (cd "bot" && rasa "run" "actions")
 echo "Running EVA main server"
-python "main.py"
+python "server.py"
