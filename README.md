@@ -79,7 +79,11 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
     ```
     pip install -r requirements.txt
     ```
-4. If GPU is present, install `CUDA 10.1` and `cuDNN v8.0.5` (for GPU support) either manually or using `Conda` as follows:
+4. Download pre-trained models.
+   ```
+   downalod_stt_model.bat
+   ```
+5. If GPU is present, install `CUDA 10.1` and `cuDNN v8.0.5` (for GPU support) either manually or using `Conda` as follows:
    ```
    conda install -c conda-forge cuda=10.1 cudnn=7.6.5
    ```
@@ -89,11 +93,11 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 Run one of these two scripts accordingly (Note that download_stt_model.bat) will be called to download automatically the speech-to-text model if not present:
 - Running on CPU
 ```
-./start_on_cpu.bat
+start_on_cpu.bat
 ```
 - Running on GPU
 ```
-./start_on_gpu.bat
+start_on_gpu.bat
 ```
 ### Manually:
 0. Ensure that STT model is downloaded, call `./download_stt_model.bat`. 
