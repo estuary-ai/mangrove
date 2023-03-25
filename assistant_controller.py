@@ -69,12 +69,13 @@ class AssistantController:
         if self.verbose:
             if(len(self.command_audio_buffer) % len(data)*10 == 0):
                 self.print_feeding_indicator()
-                
-        StorageManager.write_audio_file(
-            stt_res['text'],
-            self.command_audio_buffer
-        )
-        self.command_audio_buffer = b""
+        
+        if stt_res:
+            StorageManager.write_audio_file(
+                stt_res['text'],
+                self.command_audio_buffer
+            )
+            self.command_audio_buffer = b""
         
         return stt_res
 
@@ -99,7 +100,7 @@ class AssistantController:
                 return True                
             stt_res = self.stt_res_buffer
             self.stt_res_buffer = None
-            return False
+        return False
         
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
         bot_res = self.bot.send_user_message(text)

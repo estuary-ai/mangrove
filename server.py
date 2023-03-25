@@ -71,7 +71,6 @@ class DigitalAssistant(Namespace):
         emit("bot_voice", audioBytes)
     
     def on_stream_wakeup(self, data):
-        write_output('=', end='')
         wakeUpWordDetected =\
             self.assistant_controller.is_wake_word_detected(data)
         if wakeUpWordDetected:

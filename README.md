@@ -73,6 +73,7 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 2. Create a python 3.8 virtual environment.
     ```
     conda create -n senva python=3.8
+    conda activate senva
     ```
 3. Install all Eva's libraries dependancies.
     ```

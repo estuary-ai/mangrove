@@ -17,20 +17,20 @@ class StorageManager:
             makedirs(self.audio_files_dir)
     
     @classmethod
-    def write_audio_file(self, text, command_audio_buffer):
+    def write_audio_file(self, text, audio_buffer):
         self = StorageManager()
         def write(text, audio_buffer):
             with open(
-                path.join([
+                path.join(
                     self.audio_files_dir, 
                     f'{text.replace(" ", "_")}_binary.txt'
-                ]),
+                ),
                 mode='wb'
             ) as f:
                 f.write(audio_buffer)
         thread = Thread(
             target=write, 
-            args=(text, command_audio_buffer)
+            args=(text, audio_buffer)
         )
         thread.start()
         self.threads_pool.append(thread)
