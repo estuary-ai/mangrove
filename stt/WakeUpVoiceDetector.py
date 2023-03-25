@@ -32,7 +32,7 @@ class WakeUpVoiceDetector(Thread):
     def reset_data_buffer(self):
             self.buffered_data = b""
 
-    def process_audio_stream(self, new_data):         
+    def process_audio_stream(self, new_data): 
         data_stream = self.buffered_data + new_data 
         self.reset_data_buffer()
 

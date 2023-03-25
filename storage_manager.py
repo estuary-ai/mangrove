@@ -1,4 +1,4 @@
-from os import path
+from os import path, makedirs
 from threading import Thread
 
 class StorageManager:
@@ -13,8 +13,12 @@ class StorageManager:
     def __init__(self):
         self.audio_files_dir = 'sample-audio-binary'
         self.threads_pool = []
-        
+        if not path.exists(self.audio_files_dir):
+            makedirs(self.audio_files_dir)
+    
+    @classmethod
     def write_audio_file(self, text, command_audio_buffer):
+        self = StorageManager()
         def write(text, audio_buffer):
             with open(
                 path.join([
@@ -30,9 +34,14 @@ class StorageManager:
         )
         thread.start()
         self.threads_pool.append(thread)
-        
+    
+    @classmethod
     def ensure_completion(self):
-        for thread in self.threads_pool:
+        self = StorageManager()
+        for i, thread in enumerate(self.threads_pool):
+            if not thread:
+                write_output(f'Discarding none valid thread # {i}')
+                continue
             thread.join()
             
 def write_output(msg, end='\n'):

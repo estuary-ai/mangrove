@@ -12,12 +12,15 @@ class AssistantController:
         self.verbose = verbose
         self.wakeUpWordDetector = WakeUpVoiceDetector()
         print("Initialized WakeUpWordDetector")
+        
         self.stt = STTController()
         print("Initialized STT Controller")
         self.stt.set_regular_focus()
         print('Set STT on regular focus')
+        
         self.bot = BotController()
         print("Initialized Bot Controller")
+        
         self.tts = TTSController()    
         print("Initialized TTS Controller")
         
@@ -69,9 +72,11 @@ class AssistantController:
                 
         StorageManager.write_audio_file(
             stt_res['text'],
-            command_audio_buffer
+            self.command_audio_buffer
         )
-        command_audio_buffer = b""
+        self.command_audio_buffer = b""
+        
+        return stt_res
 
                 
     def print_feeding_indicator(self):
@@ -134,7 +139,7 @@ class AssistantController:
             elif sample_command is not None and sample_command is False:
                 write_output("sample tagging exited")
                 kill_sample_tagging()
-            write_output('emitting commands ' +  str(bot_res.get('commands')))
+            write_output(f'emitting commands {bot_res.get("commands")}')
         else:
             print('no commands')
     
