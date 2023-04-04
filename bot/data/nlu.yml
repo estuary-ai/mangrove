@@ -1,4 +1,4 @@
-version: "2.0"
+version: "3.1"
 
 nlu:
 - intent: greet
@@ -10,7 +10,7 @@ nlu:
     - good morning
     - good evening
     - hey there
-    - hey dude
+    - let's go
     - goodmorning
     - goodevening
     - good afternoon
@@ -24,3 +24,19 @@ nlu:
     - see you around
     - bye bye
     - see you later
+
+- intent: affirm
+  examples: |
+    - affirmative
+    - yes
+    - indeed
+    - of course
+    - that sounds good
+    - correct
+
+- intent: deny
+  examples: |
+    - negative
+    - no
+    - never
+    - I don't think so

@@ -78,6 +78,7 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 3. Install all Eva's libraries dependancies.
     ```
     pip install -r requirements.txt
+    pip install rasa rasa-sdk --target=.venv/Lib/site-packages/rasa
     ```
 4. Download pre-trained models.
    ```

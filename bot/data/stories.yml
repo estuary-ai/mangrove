@@ -1,9 +1,11 @@
-version: "2.0"
+version: "3.1"
 
 stories:
 
-- story: happy path
+- story: empty path
   steps:
   - intent: greet
   - action: utter_greet
-  - action: action_restart
+
+#- story: UIA procedure
+

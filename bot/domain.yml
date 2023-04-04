@@ -1,129 +1,69 @@
-version: "2.0"
+version: "3.1"
 
 intents:
-  - capture_audio
-  - click
-  - collapse_alert
-  - declutter
-  - exit
-  - expand_alert
-  - goodbye
   - greet
+  - goodbye
+  - affirm
+  - deny
   - map
   - navigation
-  - omw
-  - place_pin
-  - read_condition
-  - roger
-  - sample_tagging
-  - select_pin
-  - set_north
+  - capture_audio
   - show_panel
-  - standby
-  - take_photo
-  - terrain
-  - toggle_feature
-  - toggle_follow
+  - uia_egress
+
+  # - click
+  # - collapse_alert
+  # - declutter
+  # - exit
+  # - expand_alert
+  # - omw
+  # - place_pin
+  # - read_condition
+  # - roger
+  # - sample_tagging
+  # - select_pin
+  # - set_north
+  # - standby
+  # - take_photo
+  # - terrain
+  # - toggle_feature
+  # - toggle_follow
+
 
 entities:
-  - color
-  - feature
   - panel
   - switch_
+  - uia
+  - feature
 
 slots:
-  color:
-    type: categorical
-    values:
-      - green
-      - red
-      - blue
-  feature:
-    type: text
   panel:
     type: text
+    mappings:
+    - type: from_entity
+      entity: panel
+      intent: show_panel
   switch_:
     type: text
     initial_value: "on"
-  lighting_conditions:
-    type: text
-  outcrop_appearance:
-    type: text
-  mechanism_used:
-    type: text
-  size_and_shape:
-    type: text
-  sample_appearance:
-    type: text
-  geo_interpretation:
-    type: text
+    mappings:
+    - type: custom
+
+  
 
 responses:
+  utter_greet:
+  - text: "Hi!"
 
-  utter_ask_lighting_conditions:
-  - text: "What are the lighting conditions?"
-
-  utter_ask_outcrop_appearance:
-  - text: "How does the outcrop appear?"
-
-  utter_ask_mechanism_used:
-  - text: "What mechanism are you using to sample?"
-
-  utter_ask_size_and_shape:
-  - text: "What is the sample's size and shape?"
-
-  utter_ask_sample_appearance:
-  - text: "What is the sample's appearance?"
-
-  utter_ask_geo_interpretation:
-  - text: "What is your initial geologic interpretation of this sample?"
-
-  utter_sample_tagged:
-  - text: "Your sample has been succesfully tagged!"
-
-  utter_capture_audio:
-  - custom:
-      capture_audio: true
-
-  utter_capture_audio_text:
-  - text: "Capturing audio"
-
-  utter_click:
-  - custom:
-      click: true
-
-  utter_collapse_alert:
-  - custom:
-      LSAR: "collapse_alert"
-
-  utter_declutter:
-  - custom:
-      clear_screen: true
-
-  utter_declutter_text:
-  - text: "Clearing your screen"
-
-  utter_exit:
-  - text: "Exited current flow. Let me know if I can help you in any other way."
-
-  utter_expand_alert:
-  - custom:
-      LSAR: "expand_alert"
-
-  utter_fallback_json:
-  - custom:
-      retry: true
-
-  utter_fallback:
-  - text: "Sorry, I didn't quite catch that. Could you try again?"
-  - text: "Could you repeat that?"
-  - text: "Please try again."
+  utter_did_that_help:
+  - text: "Did that help you?"
 
   utter_goodbye:
   - text: "Bye"
 
-  utter_greet:
-  - text: "Hi!"
+  utter_fallback_json:
+  - custom:
+      retry: true
 
   utter_map:
   - custom:
@@ -137,98 +77,24 @@ responses:
       feature: "navigation"
       switch_: "{switch_}"
 
-  utter_omw:
-  - custom:
-      LSAR: "omw"
-
-  utter_place_pin:
-  - custom:
-      place_pin: True
-
-  utter_place_pin_text:
-  - text: "Placing pin in the current direction"
-
-  utter_read_condition:
-  - custom:
-      LSAR: "read_condition"
-
-  utter_roger:
-  - custom:
-      LSAR: "roger"
-
-  utter_select_pin:
-  - custom:
-      select_pin: true
-      color: "{color}"
-
-  utter_set_north:
-  - custom:
-      set_north: true
-
-  utter_set_north_text:
-  - text: "Setting this orientation as North"
-
   utter_show_panel:
   - custom:
       toggle: true
       feature: "{panel}"
       switch_: "{switch_}"
 
-  utter_standby:
-  - custom:
-      LSAR: "standby"
+  utter_fallback:
+  - text: "Sorry, I didn't quite catch that. Could you try again?"
+  - text: "Could you repeat that?"
+  - text: "Please try again."
 
-  utter_take_photo:
-  - custom:
-      take_photo: true
-
-  utter_take_photo_text:
-  - text: "Capturing a photo"
-
-  utter_terrain:
-  - custom:
-      toggle: true
-      feature: "terrain"
-      switch_: "{switch_}"
-
-  utter_toggle_feature:
-  - custom:
-      toggle: true
-      feature: "{feature}"
-      switch_: "{switch_}"
-
-  utter_toggle_follow:
-  - custom:
-      toggle: true
-      feature: "follow"
-      switch_: "on"
-
-  utter_toggle_follow_text:
-  - text: "Follow me enabled"
-
-forms:
-  form_sample_tagging:
-    lighting_conditions:
-    - type: from_text
-    outcrop_appearance:
-    - type: from_text
-    mechanism_used:
-    - type: from_text
-    size_and_shape:
-    - type: from_text
-    sample_appearance:
-    - type: from_text
-    geo_interpretation:
-    - type: from_text
 
 actions:
-  - action_map_text
-  - action_navigation_text
-  - action_terrain_text
-  - action_initiate_sample
-  - validate_form_sample_tagging
-  - action_sample_tagging
+  #- action_map_text
+  #- action_navigation_text
+  #- action_terrain_text
   - action_show_panel
+
 
 session_config:
   session_expiration_time: 60

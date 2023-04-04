@@ -2,9 +2,11 @@ import json
 import typing
 from stt import WakeUpVoiceDetector, STTController
 from bot import BotController
+print("here1")
 from tts import TTSController
 from threading import Thread
 from storage_manager import StorageManager, write_output
+
 
 class AssistantController:
     

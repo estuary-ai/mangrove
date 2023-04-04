@@ -1,5 +1,4 @@
 import os, argparse, json, time
-import numpy as np
 import sounddevice as sd
 
 from flask import Flask
@@ -10,6 +9,8 @@ from storage_manager import StorageManager, write_output
 # import tensorflow as tf
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     
+print("Here")
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(
@@ -40,6 +41,7 @@ class DigitalAssistant(Namespace):
         write_output('client connected')
     
     def on_disconnect(self):
+        import numpy as np
         write_output('client disconnected')
         
         session_audio_buffer, command_audio_buffer =\
@@ -116,7 +118,8 @@ if __name__ == "__main__":
     parser.add_argument('--cpu', dest='cpu', type=bool, default=False, help='Use CPU instead of GPU')
     parser.add_argument('--port', dest='port', type=int, default=4000, help='Use CPU instead of GPU')
     args = parser.parse_args()
-    
+
+
     if args.cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     
