@@ -3,8 +3,9 @@ import typing
 from stt import WakeUpVoiceDetector, STTController
 from bot import BotController
 from tts import TTSController
-from threading import Thread
+# from threading import Thread
 from storage_manager import StorageManager, write_output
+import numpy as np
 
 class AssistantController:
     
@@ -55,16 +56,18 @@ class AssistantController:
         return audioBytes
     
     def is_wake_word_detected(self, data):
-        return self.wakeUpWordDetector.process_audio_stream(data)
+        speech = self.load_speech_data(data)
+        return self.wakeUpWordDetector.process_audio_stream(speech)
     
     def is_command_buffer_empty(self):
         return len(self.command_audio_buffer) == 0
         
-    def process_audio_stream(self, data: bytes):
+    def process_audio_stream(self, data):
+        speech = self.load_speech_data(data)
         self.stt_res_buffer = None
-        self.command_audio_buffer += data
-        self.session_audio_buffer += data
-        stt_res = self.stt.process_audio_stream(data)
+        self.command_audio_buffer += speech
+        self.session_audio_buffer += speech
+        stt_res = self.stt.process_audio_stream(speech)
         
         if self.verbose:
             if(len(self.command_audio_buffer) % len(data)*10 == 0):
@@ -78,8 +81,45 @@ class AssistantController:
             self.command_audio_buffer = b""
         
         return stt_res
+    
+    # TODO move function to STT
+    def load_speech_data(self, data):
+        
+        if not isinstance(data, dict):
+            data = json.loads(str(data))
+        buffer = np.array(data['audio'])
+        sample_rate = data['sampleRate']
+        num_channels = data['numChannels']
+        
+        # Merge Channels if > 1
+        one_channel_buffer = np.zeros(len(buffer)//num_channels)
+        channel_contribution = 1/num_channels
+        for i in range(len(one_channel_buffer)):
+            for channel_i in range(num_channels):
+                one_channel_buffer[i] +=\
+                    buffer[i*num_channels + channel_i]*channel_contribution                
+    
+        # Downsample if necesssary
+        division = sample_rate/16000 # DEFAULT IS 16K Hz
+        buffer_16k_1ch = np.zeros(round(len(one_channel_buffer/division)), dtype=np.float)
+        if division > 1:
+            for i in range(len(buffer_16k_1ch)):
+                buffer_16k_1ch[i] = one_channel_buffer[i*division]
+        else:
+            buffer_16k_1ch = one_channel_buffer
+        # TODO revise division if < 1
 
-                
+        # Convert to int16 with scaling
+        # https://gist.github.com/HudsonHuang/fbdf8e9af7993fe2a91620d3fb86a182    
+        dtype = np.dtype('int16')
+        i = np.iinfo(dtype)
+        abs_max = 2 ** (i.bits - 1)
+        offset = i.min + abs_max
+        buffer_int16 = (buffer_16k_1ch * abs_max + offset).clip(i.min, i.max).astype(dtype)
+        
+        return bytes(buffer_int16)
+
+
     def print_feeding_indicator(self):
         # indicator = "\\" if indicator_bool else  "/"
         write_output('=', end="")

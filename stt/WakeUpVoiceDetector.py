@@ -11,15 +11,19 @@ class WakeUpVoiceDetector(Thread):
             access_key = "9DG6ZfAltia6TEuOiU/IImtAsttIfCeyxpks3SuNVbOY8LWkbOSjHQ==",
             # keyword_paths = ["models/pvprocupine/Hello-eva_en_windows_v2_1_0.ppn"],
             keyword_paths = [
-                "models/pvprocupine/sen-va_en_windows_v2_2_0/sen-va_en_windows_v2_2_0.ppn",
-                "models/pvprocupine/sen-va_en_linux_v2_2_0/sen-va_en_linux_v2_2_0.ppn"
+                [
+                    # "models/pvprocupine/sen-va_en_windows_v2_2_0/sen-va_en_windows_v2_2_0.ppn",
+                    "models/pvprocupine/Hello-Eva_en_windows_v2_2_0/Hello-Eva_en_windows_v2_2_0.ppn"
+                ],
+                ["models/pvprocupine/sen-va_en_linux_v2_2_0/sen-va_en_linux_v2_2_0.ppn"]
             ],
             sensitivities=None):
         try:
             if sys.platform.startswith('linux'):
-                keyword_paths = [keyword_paths[1]]
+                keyword_paths = keyword_paths[1]
             elif sys.platform.startswith('win'):
-                keyword_paths = [keyword_paths[0]]
+                keyword_paths = keyword_paths[0]
+                print(f'Keywords set {keyword_paths}')
             else:
                 raise NotImplementedError()
         except:
