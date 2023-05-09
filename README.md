@@ -75,7 +75,11 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
     conda create -n senva python=3.8
     conda activate senva
     ```
-3. Install all Eva's libraries dependancies.
+3.0 Only if using linux environement:
+    ```
+    sudo apt install libespeak-dev sox
+    ```
+3.1 Install all Eva's libraries dependancies.
     ```
     pip install -r requirements.txt
     pip install rasa rasa-sdk --target=.venv/Lib/site-packages/rasa

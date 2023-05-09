@@ -80,11 +80,10 @@ class DigitalAssistant(Namespace):
             emit('wake_up')    
     
     def on_stream_audio(self, data):
-        
+
         if self.assistant_controller.is_command_buffer_empty():
             write_output("recieving first stream of audio command")
         
-        data = bytes(data)
         stt_res = self.assistant_controller.process_audio_stream(data)            
         if stt_res is not None:
             write_output(f'User: {stt_res}')
@@ -114,9 +113,9 @@ class DigitalAssistant(Namespace):
 socketio.on_namespace(DigitalAssistant('/'))    
 
 if __name__ == "__main__":    
-    parser = argparse.ArgumentParser(description='Personal information')
+    parser = argparse.ArgumentParser(description='Digital Assistant Endpoint')
     parser.add_argument('--cpu', dest='cpu', type=bool, default=False, help='Use CPU instead of GPU')
-    parser.add_argument('--port', dest='port', type=int, default=4000, help='Use CPU instead of GPU')
+    parser.add_argument('--port', dest='port', type=int, default=4000, help='Port number')
     args = parser.parse_args()
 
 
