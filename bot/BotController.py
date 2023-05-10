@@ -10,11 +10,10 @@ class BotController:
                  model_path='models/rasa-model/20220523-140335.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
-        self.agent =\
-            Agent.load(
-                model_path,
-                action_endpoint=EndpointConfig(endpoint_config_address))
-
+        # breakpoint()
+        # self.agent =\
+        #     Agent.load(model_path, action_endpoint=EndpointConfig(endpoint_config_address))
+        # breakpoint()
         if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 

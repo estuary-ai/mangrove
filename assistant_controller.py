@@ -85,7 +85,6 @@ class AssistantController:
     
     # TODO move function to STT
     def load_speech_data(self, data):
-        
         if not isinstance(data, dict):
             data = json.loads(str(data))
         buffer = np.array(data['audio'])
@@ -102,7 +101,7 @@ class AssistantController:
     
         # Downsample if necesssary
         division = sample_rate/16000 # DEFAULT IS 16K Hz
-        buffer_16k_1ch = np.zeros(round(len(one_channel_buffer/division)), dtype=np.float)
+        buffer_16k_1ch = np.zeros(round(len(one_channel_buffer/division)))
         if division > 1:
             for i in range(len(buffer_16k_1ch)):
                 buffer_16k_1ch[i] = one_channel_buffer[i*division]

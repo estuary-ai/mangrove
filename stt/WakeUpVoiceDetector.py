@@ -12,7 +12,7 @@ class WakeUpVoiceDetector(Thread):
             # keyword_paths = ["models/pvprocupine/Hello-eva_en_windows_v2_1_0.ppn"],
             keyword_paths = [
                 [
-                    # "models/pvprocupine/sen-va_en_windows_v2_2_0/sen-va_en_windows_v2_2_0.ppn",
+                    "models/pvprocupine/sen-va_en_windows_v2_2_0/sen-va_en_windows_v2_2_0.ppn",
                     "models/pvprocupine/Hello-Eva_en_windows_v2_2_0/Hello-Eva_en_windows_v2_2_0.ppn"
                 ],
                 ["models/pvprocupine/sen-va_en_linux_v2_2_0/sen-va_en_linux_v2_2_0.ppn"]

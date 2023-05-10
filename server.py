@@ -1,5 +1,6 @@
 import os, argparse, json, time
 import sounddevice as sd
+import numpy as np
 
 from flask import Flask
 from flask_socketio import SocketIO, Namespace, emit
@@ -9,19 +10,14 @@ from storage_manager import StorageManager, write_output
 # import tensorflow as tf
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     
-print("Here")
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(
     app,
     cors_allowed_origins='*',
-    cors_credentials=True,
-    logger=False, 
-    engineio_logger=False
+    cors_credentials=True
 )
     
-
 @socketio.on_error_default  # handles all namespaces without an explicit error handler
 def default_error_handler(e):
     write_output(f'Error debug {e}')
@@ -41,7 +37,6 @@ class DigitalAssistant(Namespace):
         write_output('client connected')
     
     def on_disconnect(self):
-        import numpy as np
         write_output('client disconnected')
         
         session_audio_buffer, command_audio_buffer =\
@@ -112,6 +107,10 @@ class DigitalAssistant(Namespace):
 
 socketio.on_namespace(DigitalAssistant('/'))    
 
+# @socketio.on('message')
+# def handle_message(data):
+#     print('received message: ' + data)
+    
 if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description='Digital Assistant Endpoint')
     parser.add_argument('--cpu', dest='cpu', type=bool, default=False, help='Use CPU instead of GPU')
@@ -123,4 +122,9 @@ if __name__ == "__main__":
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     
     print(f'Running on port {args.port}')
-    socketio.run(app, host='0.0.0.0', port=args.port, debug=False)  
+    socketio.run(
+        app, host='0.0.0.0',
+        port=args.port, 
+        # debug=True,
+        use_reloader=False
+    )  

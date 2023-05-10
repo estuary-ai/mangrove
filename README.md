@@ -12,8 +12,8 @@
 - [ ] Push `WakeUpVoiceDetector.py` to client (Hololens) end, and Adapt logic here. 
     - Option 1: Use [Procupine](https://picovoice.ai/docs/quick-start/porcupine-unity/) (Need to build Unity Package for ARM64 on Windows UWP)
     - Option 2: Attept to User [PhraseRecognitionSubsystem](https://learn.microsoft.com/en-us/windows/mixed-reality/mrtk-unity/mrtk3-core/packages/core/subsystems/phraserecognitionsubsystem#using-phraserecognitionsubsystem-manually) (Need to ensure that Raw MicStream is still valid)
-- [ ] Update [SocketIO](https://python-socketio.readthedocs.io/en/latest/server.html) to latest version (v5)
-- [ ] Update/Replace [RASA](https://rasa.com/docs/rasa/playground) to (v3) latest version 
+- [x] Update [SocketIO](https://python-socketio.readthedocs.io/en/latest/server.html) to latest version (v5)
+- [x] Update/Replace [RASA](https://rasa.com/docs/rasa/playground) to (v3) latest version 
     - Options: [Bloom](https://towardsdatascience.com/run-bloom-the-largest-open-access-ai-model-on-your-desktop-computer-f48e1e2a9a32)
 - [ ] Reformat STT DeepSpeech Logic to modularize
 - [ ] Replace DeepSpeech if Necesssary (Kaldi), otherwise modify intermediate decoding and convert into module
@@ -70,9 +70,9 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 1. Install virtual environments manager, preferably through
    <a href="https://www.anaconda.com/products/distribution" target="_blank">Anaconda</a>.
 
-2. Create a python 3.8 virtual environment.
+2. Create a python 3.9 virtual environment.
     ```
-    conda create -n senva python=3.8
+    conda create -n senva python=3.9
     conda activate senva
     ```
 3.0 Only if using linux environement:
@@ -82,6 +82,7 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 3.1 Install all Eva's libraries dependancies.
     ```
     pip install -r requirements.txt
+    # TODO revise if this still is necessary
     pip install rasa rasa-sdk --target=.venv/Lib/site-packages/rasa
     ```
 4. Download pre-trained models.
