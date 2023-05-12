@@ -7,7 +7,7 @@ from rasa.utils.endpoints import EndpointConfig
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230204-130001.tar.gz',
+                 model_path='models/rasa-model/20230511-235124.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         # breakpoint()

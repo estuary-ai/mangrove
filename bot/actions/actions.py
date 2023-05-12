@@ -39,3 +39,16 @@ class ActionNavigationText(Action):
         else:
             dispatcher.utter_message(text='Closing the navigation menu for you')
         return [Restarted()]
+
+class ActionTerrainText(Action):
+    
+    def name(self) -> Text:
+        return 'action_terrain_text'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot('switch_')
+        if switch_ is None or switch_ == 'on':
+            dispatcher.utter_message(text='Showing terrain markers')
+        else:
+            dispatcher.utter_message(text='Hiding terrain markers')
+        return [Restarted()]

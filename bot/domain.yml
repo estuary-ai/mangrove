@@ -7,6 +7,7 @@ intents:
   - deny
   - map
   - navigation
+  - terrain
   - capture_audio
   - show_panel
   - uia_egress
@@ -71,6 +72,12 @@ responses:
       feature: "map"
       switch_: "{switch_}"
 
+  utter_terrain:
+  - custom:
+      toggle: true
+      feature: "terrain"
+      switch_: "{switch_}"
+
   utter_navigation:
   - custom:
       toggle: true
@@ -91,8 +98,8 @@ responses:
 
 actions:
   #- action_map_text
-  #- action_navigation_text
-  #- action_terrain_text
+  - action_navigation_text
+  - action_terrain_text
   - action_show_panel
 
 
