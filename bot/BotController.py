@@ -7,12 +7,12 @@ from rasa.utils.endpoints import EndpointConfig
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20220523-140335.tar.gz',
+                 model_path='models/rasa-model/20230204-130001.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         # breakpoint()
-        # self.agent =\
-        #     Agent.load(model_path, action_endpoint=EndpointConfig(endpoint_config_address))
+        self.agent =\
+            Agent.load(model_path, action_endpoint=EndpointConfig(endpoint_config_address))
         # breakpoint()
         if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
