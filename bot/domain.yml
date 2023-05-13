@@ -10,7 +10,9 @@ intents:
   - terrain
   - capture_audio
   - show_panel
-  - uia_egress
+  - start_uia
+  - repeat_uia_step
+  - exit_uia
 
   # - click
   # - collapse_alert
@@ -26,7 +28,6 @@ intents:
   # - set_north
   # - standby
   # - take_photo
-  # - terrain
   # - toggle_feature
   # - toggle_follow
 
@@ -34,7 +35,6 @@ intents:
 entities:
   - panel
   - switch_
-  - uia
   - feature
 
 slots:
@@ -49,7 +49,11 @@ slots:
     initial_value: "on"
     mappings:
     - type: custom
-
+  uia_procedure:
+    type: text
+    initial_value: "off"
+    mappings:
+    - type: custom
   
 
 responses:
@@ -96,11 +100,15 @@ responses:
   - text: "Please try again."
 
 
+# forms:
+#   form_uia_procedure:
+
 actions:
-  #- action_map_text
+  - action_map_text
   - action_navigation_text
   - action_terrain_text
   - action_show_panel
+  - action_start_uia
 
 
 session_config:
