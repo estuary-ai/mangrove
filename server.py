@@ -12,8 +12,9 @@ from multiprocessing import Lock
 
 # log.basicConfig(filename='output.log', level=log.INFO)
 
-# import tensorflow as tf
-# tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import tensorflow as tf
+print(tf.config.list_physical_devices('GPU'))
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'

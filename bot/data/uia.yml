@@ -1,0 +1,33 @@
+version: "3.1"
+
+nlu:
+
+- intent: start_uia
+  examples: |
+    - begin the uia procedure
+    - guide me through the uia procedure
+    - start the uia procedure
+
+- intent: repeat_uia_step
+  examples: |
+    - can you repeat the last step
+    - please repeat the step
+    - tell me that once more
+    - repeat that
+
+- intent: exit_uia
+  examples: |
+    - exit
+    - quit
+    - main menu
+
+rules:
+- rule: Basic UIA flow
+  steps:
+  - intent: start_uia
+  - action: action_start_uia
+
+# stories:
+# - story: uia procedure
+#   steps:
+#   - 
