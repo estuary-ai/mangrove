@@ -18,3 +18,7 @@ res-speech/*.*
 
 debug-and-drafts/web_microphone_websocket
 sample-audio-binary*/*.*
+.fake
+DeepSpeech
+tmp
+*.log
