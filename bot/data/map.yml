@@ -4,24 +4,24 @@ nlu:
 
 - intent: map
   examples: |
-    - [show](switch_:on) map
+    - [show](switch:on) map
     - view map
     - map
-    - [show](switch_:on) me the map
-    - [open](switch_:on) up the map for me
+    - [show](switch:on) me the map
+    - [open](switch:on) up the map for me
     - can I see the map
-    - can you [show](switch_:on) me the map
+    - can you [show](switch:on) me the map
     - bring up the map
-    - [show](switch_:on) me the map
-    - [hide](switch_:off) the map
-    - [close](switch_:off) the map
-    - [hide](switch_:off) map menu
-    - [close](switch_:off) map
+    - [show](switch:on) me the map
+    - [hide](switch:off) the map
+    - [close](switch:off) the map
+    - [hide](switch:off) map menu
+    - [close](switch:off) map
 
 stories:
 - story: displaying map menu
   steps:
   - intent: map
   - action: utter_map
-  - action: action_map_text
+  # - action: action_map_text
   - action: action_restart

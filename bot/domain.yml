@@ -7,12 +7,15 @@ intents:
   - deny
   - map
   - navigation
+  - short_range_navigation
+  - short_range_nav_settings
   - terrain
   - capture_audio
   - show_panel
   - start_uia
   - repeat_uia_step
   - exit_uia
+  - follow
 
   # - click
   # - collapse_alert
@@ -34,7 +37,7 @@ intents:
 
 entities:
   - panel
-  - switch_
+  - switch
   - feature
 
 slots:
@@ -48,7 +51,8 @@ slots:
     type: text
     initial_value: "on"
     mappings:
-    - type: custom
+    - type: from_entity
+      entity: switch
   uia_procedure:
     type: text
     initial_value: "off"
@@ -74,25 +78,43 @@ responses:
   - custom:
       toggle: true
       feature: "map"
-      switch_: "{switch_}"
+      switch: "{switch_}"
 
   utter_terrain:
   - custom:
       toggle: true
       feature: "terrain"
-      switch_: "{switch_}"
+      switch: "{switch_}"
 
   utter_navigation:
   - custom:
       toggle: true
       feature: "navigation"
-      switch_: "{switch_}"
+      switch: "{switch_}"
+
+  utter_short_range_navigation:
+  - custom:
+      toggle: true
+      feature: "short_range_navigation"
+      switch: "{switch_}"
+
+  utter_short_nav_settings:
+  - custom:
+      toggle: true
+      feature: "short_range_nav_settings"
+      switch: "{switch_}"
 
   utter_show_panel:
   - custom:
       toggle: true
       feature: "{panel}"
-      switch_: "{switch_}"
+      switch: "{switch_}"
+
+  utter_follow:
+  - custom:
+      toggle: true
+      feature: "follow"
+      switch: "{switch_}"
 
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
@@ -105,10 +127,12 @@ responses:
 
 actions:
   - action_map_text
+  - action_navigation
   - action_navigation_text
   - action_terrain_text
   - action_show_panel
   - action_start_uia
+  - action_follow
 
 
 session_config:

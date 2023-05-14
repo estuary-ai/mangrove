@@ -23,7 +23,7 @@ class ActionShowPanel(Action):
             panel = switch_
             switch_ = 'on'
 
-        dispatcher.utter_message(custom={'toggle': True, 'feature': panel, 'switch_': switch_})
+        dispatcher.utter_message(text='Opening up the %s panel' % panel, custom={'toggle': True, 'feature': panel, 'switch_': switch_})
 
         return [Restarted()]
 

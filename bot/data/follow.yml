@@ -1,0 +1,17 @@
+version: "3.1"
+
+nlu:
+
+- intent: follow
+  examples: |
+    - follow me
+    - [dont](switch:off) follow me
+    - [start](switch:on) following me
+    - [stop](switch:off) following me
+
+stories:
+- story: follow panel
+  steps:
+  - intent: follow
+  - action: utter_follow
+  - action: action_restart
