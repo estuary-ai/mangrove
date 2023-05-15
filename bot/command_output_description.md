@@ -1,5 +1,5 @@
 - Show/Hide panels:
-    ```json
+    ```
     {
         target: 'Panel',
         action: 'set',
@@ -13,7 +13,7 @@
     - if switch == 'off' then hide 'panel' panel
 
 - Show/Hide Long-Distance Navigation (3D map):
-    ```json
+    ```
     {
         target: 'Navigation',
         action: 'set',
@@ -26,7 +26,7 @@
     - if switch == 'off' then hide long-range navigation
 
 - Enable/Disable short-range navigation (terrain markers)
-    ```json
+    ```
     {
         target: 'ShortRangeNavigation',
         action: 'set',
@@ -39,7 +39,7 @@
     - if switch == 'off' then hide short-range navigation
 
 - Open/Close short-range navigation settings
-    ```json
+    ```
     {
         target: 'ShortRangeNavigationSettings',
         action: 'set',
@@ -52,7 +52,7 @@
     - if switch == 'off' then hide short-range navigation settings
 
 - Navigate to a point
-    ```json
+    ```
     {
         target: 'Navigation',
         action: 'navigate',
@@ -66,7 +66,7 @@
     - if point == 'a'/'b'/.../'j' then show trail to that particular point of interest
 
 - Add Waypoint
-    ```json
+    ```
     {
         target: 'Waypoint',
         action: 'add',
@@ -79,7 +79,7 @@
     - if waypoint_type == 'warning' then place a warning waypoint at the location pointed to on the map
 
 - Remove Waypoint/Undo placing last Waypoint
-    ```json
+    ```
     {
         target: 'Waypoint',
         action: 'remove',
