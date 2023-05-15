@@ -18,7 +18,6 @@ nlu:
     - [show](switch:on) me all the paths
     - which route should I take?
     - navigate me there using any available path
-    
     - [open](switch:on) [long](feature:long-range) range navigation
     - [close](switch:off) [long](feature:long-range) range navigation
 

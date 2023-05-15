@@ -7,7 +7,7 @@ from rasa.utils.endpoints import EndpointConfig
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230514-214737.tar.gz',
+                 model_path='models/rasa-model/20230514-225732.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         print("Loading RASA Agent...")

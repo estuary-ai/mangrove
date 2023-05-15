@@ -5,22 +5,32 @@ intents:
   - goodbye
   - affirm
   - deny
+  - capture_audio
+
+  - follow
+
   - map
+
   - navigation
   - short_range_navigation
   - short_range_nav_settings
   - terrain
-  - capture_audio
+
   - show_panel
   - show_vitals
   - show_suit
   - show_spectrometry
   - show_warnings
   - show_cautions
-  - start_uia
-  - repeat_uia_step
-  - exit_uia
-  - follow
+
+  - add_waypoint
+  - remove_waypoint
+  - undo_waypoint
+
+  - start_egress
+  - next_egress_step
+  - repeat_egress_step
+  - exit_egress
 
   # - click
   # - collapse_alert
@@ -65,7 +75,20 @@ slots:
     - type: from_entity
       entity: switch
 
-  uia_procedure:
+  waypoint_type:
+    type: categorical
+    values:
+    - warning
+    - poi
+    mappings:
+    - type: from_entity
+      entity: feature
+      intent: add_waypoint
+    # - type: from_entity
+    #   entity: feature
+    #   intent: add_waypoint
+    
+  egress_procedure:
     type: text
     initial_value: "off"
     mappings:
@@ -86,66 +109,31 @@ responses:
   - custom:
       retry: true
 
-  # utter_map:
-  # - custom:
-  #     action: true
-  #     target: "map"
-  #     value: "{switch_}"
-
-  # utter_terrain:
-  # - custom:
-  #     action: true
-  #     target: "terrain"
-  #     value: "{switch_}"
-
-  # utter_navigation:
-  # - custom:
-  #     action: true
-  #     target: "navigation"
-  #     value: "{switch_}"
-
-  # utter_short_range_navigation:
-  # - custom:
-  #     action: true
-  #     target: "short_range_navigation"
-  #     value: "{switch_}"
-
-  # utter_short_nav_settings:
-  # - custom:
-  #     action: true
-  #     target: "short_range_nav_settings"
-  #     value: "{switch_}"
-
-  # utter_show_panel:
-  # - custom:
-  #     action: true
-  #     target: "{panel}"
-  #     value: "{switch_}"
-
-  # utter_follow:
-  # - custom:
-  #     action: true
-  #     target: "follow"
-  #     value: "{switch_}"
-
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
   - text: "Could you repeat that?"
   - text: "Please try again."
 
-
-# forms:
-#   form_uia_procedure:
-
 actions:
   - action_map
+
   - action_navigation
   - action_short_range_navigation
   - action_short_nav_settings
   - action_terrain
+
   - action_show_panel
-  - action_start_uia
+
   - action_follow
+
+  - action_add_waypoint
+  - action_remove_waypoint
+  - action_undo_waypoint
+
+  - action_start_egress
+  - action_next_egress
+  - action_repeat_egress
+  - action_exit_egress
 
 
 session_config:
