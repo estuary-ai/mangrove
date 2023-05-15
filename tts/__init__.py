@@ -1,1 +1,1 @@
-from .TTSController import TTSController
+from .tts_controller import TTSController

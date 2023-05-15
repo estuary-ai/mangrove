@@ -26,6 +26,7 @@ class AudioPacket(object):
         
         self.frame_size = len(self.bytes)
         self.duration = ((self.frame_size/16000)/2.0)*1000
+        self.id = data_json.get('packetID')
     
     def preprocess_audio_buffer(self, buffer, sample_rate, num_channels):
         # Merge Channels if > 1

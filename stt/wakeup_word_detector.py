@@ -3,6 +3,7 @@ import sys
 import struct
 from threading import Thread
 from .data_buffer import DataBuffer
+from .audio_packet import AudioPacket
 
 class WakeUpVoiceDetector(Thread):
 
@@ -59,9 +60,11 @@ class WakeUpVoiceDetector(Thread):
     def reset_data_buffer(self):
         self.buffer.reset()
 
-    def process_audio_stream(self, audio_packet): 
-        # Utilize full audio_packet instead
+    def feed_audio(self, audio_packet: AudioPacket):
         self.buffer.add(audio_packet)
+        
+    def process_audio_stream(self): 
+        # Utilize full audio_packet instead
         for frame in self.buffer:
             # Process only proper frame sizes
             if len(frame) < self.frame_size:

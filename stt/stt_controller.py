@@ -3,9 +3,9 @@ import collections.abc
 import numpy as np
 import deepspeech
 import webrtcvad
-import sounddevice as sd   
 from functools import reduce
                                       
+from storage_manager import StorageManager
 from .focus_level import FocusLevel, init_words_focus_assets
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
@@ -44,10 +44,10 @@ class STTController:
         # TODO
         self.init_words_focus_assets()
 
-
     def create_stream(self):
-        def feed_silence(num_samples=320*3):
-            silence_bytes = b'\x00\x00'*num_samples
+        def feed_silence(milliseconds=30):
+            num_bytes = (milliseconds//10)*320
+            silence_bytes = b'\x00\x00'*num_bytes
             self.stream_context.feedAudioContent(np.frombuffer(silence_bytes, np.int16))
         
         self.stream_context = self.model.createStream()        
@@ -58,21 +58,13 @@ class STTController:
 
     def _finish_stream(self):
         if self.stream_context is not None:
-            # self.is_stream_locked = True
             self._log("\nTry to finalize Stream", end="\n", force=True)
-            time_start_recog = round(time.time() * 1000)
-            
-            # self.feed_silence()
+            time_start_recog = round(time.time() * 1000)            
             transcription = self.stream_context.intermediateDecode()
-
             if transcription:
-                # TODO lock stream and ditch everything unless stream is unlocked back
-                self._log('Here is response frames.. pay attention', end='\n')
-                sd.play(np.frombuffer(self.debug_feed_frames.bytes, dtype=np.int16), 16000)
-                sd.wait()
-                with open(f"sample-audio-binary/{transcription}_{str(time.time())}.txt", mode='wb') as f:
-                    f.write(self.debug_feed_frames.bytes)
-
+                # breakpoint() # TODO check meta data
+                StorageManager.play_audio_packet(self.debug_feed_frames, transcription) # TODO Remove if not debugging
+                
                 self._log(f'Recognized Text: {transcription}', end="\n")
                 recog_time = round(time.time() * 1000) - time_start_recog
                 result = { 
@@ -154,7 +146,7 @@ class STTController:
             self.buffered_silences.append(frame)
     
     def process_audio_stream(self, audio_packet):          
-        freq = (5000//20)**320*2 # 5 seconds
+        freq = (3000//20)**320*2 # 3 seconds
         verbose_cond = (self.debug_total_size % freq) == 0
         verbose_cond &= (self.debug_total_size > freq)
         if verbose_cond:
@@ -180,17 +172,17 @@ class STTController:
         if len(outcomes) > 0:
             return self._combine_outcomes(outcomes)
     
-    def process_audio_buffer_new(self):
-        while True:
-            for bytes_segment in vad_collector(
-                sample_rate=self.SAMPLE_RATE,
-                frame_duration_ms=30, # TODO
-                padding_duration_ms=300, # TODO
-                vad=self.vad,
-                frames=self.buffer
-            ):
-                audio = np.frombuffer(bytes_segment, dtype=np.int16)
-                # TODO
+    # def process_audio_buffer_new(self):
+    #     while True:
+    #         for bytes_segment in vad_collector(
+    #             sample_rate=self.SAMPLE_RATE,
+    #             frame_duration_ms=30, # TODO
+    #             padding_duration_ms=300, # TODO
+    #             vad=self.vad,
+    #             frames=self.buffer
+    #         ):
+    #             audio = np.frombuffer(bytes_segment, dtype=np.int16)
+    #             # TODO
     
 
     def _combine_outcomes(self, outcomes):
