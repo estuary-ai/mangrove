@@ -82,16 +82,14 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
 3.1 Install all Eva's libraries dependancies.
     ```
     pip install -r requirements.txt
-    # TODO revise if this still is necessary
-    pip install rasa rasa-sdk --target=.venv/Lib/site-packages/rasa
     ```
-4. Download pre-trained models.
+1. Download pre-trained models.
    ```
    downalod_stt_model.bat
    ```
-5. If GPU is present, install `CUDA 10.1` and `cuDNN v8.0.5` (for GPU support) either manually or using `Conda` as follows:
+2. If GPU is present, install `CUDA 10.1` and `cuDNN v7.6.5` (for GPU support) either manually or using `Conda` as follows:
    ```
-   conda install -c conda-forge cuda=10.1 cudnn=7.6.5
+   conda install -c conda-forge cudnn=7.6.*
    ```
    
 ## Running Eva:

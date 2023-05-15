@@ -1,40 +1,44 @@
-import json
+import time
 import typing
-from stt import WakeUpVoiceDetector, STTController
+from stt import STTController, WakeUpVoiceDetector, AudioPacket
 from bot import BotController
 from tts import TTSController
-# from threading import Thread
 from storage_manager import StorageManager, write_output
-import numpy as np
-
+from stt import DataBuffer
+DEFINED_PAUSE_PERIOD=0.5 # in seconds pause between stt responses
 
 class AssistantController:
     
-    def __init__(self, verbose=True):
+    def __init__(self, verbose=True, shutdown_bot=True):
         self.verbose = verbose
         self.wakeUpWordDetector = WakeUpVoiceDetector()
-        print("Initialized WakeUpWordDetector")
+        write_output("Initialized WakeUpWordDetector")
         
         self.stt = STTController()
-        print("Initialized STT Controller")
-        self.stt.set_regular_focus()
-        print('Set STT on regular focus')
+        write_output("Initialized STT Controller")
+        # self.stt.set_regular_focus()
+        # print('Set STT on regular focus')
         
-        self.bot = BotController()
-        print("Initialized Bot Controller")
+        self.bot = None
+        if not shutdown_bot:
+            self.bot = BotController()
+            write_output("Initialized Bot Controller")
         
         self.tts = TTSController()    
-        print("Initialized TTS Controller")
+        write_output("Initialized TTS Controller")
         
         # Debuggers and Auxilarly variables
         self.is_sample_tagging = False
         self.indicator_bool = True
         self.writing_command_audio_threads_list = []
+        self.last_response_ts = time.time() # JUST DUMMY
+        
+        # self.data_buffer = DataBuffer(frame_size=320)
 
-
+        
     def reset_audio_buffers(self):
-        self.session_audio_buffer = b""
-        self.command_audio_buffer = b""
+        self.session_audio_buffer = AudioPacket.get_null_packet()
+        self.command_audio_buffer = AudioPacket.get_null_packet()
     
     def get_audio_buffers(self):
         return self.session_audio_buffer, self.command_audio_buffer
@@ -50,80 +54,51 @@ class AssistantController:
     def reset_audio_stream(self):
         self.stt.reset_audio_stream()
         
-    def read_text(self, data: dict):
-        audioBytes = self.tts.get_feature_read_bytes(
-            data['feature'], data['values'], data['units']
-        )
-        return audioBytes
+    def read_text(self, data: any):
+        if isinstance(data, dict):
+            audio_bytes = self.tts.get_feature_read_bytes(
+                data['feature'], data['values'], data['units']
+            )
+        elif isinstance(data, str):
+            audio_bytes = self.tts.get_plain_text_read_bytes(data)
+        else:
+            raise Exception("Only dict and str are supported types")
+        return audio_bytes
     
-    def is_wake_word_detected(self, data):
-        speech = self.load_speech_data(data)
-        return self.wakeUpWordDetector.process_audio_stream(speech)
+    def is_wake_word_detected(self, audio_data):
+        audio_packet = AudioPacket(audio_data)
+        # self.data_buffer.add(audio_packet) # TODO useless now
+        return self.wakeUpWordDetector.process_audio_stream(audio_packet)
     
     def is_command_buffer_empty(self):
         return len(self.command_audio_buffer) == 0
         
-    def process_audio_stream(self, data):
-        speech = self.load_speech_data(data)
-        self.stt_res_buffer = None
-        self.command_audio_buffer += speech
-        self.session_audio_buffer += speech
-        stt_res = self.stt.process_audio_stream(speech)
-        
-        if self.verbose:
-            if(len(self.command_audio_buffer) % len(data)*10 == 0):
-                self.print_feeding_indicator()
-        
+    def process_audio_buffer(self):
+        stt_res = self.stt.process_audio_buffer()
         if stt_res:
             StorageManager.write_audio_file(
                 stt_res['text'],
-                self.command_audio_buffer
+                self.command_audio_buffer.bytes # TODO include meta-data
             )
-            self.command_audio_buffer = b""
+            self.command_audio_buffer = AudioPacket.get_null_packet()
+            self.last_response_ts = time.time()
+
+        return stt_res        
         
-        return stt_res
+    def process_audio_stream(self, audio_data):
+        if time.time() - self.last_response_ts <= DEFINED_PAUSE_PERIOD:
+            return None
     
-    # TODO move function to STT
-    def load_speech_data(self, data):
-        if not isinstance(data, dict):
-            data = json.loads(str(data))
-        buffer = np.array(data['audio'])
-        sample_rate = data['sampleRate']
-        num_channels = data['numChannels']
+        audio_packet = AudioPacket(audio_data)
         
-        # Merge Channels if > 1
-        one_channel_buffer = np.zeros(len(buffer)//num_channels)
-        channel_contribution = 1/num_channels
-        for i in range(len(one_channel_buffer)):
-            for channel_i in range(num_channels):
-                one_channel_buffer[i] +=\
-                    buffer[i*num_channels + channel_i]*channel_contribution                
-    
-        # Downsample if necesssary
-        division = sample_rate/16000 # DEFAULT IS 16K Hz
-        buffer_16k_1ch = np.zeros(round(len(one_channel_buffer/division)))
-        if division > 1:
-            for i in range(len(buffer_16k_1ch)):
-                buffer_16k_1ch[i] = one_channel_buffer[i*division]
-        else:
-            buffer_16k_1ch = one_channel_buffer
-        # TODO revise division if < 1
-
-        # Convert to int16 with scaling
-        # https://gist.github.com/HudsonHuang/fbdf8e9af7993fe2a91620d3fb86a182    
-        dtype = np.dtype('int16')
-        i = np.iinfo(dtype)
-        abs_max = 2 ** (i.bits - 1)
-        offset = i.min + abs_max
-        buffer_int16 = (buffer_16k_1ch * abs_max + offset).clip(i.min, i.max).astype(dtype)
+        # self.data_buffer.add(audio_packet) # TODO useless now
         
-        return bytes(buffer_int16)
-
-
-    def print_feeding_indicator(self):
-        # indicator = "\\" if indicator_bool else  "/"
-        write_output('=', end="")
-        self.indicator_bool = not self.indicator_bool
+        self.stt_res_buffer = None
+        self.command_audio_buffer += audio_packet
+        self.session_audio_buffer += audio_packet
+        
+        self.stt.process_audio_stream(audio_packet)
+                
         
     def process_sample_tagging_if_on(self):
         if self.is_sample_tagging:
@@ -143,8 +118,10 @@ class AssistantController:
         return False
         
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
+        if self.bot is None:
+            return None, None
         bot_res = self.bot.send_user_message(text)
-        print('SENVA: ' + str(bot_res))  
+        write_output('SENVA: ' + str(bot_res))  
         bot_texts = bot_res.get('text')
         voice_bytes = None
         if bot_texts is not None:
@@ -182,5 +159,5 @@ class AssistantController:
                 kill_sample_tagging()
             write_output(f'emitting commands {bot_res.get("commands")}')
         else:
-            print('no commands')
+            write_output('no commands')
     
