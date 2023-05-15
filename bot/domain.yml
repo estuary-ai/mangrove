@@ -12,6 +12,11 @@ intents:
   - terrain
   - capture_audio
   - show_panel
+  - show_vitals
+  - show_suit
+  - show_spectrometry
+  - show_warnings
+  - show_cautions
   - start_uia
   - repeat_uia_step
   - exit_uia
@@ -42,17 +47,24 @@ entities:
 
 slots:
   panel:
-    type: text
+    type: categorical
+    values:
+    - vitals
+    - suit
+    - spectrometry
+    - warnings
+    - cautions
     mappings:
     - type: from_entity
       entity: panel
-      intent: show_panel
+
   switch_:
     type: text
     initial_value: "on"
     mappings:
     - type: from_entity
       entity: switch
+
   uia_procedure:
     type: text
     initial_value: "off"
@@ -74,47 +86,47 @@ responses:
   - custom:
       retry: true
 
-  utter_map:
-  - custom:
-      toggle: true
-      feature: "map"
-      switch: "{switch_}"
+  # utter_map:
+  # - custom:
+  #     action: true
+  #     target: "map"
+  #     value: "{switch_}"
 
-  utter_terrain:
-  - custom:
-      toggle: true
-      feature: "terrain"
-      switch: "{switch_}"
+  # utter_terrain:
+  # - custom:
+  #     action: true
+  #     target: "terrain"
+  #     value: "{switch_}"
 
-  utter_navigation:
-  - custom:
-      toggle: true
-      feature: "navigation"
-      switch: "{switch_}"
+  # utter_navigation:
+  # - custom:
+  #     action: true
+  #     target: "navigation"
+  #     value: "{switch_}"
 
-  utter_short_range_navigation:
-  - custom:
-      toggle: true
-      feature: "short_range_navigation"
-      switch: "{switch_}"
+  # utter_short_range_navigation:
+  # - custom:
+  #     action: true
+  #     target: "short_range_navigation"
+  #     value: "{switch_}"
 
-  utter_short_nav_settings:
-  - custom:
-      toggle: true
-      feature: "short_range_nav_settings"
-      switch: "{switch_}"
+  # utter_short_nav_settings:
+  # - custom:
+  #     action: true
+  #     target: "short_range_nav_settings"
+  #     value: "{switch_}"
 
-  utter_show_panel:
-  - custom:
-      toggle: true
-      feature: "{panel}"
-      switch: "{switch_}"
+  # utter_show_panel:
+  # - custom:
+  #     action: true
+  #     target: "{panel}"
+  #     value: "{switch_}"
 
-  utter_follow:
-  - custom:
-      toggle: true
-      feature: "follow"
-      switch: "{switch_}"
+  # utter_follow:
+  # - custom:
+  #     action: true
+  #     target: "follow"
+  #     value: "{switch_}"
 
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
@@ -126,10 +138,11 @@ responses:
 #   form_uia_procedure:
 
 actions:
-  - action_map_text
+  - action_map
   - action_navigation
-  - action_navigation_text
-  - action_terrain_text
+  - action_short_range_navigation
+  - action_short_nav_settings
+  - action_terrain
   - action_show_panel
   - action_start_uia
   - action_follow
