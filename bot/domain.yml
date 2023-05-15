@@ -11,9 +11,12 @@ intents:
 
   - map
 
-  - navigation
+  - show_navigation
   - short_range_navigation
   - short_range_nav_settings
+  - navigate_home
+  - navigate_closest
+  - navigate_point
   - terrain
 
   - show_panel
@@ -84,10 +87,33 @@ slots:
     - type: from_entity
       entity: feature
       intent: add_waypoint
-    # - type: from_entity
-    #   entity: feature
-    #   intent: add_waypoint
     
+  nav_target:
+    type: categorical
+    values:
+    - home
+    - closest
+    - a
+    - b
+    - c
+    - d
+    - e
+    - f
+    - g
+    - h
+    - i
+    - j
+    mappings:
+    - type: from_entity
+      entity: feature
+      intent: navigate_home
+    - type: from_entity
+      entity: feature
+      intent: navigate_closest
+    - type: from_entity
+      entity: feature
+      intent: navigate_point
+  
   egress_procedure:
     type: text
     initial_value: "off"
@@ -117,9 +143,10 @@ responses:
 actions:
   - action_map
 
-  - action_navigation
+  - action_show_navigation
   - action_short_range_navigation
   - action_short_nav_settings
+  - action_navigate
   - action_terrain
 
   - action_show_panel

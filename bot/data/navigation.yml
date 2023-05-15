@@ -2,11 +2,12 @@ version: "3.1"
 
 nlu:
 
-- intent: navigation
+- intent: show_navigation
   examples: |
     - [show](switch:on) navigation
     - view navigation
     - navigation
+    - navigation menu
     - navigate me
     - navigate me to the destination
     - [show](switch:on) me the way
@@ -16,7 +17,6 @@ nlu:
     - [show](switch:on) me the path
     - which path do I take?
     - [show](switch:on) me all the paths
-    - which route should I take?
     - navigate me there using any available path
     - [open](switch:on) [long](feature:long-range) range navigation
     - [close](switch:off) [long](feature:long-range) range navigation
@@ -33,13 +33,41 @@ nlu:
     - [close](switch:off) [short](feature:short-range) range navigation settings
     - [hide](switch:off) [short](feature:short-range) range navigation settings
 
+- intent: navigate_home
+  examples: |
+    - take me back [home](feature)
+    - navigate back to [home](feature)
+    - show me the way [home](feature)
+    - display the way to the [starting point](feature:home)
+    - show me the trail back to the [initial position](feature:home)
+
+- intent: navigate_closest
+  examples: |
+    - take me to the [closest](feature) point of interest
+    - navigate to the [nearest](feature:closest) waypoint
+    - show me the way to the [closest](feature) point of interest
+    - display the way to the [nearest](feature:closest) marker
+    - show me the trail to the [closest](feature) waypoint of interest
+
+- intent: navigate_point
+  examples: |
+    - take me to point of interest [a](feature)
+    - take me to [b](feature)
+    - navigate to waypoint [c](feature)
+    - navigate to [d](feature)
+    - show me the way to point of interest [e](feature)
+    - show me the way to [f](feature)
+    - display the way to marker [g](feature)
+    - display the way to marker [h](feature)
+    - show me the trail to waypoint of interest [i](feature)
+    - show me the trail to [j](feature)
 
 
 stories:
 - story: displaying navigation menu
   steps:
-  - intent: navigation
-  - action: action_navigation
+  - intent: show_navigation
+  - action: action_show_navigation
   - action: action_restart
 
 - story: enabling short range navigation
@@ -53,3 +81,11 @@ stories:
   - intent: short_range_nav_settings
   - action: action_short_nav_settings
   - action: action_restart
+
+- story: navigate to a point
+  steps:
+  - or:
+    - intent: navigate_home
+    - intent: navigate_closest
+    - intent: navigate_point
+  - action: action_navigate

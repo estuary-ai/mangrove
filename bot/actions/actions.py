@@ -22,7 +22,7 @@ class ActionShowPanel(Action):
         else:
             text='Closing the %s panel' % panel
 
-        cmd = { 'target': panel, 'action': 'set', 'additionalInfo': [switch_] }
+        cmd = { 'target': 'Panel', 'action': 'set', 'additionalInfo': [panel, switch_] }
 
         dispatcher.utter_message(text=text, custom=cmd)
 
@@ -31,7 +31,7 @@ class ActionShowPanel(Action):
 class ActionNavigation(Action):
 
     def name(self) -> Text:
-        return 'action_navigation'
+        return 'action_show_navigation'
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         switch_ = tracker.get_slot('switch_')
@@ -87,6 +87,27 @@ class ActionShortRangeNavSettings(Action):
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
 
+class ActionNavigate(Action):
+
+    def name(self) -> Text:
+        return 'action_navigate'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        point = tracker.get_slot('nav_target')
+
+        if point is None or point == 'home':
+            point = 'home'
+            text = 'Calculating path back home'
+        elif point == 'closest':
+            text = 'Calculating path to the closest point'
+        else:
+            text = 'Calculating path to point %s' % point
+
+        cmd = { 'target': 'Navigation', 'action': 'navigate', 'additionalInfo': [point] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
+        return [Restarted()]
+
 class ActionMap(Action):
     
     def name(self) -> Text:
@@ -133,7 +154,7 @@ class ActionRemoveWaypoint(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         text='Deleting the waypoint'
 
-        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': [] }
+        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['selected'] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -146,7 +167,7 @@ class ActionUndoWaypoint(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         text='Undoing last waypoint'
 
-        cmd = { 'target': 'Waypoint', 'action': 'undo', 'additionalInfo': [] }
+        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['last'] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
