@@ -19,9 +19,8 @@ nlu:
     - [close](switch:off) map
 
 stories:
-- story: displaying map menu
+- story: toggling map
   steps:
   - intent: map
-  - action: utter_map
-  # - action: action_map_text
+  - action: action_map
   - action: action_restart

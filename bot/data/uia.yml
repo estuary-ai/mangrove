@@ -2,20 +2,25 @@ version: "3.1"
 
 nlu:
 
-- intent: start_uia
+- intent: start_egress
   examples: |
     - begin the uia procedure
+    - begin the egress procedure
     - guide me through the uia procedure
+    - guide me through the egress procedure
     - start the uia procedure
+    - show the egress checklist
+    - display the uia egress procedure checklist
+    - egress checklist
 
-- intent: repeat_uia_step
+- intent: repeat_egress_step
   examples: |
     - can you repeat the last step
     - please repeat the step
     - tell me that once more
-    - repeat that
+    - repeat that step
 
-- intent: exit_uia
+- intent: exit_egress
   examples: |
     - exit
     - quit
@@ -24,8 +29,8 @@ nlu:
 rules:
 - rule: Basic UIA flow
   steps:
-  - intent: start_uia
-  - action: action_start_uia
+  - intent: start_egress
+  - action: action_start_egress
 
 # stories:
 # - story: uia procedure
