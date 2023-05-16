@@ -15,7 +15,7 @@ class STTController:
     def __init__(self, 
                  sample_rate=16000,
                  model_path='models/ds-model/deepspeech-0.9.3-models',
-                 load_scorer=True,
+                 load_scorer=False,
                  silence_threshold=200,
                  vad_aggressiveness=3,
                  frame_size=320,
@@ -44,14 +44,14 @@ class STTController:
         # TODO
         self.init_words_focus_assets()
 
-    def create_stream(self):
-        def feed_silence(milliseconds=30):
-            num_bytes = (milliseconds//10)*320
-            silence_bytes = b'\x00\x00'*num_bytes
-            self.stream_context.feedAudioContent(np.frombuffer(silence_bytes, np.int16))
+    def feed_silence(self, milliseconds=200):
+        num_bytes = (milliseconds//10)*320*2
+        silence_bytes = b'\x00\x00'*num_bytes
+        self.stream_context.feedAudioContent(np.frombuffer(silence_bytes, np.int16))
         
+    def create_stream(self):
         self.stream_context = self.model.createStream()        
-        feed_silence()
+        self.feed_silence()
         self.num_recorded_chunks = 0
         self.recorded_audio_length = 0
         self.debug_feed_frames = AudioPacket.get_null_packet()
@@ -59,10 +59,12 @@ class STTController:
     def _finish_stream(self):
         if self.stream_context is not None:
             self._log("\nTry to finalize Stream", end="\n", force=True)
-            time_start_recog = round(time.time() * 1000)            
+            time_start_recog = round(time.time() * 1000)       
+            
             transcription = self.stream_context.intermediateDecode()
+            # CONFIDENCE_THRESHOLD = 0
+            # valid_transcripts = [t for t in transcription.transcripts if t.confidence > CONFIDENCE_THRESHOLD]
             if transcription:
-                # breakpoint() # TODO check meta data
                 StorageManager.play_audio_packet(self.debug_feed_frames, transcription) # TODO Remove if not debugging
                 
                 self._log(f'Recognized Text: {transcription}', end="\n")

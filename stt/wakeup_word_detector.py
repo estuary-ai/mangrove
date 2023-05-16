@@ -52,10 +52,8 @@ class WakeUpVoiceDetector(Thread):
                 print('Reswitching Access Key')
                 alternate_i += 1 
                 
-        
         self.frame_size = 1024
         self.buffer = DataBuffer(self.frame_size)
-        # self.reset_data_buffer()
     
     def reset_data_buffer(self):
         self.buffer.reset()
