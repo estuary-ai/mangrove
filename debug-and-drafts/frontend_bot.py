@@ -11,4 +11,5 @@ while True:
 
     #Send message to server
     response = requests.post('http://localhost:5000/', data={'Body': user_message, 'From': '123'})
-    print(response)
+    res = response.json()
+    print(res)

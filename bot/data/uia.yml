@@ -13,6 +13,14 @@ nlu:
     - display the uia egress procedure checklist
     - egress checklist
 
+- intent: next_egress_step
+  examples: |
+    - next step
+    - what's the next step
+    - okay next
+    - what do i do next
+    - give me the next step in the egress procedure
+
 - intent: repeat_egress_step
   examples: |
     - can you repeat the last step
@@ -22,17 +30,28 @@ nlu:
 
 - intent: exit_egress
   examples: |
-    - exit
-    - quit
-    - main menu
+    - exit egress
+    - stop egress guidance
+    - close egress
 
-rules:
-- rule: Basic UIA flow
+  # - action: action_restart
+
+stories:
+- story: Start UIA egress guidance
   steps:
   - intent: start_egress
   - action: action_start_egress
+  - checkpoint: checkpoint_egress_started
+  
+- story: Get the next step in UIA procedure
+  steps:
+  - checkpoint: checkpoint_egress_started
+  - intent: next_egress_step
+  - action: action_next_egress_step
+  # - action: action_restart
 
-# stories:
-# - story: uia procedure
-#   steps:
-#   - 
+- story: Exit UIA egress guidance
+  steps:
+  - checkpoint: checkpoint_egress_started
+  - intent: exit_egress
+  - action: action_exit_egress

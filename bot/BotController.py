@@ -4,12 +4,15 @@ import sys
 from rasa.core.agent import Agent
 from rasa.utils.endpoints import EndpointConfig
 
+from .procedures import EgressProcedure
+
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230515-004254.tar.gz',
+                 model_path='models/rasa-model/20230516-104625.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
+        self.egress_procedure = EgressProcedure()
         print("Loading RASA Agent...")
         self.agent =\
             Agent.load(model_path, action_endpoint=EndpointConfig(endpoint_config_address))
@@ -30,23 +33,44 @@ class BotController:
         messages = loop.run_until_complete(self.agent.handle_text(user_message, sender_id=conversation_id))
         loop.close()
 
+        print(messages)
+
         #Deciphering RASA's response
         texts = []
         commands = []
-
-        print(commands)
 
         for message in messages:
             if 'text' in message:
                 text = message['text']
                 texts.append(text)
             elif 'custom' in message:
-                commands.append(message['custom'])
+                command = message['custom']
+                if command['target'] == 'UIA':
+                    if command['action'] == 'start':
+                        # reset the egress procedure
+                        self.egress_procedure.restart()
+                        # start video stream
+                        # open egress checklist
+                        commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
+                        # set world state to egress in progress
+                    elif command['action'] == 'next_step':
+                        next_step = self.egress_procedure.get_next_step()
+                        if next_step is None:
+                            command['additionalInfo'] = ['-1', 'null']
+                            texts.append('Completed all steps in procedure')
+                        else:
+                            command['additionalInfo'] = [next_step.stepId, next_step.target]
+                            texts.append(next_step.text)
+                        commands.append(command)
+                else:
+                    commands.append(command)
         
         #Compiling responses
         response = {}
         response['text'] = texts
         response['commands'] = commands
+
+        print(commands)
 
         # Flatten commands
         # for command in commands:

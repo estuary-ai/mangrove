@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(1, '../')
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 import asyncio
@@ -14,7 +14,7 @@ app = Flask(__name__)
 if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-bot = BotController(model_path='../models/rasa-model/model.tar.gz')
+bot = BotController(model_path='../models/rasa-model/20230516-104625.tar.gz')
 
 @app.route("/", methods=["POST"])
 def sendUserMessage():

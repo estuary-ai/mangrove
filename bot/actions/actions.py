@@ -8,6 +8,20 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted
 
+class ActionClosePanel(Action):
+
+    def name(self) -> Text:
+        return 'action_close_panel'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        text='Closing the panel'
+
+        cmd = { 'target': 'Panel', 'action': 'close', 'additionalInfo': [] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
+        return [Restarted()]
+
 class ActionShowPanel(Action):
 
     def name(self) -> Text:
@@ -16,16 +30,18 @@ class ActionShowPanel(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         panel = tracker.get_slot('panel')
         switch_ = tracker.get_slot('switch_')
+
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
             switch_ = 'on'
+            action = 'open'
             text='Opening up the %s panel' % panel
         else:
+            action = 'close'
             text='Closing the %s panel' % panel
 
-        cmd = { 'target': 'Panel', 'action': 'set', 'additionalInfo': [panel, switch_] }
+        cmd = { 'target': 'Panel', 'action': action, 'additionalInfo': [panel] }
 
         dispatcher.utter_message(text=text, custom=cmd)
-
         return [Restarted()]
 
 class ActionNavigation(Action):
@@ -123,6 +139,20 @@ class ActionMap(Action):
             text='Closing the map'
 
         cmd = { 'target': 'Map', 'action': 'set', 'additionalInfo': [switch_] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
+        return [Restarted()]
+
+class ActionNextSpectrometryGraph(Action):
+
+    def name(self) -> Text:
+        return 'action_next_spectrometry_graph'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        
+        text = 'Switching to next spectrometry sample'
+
+        cmd = { 'target': 'Spectrometry', 'action': 'next_graph', 'additionalInfo': [] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]

@@ -19,12 +19,15 @@ intents:
   - navigate_point
   - terrain
 
+  - close_panel
   - show_panel
   - show_vitals
   - show_suit
   - show_spectrometry
   - show_warnings
   - show_cautions
+
+  - next_spectrometry_graph
 
   - add_waypoint
   - remove_waypoint
@@ -149,18 +152,26 @@ actions:
   - action_navigate
   - action_terrain
 
-  - action_show_panel
-
   - action_follow
 
+  - action_close_panel
+  - action_show_panel
+
+  - action_next_spectrometry_graph
+  
   - action_add_waypoint
   - action_remove_waypoint
   - action_undo_waypoint
 
   - action_start_egress
-  - action_next_egress
-  - action_repeat_egress
+  - action_next_egress_step
+  - action_repeat_egress_step
   - action_exit_egress
+
+
+checkpoints:
+  - checkpoint_egress_started
+  - checkpoint_egress_ended 
 
 
 session_config:

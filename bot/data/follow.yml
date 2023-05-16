@@ -4,10 +4,19 @@ nlu:
 
 - intent: follow
   examples: |
+    - follow
     - follow me
-    - [dont](switch:off) follow me
     - [start](switch:on) following me
-    - [stop](switch:off) following me
+    - bring panel with me
+    - bring this panel with me
+    - [cancel](switch:off) follow me
+    - [cancel](switch:off) following me
+    - [dont](switch:off) follow me
+    - [stop](switch:off) following
+    - [leave](switch:off) the panel here
+    - [leave](switch:off) panel here
+    - [leave](switch:off) this panel here
+
 
 stories:
 - story: follow panel

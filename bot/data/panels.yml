@@ -2,6 +2,13 @@ version: '3.1'
 
 nlu:
 
+- intent: close_panel
+  examples: |
+    - hide panel
+    - dismiss panel
+    - close the panel
+    - close this panel
+
 - intent: show_vitals
   examples: |
     - [show](switch:on) me my [vitals](panel)
@@ -18,10 +25,16 @@ nlu:
 
 - intent: show_spectrometry
   examples: |
-    - [show](switch:on) the [spectrometry](panel) graphs
+    - [show](switch:on) the [spectrometry](panel) data
     - [open](switch:on) [spectrometry](panel) window
+    - [open](switch:on) the [spectrometry](panel) menu
+    - [pull up](switch:on) [spectrometry](panel)
     - [hide](switch:off) the [spectrometry](panel) panel
-    - [close](switch:off) [spectrometry](panel)
+    - [close](switch:off) [spectrometry](panel) menu
+    - [close](switch:off) [graph](panel:spectrometry)
+    - [dismiss](switch:off) [spectrometry](panel) analysis
+    - [hide](switch:off) [spectrometry](panel) viewer
+
 
 - intent: show_warnings
   examples: |
@@ -64,6 +77,12 @@ nlu:
 
 
 stories:
+- story: close panel in view
+  steps:
+  - intent: close_panel
+  - action: action_close_panel
+  - action: action_restart
+
 - story: toggling a panel
   steps:
   - or:
