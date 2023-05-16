@@ -57,17 +57,17 @@ class DigitalAssistant(Namespace):
     def on_stream_audio(self, audio_data):
         with self.lock:
             # Feeding in audio stream
-            self.assistant_controller.feed_audio_stream(audio_data)         
+            self.assistant_controller.feed_audio_stream(audio_data) 
         
     def on_trial(self, data):
         write_output(f'received trial: {data}')
 
     def bg_responding_task(self):
         # READ BUFFER AND EMIT AS NEEDED
-        counter = 0
+        # counter = 0
         while True:
             socketio.sleep(0.01)
-            counter += 1
+            # counter += 1
             with self.lock:
                 if self.assistant_controller.is_awake:
                     # write_output(f'is awake {counter}: {self.assistant_controller.is_awake}', end='\r')
@@ -78,7 +78,7 @@ class DigitalAssistant(Namespace):
                     wakeUpWordDetected =\
                         self.assistant_controller.is_wake_word_detected()
                     # write_output(f'took {time.time() - start}', end='\r')
-                    if wakeUpWordDetected and not self.assistant_controller.is_awake:
+                    if wakeUpWordDetected:
                         write_output("detected wakeup word")
                         socketio.emit('wake_up')    
                         self.assistant_controller.is_awake = True
@@ -92,6 +92,7 @@ class DigitalAssistant(Namespace):
         write_output(f'\nUser: {stt_res}')
         socketio.emit('stt_response', stt_res)
     
+        # TODO check logic of is_awake
         is_procedural_step = self.assistant_controller.process_if_procedural_step()
         if is_procedural_step:
             return
