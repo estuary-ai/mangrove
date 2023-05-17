@@ -2,59 +2,52 @@
     ```
     {
         target: 'Panel',
-        action: 'set',
+        action: (open/close),
         additionalInfo: [
-            panel (vitals/suit/spectrometry/warnings/cautions),
-            switch (on/off)
+            panel (vitals/suit/spectrometry/warnings/cautions)
         ]
     }
     ```
-    - if switch == 'on' then show 'panel' panel
-    - if switch == 'off' then hide 'panel' panel
+    - if action == 'open' then show 'panel' panel
+    - if action == 'close' then hide 'panel' panel
 
 - Show/Hide Long-Distance Navigation (3D map):
     ```
     {
-        target: 'Navigation',
-        action: 'set',
-        additionalInfo: [
-            switch (on/off)
-        ]
+        target: 'LongRangeNavigation',
+        action: (open/close),
+        additionalInfo: []
     }
     ```
-    - if switch == 'on' then show long-range navigation
-    - if switch == 'off' then hide long-range navigation
+    - if action == 'open' then show long-range navigation
+    - if action == 'close' then hide long-range navigation
 
 - Enable/Disable short-range navigation (terrain markers)
     ```
     {
         target: 'ShortRangeNavigation',
-        action: 'set',
-        additionalInfo: [
-            switch (on/off)
-        ]
+        action: (enable/disable),
+        additionalInfo: []
     }
     ```
-    - if switch == 'on' then show short-range navigation
-    - if switch == 'off' then hide short-range navigation
+    - if action == 'enable' then show short-range navigation
+    - if action == 'disable' then hide short-range navigation
 
 - Open/Close short-range navigation settings
     ```
     {
-        target: 'ShortRangeNavigationSettings',
-        action: 'set',
-        additionalInfo: [
-            switch (on/off)
-        ]
+        target: 'ShortRangeNavigation',
+        action: (open/close),
+        additionalInfo: []
     }
     ```
-    - if switch == 'on' then show short-range navigation settings
-    - if switch == 'off' then hide short-range navigation settings
+    - if action == 'open' then show short-range navigation settings
+    - if action == 'close' then hide short-range navigation settings
 
 - Navigate to a point
     ```
     {
-        target: 'Navigation',
+        target: 'Breadcrumb',
         action: 'navigate',
         additionalInfo: [
             point (home/closest/a/b/c/d/e/f/g/h/i/j)

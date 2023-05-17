@@ -54,11 +54,13 @@ class ActionNavigation(Action):
 
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
             switch_ = 'on'
-            text='Opening up the navigation menu for you'
+            action = 'open'
+            text='Opening up the long range navigation menu for you'
         else:
-            text='Closing the navigation menu for you'
+            action = 'close'
+            text='Closing the long range navigation menu for you'
 
-        cmd = { 'target': 'Navigation', 'action': 'set', 'additionalInfo': [switch_] }
+        cmd = { 'target': 'LongRangeNavigation', 'action': action, 'additionalInfo': [] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -74,11 +76,13 @@ class ActionShortRangeNavigation(Action):
 
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
             switch_ = 'on'
+            action = 'enable'
             text='Showing short range navigation markers'
         else:
+            action = 'disable'
             text='Hiding short range navigation markers'
 
-        cmd = { 'target': 'ShortRangeNavigation', 'action': 'set', 'additionalInfo': [switch_] }
+        cmd = { 'target': 'ShortRangeNavigation', 'action': action, 'additionalInfo': [] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -94,11 +98,13 @@ class ActionShortRangeNavSettings(Action):
 
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
             switch_ = 'on'
+            action = 'open'
             text='Opening up the short range navigation settings'
         else:
+            action = 'close'
             text='Closing the short range navigation settings'
 
-        cmd = { 'target': 'ShortRangeNavigationSettings', 'action': 'set', 'additionalInfo': [switch_] }
+        cmd = { 'target': 'ShortRangeNavigation', 'action': action, 'additionalInfo': [] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -119,7 +125,7 @@ class ActionNavigate(Action):
         else:
             text = 'Calculating path to point %s' % point
 
-        cmd = { 'target': 'Navigation', 'action': 'navigate', 'additionalInfo': [point] }
+        cmd = { 'target': 'Breadcrumb', 'action': 'navigate', 'additionalInfo': [point] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
