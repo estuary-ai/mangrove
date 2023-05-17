@@ -2,6 +2,21 @@ version: '3.1'
 
 nlu:
 
+- intent: panel_follow
+  examples: |
+    - follow
+    - follow me
+    - [start](switch:on) following me
+    - bring panel with me
+    - bring this panel with me
+    - [cancel](switch:off) follow me
+    - [cancel](switch:off) following me
+    - [dont](switch:off) follow me
+    - [stop](switch:off) following
+    - [leave](switch:off) the panel here
+    - [leave](switch:off) panel here
+    - [leave](switch:off) this panel here
+
 - intent: close_panel
   examples: |
     - hide panel
@@ -29,10 +44,20 @@ nlu:
 
 - intent: show_suit
   examples: |    
-    - [show](switch:on) [suit](panel) window
-    - [open](switch:on) [suit](panel) panel
+    - [show](switch:on) [suit](panel) panel
+    - [open](switch:on) [suits](panel:suit)
+    - [open](switch:on) [x EMU](panel:suit) window
+    - [show](switch:on) me my [suit](panel) info
+    - [pull up](switch:on) [suits](panel:suit) information
+    - [pull up](switch:on) [x EMU](panel:suit) statistics
+    - how is my [suit](panel)
+    - how is my [x EMU](panel:suit)
     - [hide](switch:off) [suit](panel) panel
+    - [hide](switch:off) [xEMU](panel:suit) information
+    - [dismiss](switch:off) [suit](panel) stats
+    - [dismiss](switch:off) [x EMU](panel:suit) statistics
     - [close](switch:off) [suit](panel) window
+    - [close](switch:off) [x EMU](panel:suit) info
 
 - intent: show_spectrometry
   examples: |
@@ -87,6 +112,12 @@ nlu:
 
 
 stories:
+- story: Make a panel follow
+  steps:
+  - intent: panel_follow
+  - action: action_panel_follow
+  - action: action_restart
+
 - story: close panel in view
   steps:
   - intent: close_panel

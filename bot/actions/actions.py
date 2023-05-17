@@ -8,6 +8,35 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted, SlotSet
 
+class ActionEvaTime(Action):
+
+    def name(self) -> Text:
+        return 'action_eva_time'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        cmd = { 'target': 'Time', 'action': 'open', 'additionalInfo': [] }
+
+        dispatcher.utter_message(custom=cmd)
+        return [Restarted()]
+
+class ActionPanelFollow(Action):
+
+    def name(self) -> Text:
+        return 'action_panel_follow'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot('switch_')
+
+        if switch_ is None or switch_ == 'on' or switch_ != 'off':
+            switch_ = 'on'
+
+        cmd = { 'target': 'Panel', 'action': 'follow', 'additionalInfo': [switch_] }
+
+        dispatcher.utter_message(custom=cmd)
+        return [Restarted()]
+
+
 class ActionClosePanel(Action):
 
     def name(self) -> Text:
@@ -204,6 +233,40 @@ class ActionUndoWaypoint(Action):
         text='Undoing last waypoint'
 
         cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['last'] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
+        return [Restarted()]
+
+class ActionClearAllWaypoints(Action):
+
+    def name(self) -> Text:
+        return 'action_clear_all_waypoints'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        text='Clearing all waypoints'
+
+        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['all'] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
+        return [Restarted()]
+
+class ActionShowWaypoints(Action):
+    
+    def name(self) -> Text:
+        return 'action_show_waypoints'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot('switch_')
+
+        if switch_ is None or switch_ == 'on' or switch_ != 'off':
+            switch_ = 'on'
+            action = 'show'
+            text='Displaying waypoints'
+        else:
+            action = 'hide'
+            text='Hiding waypoints'
+
+        cmd = { 'target': 'Waypoint', 'action': action, 'additionalInfo': [] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]

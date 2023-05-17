@@ -1,0 +1,23 @@
+version: "3.1"
+
+nlu:
+
+- intent: eva_time
+  examples: |
+    - how long has it been
+    - what is my eva time
+    - show me my eva time
+    - show me time elapsed
+    - show me elapsed time
+    - what time has elapsed
+    - what is the elapsed time
+    - pull up time elapsed
+    - pull up elapsed time
+
+
+stories:
+- story: Query EVA time elapsed
+  steps:
+  - intent: eva_time
+  - action: action_eva_time
+  - action: action_restart

@@ -1,0 +1,51 @@
+version: '3.1'
+
+
+nlu:
+
+- intent: navigate_home
+  examples: |
+    - take me back [home](feature)
+    - navigate back to [home](feature)
+    - show me the way [home](feature)
+    - display the way to the [starting point](feature:home)
+    - show me the trail back to the [initial position](feature:home)
+
+- intent: navigate_closest
+  examples: |
+    - take me to the [closest](feature) point of interest
+    - navigate to the [nearest](feature:closest) waypoint
+    - show me the way to the [closest](feature) point of interest
+    - display the way to the [nearest](feature:closest) marker
+    - show me the trail to the [closest](feature) waypoint of interest
+
+- intent: navigate_point
+  examples: |
+    - take me to point of interest [a](feature)
+    - take me to [b](feature)
+    - navigate to waypoint [c](feature)
+    - navigate to [d](feature)
+    - show me the way to point of interest [e](feature)
+    - show me the way to [f](feature)
+    - display the way to marker [g](feature)
+    - display the way to marker [h](feature)
+    - show me the trail to waypoint of interest [i](feature)
+    - show me the trail to [j](feature)
+
+# - intent: show_breadcrumbs
+#   examples: |
+#     - 
+
+# - intent: show_path
+#   examples: |
+
+
+
+stories:
+- story: navigate to a point
+  steps:
+  - or:
+    - intent: navigate_home
+    - intent: navigate_closest
+    - intent: navigate_point
+  - action: action_navigate

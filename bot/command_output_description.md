@@ -1,3 +1,16 @@
+- Make a panel follow your view:
+    ```
+    {
+        target: 'Panel',
+        action: 'follow',
+        additionalInfo: [
+            switch (on/off)
+        ]
+    }
+    ```
+    - if switch == 'on' then set the panel under gaze to follow the user's field of view
+    - if switch == 'off' then set the panel under gaze to remain static in the world
+
 - Close panel under observation:
     ```
     {
@@ -32,7 +45,7 @@
     - if action == 'open' then show long-range navigation
     - if action == 'close' then hide long-range navigation
 
-- Enable/Disable short-range navigation (terrain markers)
+- Enable/Disable short-range navigation (terrain markers):
     ```
     {
         target: 'ShortRangeNavigation',
@@ -43,7 +56,7 @@
     - if action == 'enable' then show short-range navigation
     - if action == 'disable' then hide short-range navigation
 
-- Open/Close short-range navigation settings
+- Open/Close short-range navigation settings:
     ```
     {
         target: 'ShortRangeNavigation',
@@ -54,7 +67,7 @@
     - if action == 'open' then show short-range navigation settings
     - if action == 'close' then hide short-range navigation settings
 
-- Navigate to a point
+- Navigate to a point:
     ```
     {
         target: 'Breadcrumb',
@@ -78,7 +91,7 @@
     ```
     - switch to the next spectrometry sample's graph in the list
 
-- Add Waypoint
+- Add Waypoint:
     ```
     {
         target: 'Waypoint',
@@ -91,7 +104,7 @@
     - if waypoint_type == 'poi' then place a point of interest waypoint at the location pointed to on the map
     - if waypoint_type == 'warning' then place a warning waypoint at the location pointed to on the map
 
-- Remove Waypoint/Undo placing last Waypoint
+- Remove Waypoint/Undo placing last Waypoint/Clear all Waypoints:
     ```
     {
         target: 'Waypoint',
@@ -103,8 +116,20 @@
     ```
     - if selection_type == 'selected' remove the waypoint pointed to on the map
     - if selection_type == 'last' remove the latest placed waypoint (i.e. undo placing waypoint)
+    - if selection_type == 'all' remove all the waypoints
 
-- Read out Vitals information
+- Show/Hide Waypoints:
+    ```
+    {
+        target: 'Waypoint',
+        action: (show/hide),
+        additionalInfo: []
+    }
+    ```
+    - if action == 'show' then show waypoints in the field
+    - if action == 'hide' then hide waypoints in the field
+
+- Read out Vitals information:
     ```
     {
         target: 'Vitals',

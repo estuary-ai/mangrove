@@ -27,6 +27,24 @@ nlu:
     - clear the most recent waypoint
     - undo addition of the previous marker
 
+- intent: clear_all_waypoints
+  examples: |
+    - clear all waypoints
+    - clear all markers
+    - delete all waypoints
+    - remove all markers
+
+- intent: show_waypoints
+  examples: |
+    - [show](switch:on) all waypoints
+    - [enable](switch:on) waypoints
+    - [pull up](switch:on) all waypoints
+    - [display](switch:on) waypoints
+    - [hide](switch:off) all waypoints
+    - [disable](switch:off) waypoints
+    - [collapse](switch:off) all waypoints
+
+
 stories:
 - story: Add a new waypoint
   steps:
@@ -45,3 +63,16 @@ stories:
   - intent: undo_waypoint
   - action: action_undo_waypoint
   - action: action_restart
+
+- story: Clear all waypoints
+  steps:
+  - intent: clear_all_waypoints
+  - action: action_clear_all_waypoints
+  - action: action_restart
+
+- story: Show/hide waypoints
+  steps:
+  - intent: show_waypoints
+  - action: action_show_waypoints
+  - action: action_restart
+

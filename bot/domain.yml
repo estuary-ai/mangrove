@@ -7,11 +7,9 @@ intents:
   - deny
   - capture_audio
 
-  - follow
+  - eva_time
 
-  - map
-
-  - show_navigation
+  - long_range_navigation
   - short_range_navigation
   - short_range_nav_settings
   - navigate_home
@@ -19,6 +17,7 @@ intents:
   - navigate_point
   - terrain
 
+  - panel_follow
   - close_panel
   - show_panel
   - show_vitals
@@ -44,6 +43,8 @@ intents:
   - add_waypoint
   - remove_waypoint
   - undo_waypoint
+  - clear_all_waypoints
+  - show_waypoints
 
   - start_egress
   - current_egress_step_number
@@ -166,8 +167,9 @@ actions:
   - action_navigate
   - action_terrain
 
-  - action_follow
+  - action_eva_time
 
+  - action_panel_follow
   - action_close_panel
   - action_show_panel
 
@@ -178,6 +180,8 @@ actions:
   - action_add_waypoint
   - action_remove_waypoint
   - action_undo_waypoint
+  - action_clear_all_waypoints
+  - action_show_waypoints
 
   - action_start_egress
   - action_current_egress_step_number
