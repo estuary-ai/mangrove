@@ -15,7 +15,7 @@ class ActionStartEgress(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        text = 'Starting egress procedure checklist'
+        text = 'Opening egress procedure checklist'
 
         cmd = { 'target': 'UIA', 'action': 'start', 'additionalInfo': [] }
 
