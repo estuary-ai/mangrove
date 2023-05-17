@@ -1,3 +1,13 @@
+- Open EVA time:
+    ```
+    {
+        target: 'Time',
+        action: 'open',
+        additionalInfo: []
+    }
+    ```
+    - Displays the EVA elapsed time
+
 - Make a panel follow your view:
     ```
     {
@@ -110,7 +120,7 @@
         target: 'Waypoint',
         action: 'remove',
         additionalInfo: [
-            selection_type (selected/last)
+            selection_type (selected/last/all)
         ]
     }
     ```
