@@ -9,7 +9,7 @@ from .procedures import EgressProcedure
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230516-204842.tar.gz',
+                 model_path='models/rasa-model/20230516-224419.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         self.egress_procedure = EgressProcedure()
@@ -53,6 +53,20 @@ class BotController:
                         # open egress checklist
                         commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
                         # set world state to egress in progress
+                    elif command['action'] == 'current_step_number':
+                        cur_step = self.egress_procedure.get_current_step()
+                        command['additionalInfo'] = [cur_step.stepId]
+                        texts.append('You\'re on step number %s' % cur_step.stepId)
+                        commands.append(command)
+                    elif command['action'] == 'current_step':
+                        cur_step = self.egress_procedure.get_current_step()
+                        if cur_step is None:
+                            command['additionalInfo'] = ['-1', 'null']
+                            texts.append('Completed all steps in procedure')
+                        else:
+                            command['additionalInfo'] = [cur_step.stepId, cur_step.target]
+                            texts.append(next_step.text)
+                        commands.append(command)    
                     elif command['action'] == 'next_step':
                         next_step = self.egress_procedure.get_next_step()
                         if next_step is None:
@@ -62,6 +76,18 @@ class BotController:
                             command['additionalInfo'] = [next_step.stepId, next_step.target]
                             texts.append(next_step.text)
                         commands.append(command)
+                    elif command['action'] == 'exit':
+                        # stop video stream
+                        # close egress checklist
+                        commands.append({ 'target': 'UIA', 'action': 'close', 'additionalInfo': [] })
+                        # set world state to egress exited
+                    elif command['action'] == 'confirm_completion':
+                        if self.egress_procedure.is_finished():
+                            commands['additionalInfo'] = ['true']
+                            texts.append('All steps of the egress procedure have been completed')
+                        else:
+                            commands['additionalInfo'] = ['false']
+                            texts.append('The egress procedure has not been completed')
                 else:
                     commands.append(command)
         

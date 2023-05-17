@@ -46,27 +46,12 @@ intents:
   - undo_waypoint
 
   - start_egress
+  - current_egress_step_number
+  - current_egress_step
   - next_egress_step
   - repeat_egress_step
   - exit_egress
-
-  # - click
-  # - collapse_alert
-  # - declutter
-  # - exit
-  # - expand_alert
-  # - omw
-  # - place_pin
-  # - read_condition
-  # - roger
-  # - sample_tagging
-  # - select_pin
-  # - set_north
-  # - standby
-  # - take_photo
-  # - toggle_feature
-  # - toggle_follow
-
+  - confirm_egress_completion
 
 entities:
   - panel
@@ -195,9 +180,12 @@ actions:
   - action_undo_waypoint
 
   - action_start_egress
+  - action_current_egress_step_number
+  - action_current_egress_step
   - action_next_egress_step
   - action_repeat_egress_step
   - action_exit_egress
+  - action_confirm_egress_completion
 
 
 checkpoints:

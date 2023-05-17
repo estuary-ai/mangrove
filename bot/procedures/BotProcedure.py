@@ -54,7 +54,7 @@ class BotProcedure:
         return self.get_step(step, substep)
 
     def is_finished(self):
-        return self.cur_step == -1 and self.cur_substep == -1
+        return self.cur_step >= len(self.steps)
 
     def todict(self):
         out = [todict(step) for step in self.steps]
