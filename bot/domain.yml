@@ -29,6 +29,18 @@ intents:
 
   - next_spectrometry_graph
 
+  - read_vitals
+  - read_battery
+  - read_battery_time
+  - read_primary_o2
+  - read_primary_o2_pressure
+  - read_secondary_o2
+  - read_secondary_o2_pressure
+  - read_o2_time
+  - read_heart_rate
+  - read_suit_pressure
+  - read_suit_o2_pressure
+
   - add_waypoint
   - remove_waypoint
   - undo_waypoint
@@ -122,7 +134,24 @@ slots:
     initial_value: "off"
     mappings:
     - type: custom
-  
+
+  vitals_type:
+    type: categorical
+    values:
+    - battery
+    - battery_time
+    - primary_o2
+    - primary_o2_pressure
+    - secondary_o2
+    - secondary_o2_pressure
+    - o2_time
+    - heart_rate
+    - suit_pressure
+    - suit_o2_pressure
+    mappings:
+    - type: from_entity
+      entity: feature
+      intent: read_vitals
 
 responses:
   utter_greet:
@@ -158,6 +187,8 @@ actions:
   - action_show_panel
 
   - action_next_spectrometry_graph
+
+  - action_read_vitals
   
   - action_add_waypoint
   - action_remove_waypoint

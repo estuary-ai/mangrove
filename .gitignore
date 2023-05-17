@@ -16,6 +16,8 @@ debug-and-drafts/res-speech/*.*
 samples/
 res-speech/*.*
 
+bot/models/
+
 debug-and-drafts/web_microphone_websocket
 sample-audio-binary*/*.*
 .fake

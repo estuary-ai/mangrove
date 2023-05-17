@@ -11,10 +11,21 @@ nlu:
 
 - intent: show_vitals
   examples: |
-    - [show](switch:on) me my [vitals](panel)
+    - [show](switch:on) me the [vitals](panel)
     - [open](switch:on) [vitals](panel) panel
+    - [show](switch:on) [life support](panel:vitals)
+    - [open](switch:on) the [life support](panel:vitals) panel
+    - [show](switch:on) me my [vitals](panel)
+    - [pull up](switch:on) vitals
+    - [pull up](switch:on) life support
+    - what are my [vitals](panel)
+    - how are my [vitals](panel) doing
+    - how is my [life support](panel:vitals)
     - [hide](switch:off) [vitals](panel) view
     - [close](switch:off) the [vitals](panel) window
+    - [dismiss](switch:off) [vitals](panel) panel
+    - [hide](switch:off) [life support](panel:vitals)
+    - [dismiss](switch:off) my [life support](panel:vitals)
 
 - intent: show_suit
   examples: |    
@@ -34,7 +45,6 @@ nlu:
     - [close](switch:off) [graph](panel:spectrometry)
     - [dismiss](switch:off) [spectrometry](panel) analysis
     - [hide](switch:off) [spectrometry](panel) viewer
-
 
 - intent: show_warnings
   examples: |
