@@ -14,7 +14,9 @@ from .vad_collector import vad_collector
 class STTController:
     def __init__(self, 
                  sample_rate=16000,
-                 model_path='models/ds-model/deepspeech-0.9.3-models',
+                 model_acoustic_path='models/ds-model/deepspeech-0.9.3-models',
+                #  model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
+                 model_scorer_path='models\ds-model\lm_unopt_senva\kenlm',
                  load_scorer=True,
                  silence_threshold=300,
                  vad_aggressiveness=3,
@@ -25,12 +27,12 @@ class STTController:
         self.verbose=verbose
         self.frame_size = frame_size
         self.SAMPLE_RATE = sample_rate
-        self.model = deepspeech.Model(model_path + ".pbmm")
+        self.model = deepspeech.Model(model_acoustic_path + ".pbmm")
         if load_scorer:
             self._log('Enabling External Scorer.', end='\n')
-            self.model.enableExternalScorer(model_path + ".scorer")
-            self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
-            self.model.setScorerAlphaBeta(*scorer_alpha_beta)
+            self.model.enableExternalScorer(model_scorer_path + ".scorer")
+            # self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
+            # self.model.setScorerAlphaBeta(*scorer_alpha_beta)
             self._log(f"Establishing a beam width of {self.model.beamWidth()}", end='\n')
             
         self.buffer = DataBuffer(self.frame_size)
