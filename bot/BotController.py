@@ -104,3 +104,6 @@ class BotController:
         #         response['commands'][0][key] = str(command[key])
 
         return response
+
+    def process_procedures_if_on(self):
+        pass

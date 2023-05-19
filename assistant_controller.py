@@ -184,6 +184,10 @@ class AssistantController:
         # TODO enclude all types of procedures (i.e UIA Egress Procedure)
         self._process_sample_tagging_if_on()
         
+        return self.bot.process_procedures_if_on()
+
+
+        
     def _process_sample_tagging_if_on(self):
         if self.is_sample_tagging:
             write_output("is sample taggin on..")
