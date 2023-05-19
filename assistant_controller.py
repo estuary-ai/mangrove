@@ -10,7 +10,8 @@ DEFINED_PAUSE_PERIOD=0.5 # in seconds pause between stt responses
 
 class AssistantController:
     
-    def __init__(self, verbose=True, shutdown_bot=True):
+    def __init__(self, verbose=True, shutdown_bot=True, name='SENVA'):
+        self.name = name
         self.verbose = verbose
         self.wakeUpWordDetector = WakeUpVoiceDetector()
         write_output("Initialized WakeUpWordDetector")
@@ -45,7 +46,7 @@ class AssistantController:
         self.initiate_audio_stream()
         bot_voice_bytes = self.read_text(
             "Hello, AI server connection is succesful. "
-            "This is Your assistant, Senva.",
+            f"This is Your assistant, {self.name}.",
             plain_text=True
         )
         return bot_voice_bytes
@@ -76,25 +77,19 @@ class AssistantController:
             raise Exception("Only dict/json and str are supported types")
         return audio_bytes
     
-    def feed_audio_stream(self, audio_data):
-        def _feed_audio_stream_wakeup(audio_packet):
-            self.wakeUpWordDetector.feed_audio(audio_packet)
-
-        def _feed_audio_stream_command(audio_packet):
+    def feed_audio_stream(self, audio_data):        
+        audio_packet = AudioPacket(audio_data)
+        if self.is_awake:
             if self.is_command_buffer_empty():
                 self.initiate_audio_stream()
                 write_output("recieving first stream of audio command")
                 
             self.stt_res_buffer = None
             self.command_audio_buffer += audio_packet
-            self.session_audio_buffer += audio_packet
-            self.stt.process_audio_stream(audio_packet)
-        
-        audio_packet = AudioPacket(audio_data)
-        if self.is_awake:
-            _feed_audio_stream_command(audio_packet)
+            self.session_audio_buffer += audio_packet # TODO note that this includes is_awake only
+            self.stt.feed(audio_packet)
         else:
-            _feed_audio_stream_wakeup(audio_packet)
+            self.wakeUpWordDetector.feed_audio(audio_packet)
             
     def is_wake_word_detected(self):
         return self.wakeUpWordDetector.process_audio_stream()
