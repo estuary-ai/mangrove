@@ -159,21 +159,23 @@ class ActionNavigate(Action):
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
 
-class ActionMap(Action):
-    
+class ActionShowBreadcrumbs(Action):
+
     def name(self) -> Text:
-        return 'action_map'
+        return 'action_show_breadcrumbs'
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         switch_ = tracker.get_slot('switch_')
 
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
             switch_ = 'on'
-            text='Opening up the map for you'
+            action = 'show'
+            text='Displaying the breadcrumb trail'
         else:
-            text='Closing the map'
+            action = 'hide'
+            text='Hiding the breadcrumb trail'
 
-        cmd = { 'target': 'Map', 'action': 'set', 'additionalInfo': [switch_] }
+        cmd = { 'target': 'Breadcrumb', 'action': action, 'additionalInfo': [] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -200,7 +202,7 @@ class ActionAddWaypoint(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         waypoint_type = tracker.get_slot('waypoint_type')
 
-        if waypoint_type is None or waypoint_type == 'poi' or waypoint_type != 'warning':
+        if waypoint_type is None or waypoint_type == 'poi' or waypoint_type != 'hazard':
             waypoint_type = 'poi'
             text='Adding a point of interest waypoint'
         else:
@@ -284,5 +286,3 @@ class ActionReadVitals(Action):
 
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]
-
-

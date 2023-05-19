@@ -20,7 +20,7 @@ nlu:
     - [bring up](switch:on) the map
     - [show](switch:on) me the map
     - [close](switch:off) the long range navigation menu
-    - [close](switch:off) [long](feature:long-range) range navigation
+    - [close](switch:off) [long range](feature:long-range) navigation
     - [hide](switch:off) the map
     - [close](switch:off) the map
     - [hide](switch:off) map menu
@@ -28,8 +28,10 @@ nlu:
 
 - intent: short_range_navigation
   examples: |
-    - [enable](switch:on) [short](feature:short-range) range navigation
-    - [disable](switch:off) [short](feature:short-range) range navigation
+    - [enable](switch:on) [short range](feature:short-range) navigation
+    - [show](switch:on) [short range](feature:short-range) navigation
+    - [disable](switch:off) [short range](feature:short-range) navigation
+    - [hide](switch:off) [short range](feature:short-range) navigation
 
 - intent: short_range_nav_settings
   examples: |
@@ -38,6 +40,24 @@ nlu:
     - [close](switch:off) [short](feature:short-range) range navigation settings
     - [hide](switch:off) [short](feature:short-range) range navigation settings
 
+- intent: set_long_nav_mode
+  examples: |
+    - set map mode to [move](feature:move)
+    - set long range navigation to [move](feature:move) mode
+    - switch long range nav to [move](feature:move) mode
+    - [move](feature:move) map
+    - switch map to [area of interest](feature:poi) mode
+    - set long range nav mode to add [poi](feature:poi) waypoints
+    - set mode of long range nav to [point of interest](feature:poi)
+    - switch long range navigation mode to [area of interest](feature:poi)
+    - switch map to [area of interest](feature:poi) mode
+    - set long range nav mode to add [poi](feature:poi) waypoints
+    - set mode of long range nav to [point of interest](feature:poi)
+    - switch long range navigation mode to [area of interest](feature:poi)
+    - switch map to [hazard](feature:hazard) mode
+    - set long range nav mode to add [warning](feature:hazard) waypoints
+    - set mode of long range nav to [hazard](feature:hazard)
+    - switch long range navigation mode to [warning](feature:hazard)
 
 stories:
 - story: displaying navigation menu
