@@ -141,7 +141,7 @@ class AssistantController:
         write_output('SENVA: ' + str(bot_res))  
         bot_texts = bot_res.get('text')
         voice_bytes = None
-        if bot_texts is not None:
+        if bot_texts:
             voice_bytes = self.tts.get_plain_text_read_bytes(
                 ' '.join(bot_texts)
             )
