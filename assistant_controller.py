@@ -26,7 +26,7 @@ class AssistantController:
             self.bot = BotController()
             write_output("Initialized Bot Controller")
         
-        self.tts = TTSController()    
+        self.tts = TTSController(engine="tts")    
         write_output("Initialized TTS Controller")
         
         # Debuggers and Auxilarly variables

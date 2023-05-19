@@ -15,8 +15,8 @@ class WakeUpVoiceDetector(Thread):
                 ],
             keyword_paths = [
                 [
-                    "models\pvprocupine\0\Traveller_en_windows_v2_2_0\Traveller_en_windows_v2_2_0.ppn",
-                    "models\pvprocupine\0\حبيبي_ar_windows_v2_2_0\حبيبي_ar_windows_v2_2_0.ppn"
+                    "models/pvprocupine/%s/Traveller_en_windows_v2_2_0/Traveller_en_windows_v2_2_0.ppn",
+                    "models/pvprocupine/%s/habibi_en_windows_v2_2_0/habibi_en_windows_v2_2_0.ppn"
                 ]
             ],
             sensitivities=None):
