@@ -43,7 +43,7 @@ class DigitalAssistant(Namespace):
         if bot_voice_bytes:
             write_output('emmiting bot_voice')
             socketio.emit('bot_voice', bot_voice_bytes)
-    
+            
     def on_disconnect(self):
         write_output('client disconnected\n')
         with self.lock:
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # TODO use digital_assistant_name to set introduction msg
-    digital_assistant_name = 'Habibi'
+    digital_assistant_name = 'Traveller'
     digital_assistant = DigitalAssistant('/', assistant_name=digital_assistant_name)
     socketio.on_namespace(digital_assistant)    
 

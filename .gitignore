@@ -16,7 +16,8 @@ debug-and-drafts/res-speech/*.*
 samples/
 res-speech/*.*
 
-bot/models/
+models/ds-model/*.zip
+
 
 debug-and-drafts/web_microphone_websocket
 sample-audio-binary*/*.*
@@ -24,3 +25,5 @@ sample-audio-binary*/*.*
 DeepSpeech
 tmp
 *.log
+*.txt
+*.zip

@@ -1,7 +1,6 @@
 import os
 import time
 import pyttsx3
-from TTS.api import TTS
 import inflect
 import math
 from decimal import Decimal
@@ -22,6 +21,7 @@ class TTSController:
             # write_output(f'Chosen: {voices[voice_id].id}')
             self.engine.setProperty('voice', voices[voice_id].id)
         elif engine == "tts":
+            from TTS.api import TTS
             temp = TTS.list_models()
             # breakpoint()
             self.engine = TTS(temp[0])
