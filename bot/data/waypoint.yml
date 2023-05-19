@@ -7,10 +7,16 @@ nlu:
     - add a new waypoint
     - insert a waypoint at this point
     - create a marker where i'm looking
-    - drop the [warning](feature) waypoint where i'm looking
+    - assign a pin here
     - drop the [point of interest](feature:poi) waypoint where i'm looking
-    - add a new [warning](feature) marker here
     - add a [POI](feature:poi) marker here
+    - place a [point of interest](feature:poi) where i'm gazing
+    - assign [interest pin](feature:poi) at this point
+    - drop the [warning](feature:hazard) waypoint where i'm looking
+    - add a new [warning](feature:hazard) marker here
+    - insert a [hazard](feature:hazard) waypoint at the point i'm gazing
+    - place [hazard](feature:hazard) marker here
+    - position a [warning](feature:hazard) pin at this point
 
 - intent: remove_waypoint
   examples: |

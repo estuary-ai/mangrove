@@ -15,7 +15,7 @@ intents:
   - navigate_home
   - navigate_closest
   - navigate_point
-  - terrain
+  - show_breadcrumbs
 
   - panel_follow
   - close_panel
@@ -159,13 +159,11 @@ responses:
   - text: "Please try again."
 
 actions:
-  - action_map
-
   - action_show_navigation
   - action_short_range_navigation
   - action_short_nav_settings
   - action_navigate
-  - action_terrain
+  - action_show_breadcrumbs
 
   - action_eva_time
 
