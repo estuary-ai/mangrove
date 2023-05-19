@@ -13,7 +13,6 @@ class TTSController:
         # ENGINE INIT START
         # TODO reinitialize engine
         self.engine_type = engine
-        breakpoint()
         if engine == "pyttsx3":
             self.engine = pyttsx3.init()
             self.engine.setProperty('rate', voice_rate)
