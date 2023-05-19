@@ -24,6 +24,7 @@ class TTSController:
         elif engine == "tts":
             temp = TTS.list_models()
             # breakpoint()
+            # self.engine = TTS("voice_conversion_models/multilingual/vctk/freevc24")
             self.engine = TTS(temp[0])
         # ENGINE INIT END
         
