@@ -28,10 +28,10 @@ socketio = SocketIO(
 #     # # TODO reset anything   
         
 class DigitalAssistant(Namespace):
-    def __init__(self, namespace):
+    def __init__(self, namespace, assistant_name='SENVA'):
         super()
         self.namespace = namespace
-        self.assistant_controller = AssistantController()
+        self.assistant_controller = AssistantController(name=assistant_name)
         self.lock = Lock()        
         
         self.responding_task = socketio.start_background_task(self.bg_responding_task)
@@ -135,12 +135,22 @@ if __name__ == "__main__":
     parser.add_argument('--port', dest='port', type=int, default=4000, help='Port number')
     args = parser.parse_args()
 
-    digital_assistant = DigitalAssistant('/')
+    # TODO use digital_assistant_name to set introduction msg
+    digital_assistant_name = 'Habibi'
+    digital_assistant = DigitalAssistant('/', assistant_name=digital_assistant_name)
     socketio.on_namespace(digital_assistant)    
 
     if args.cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-    write_output(f'Running on port {args.port}')
+        
+    # host_ip_address = socket.gethostbyname(socket.gethostname())
+    write_output(f'\nYour Digital Assistant {digital_assistant_name} running on port {args.port}')
+    write_output('Hints:')
+    write_output('1. Run "ipconfig" in your terminal and use Wireless LAN adapter Wi-Fi IPv4 Address')
+    write_output('2. Ensure your client is connected to the same WIFI connection')
+    write_output('3. Ensure firewall shields are down in this particular network type with python')
+    write_output('4. Ensure your client microphone is not used by any other services such as windows speech-to-text api')
+    write_output('Fight On!')
     
     socketio.run(
         app, host='0.0.0.0',
