@@ -10,7 +10,7 @@ DEFINED_PAUSE_PERIOD=0.5 # in seconds pause between stt responses
 
 class AssistantController:
     
-    def __init__(self, verbose=True, shutdown_bot=True):
+    def __init__(self, verbose=True, shutdown_bot=False):
         self.verbose = verbose
         self.wakeUpWordDetector = WakeUpVoiceDetector()
         write_output("Initialized WakeUpWordDetector")
@@ -134,6 +134,7 @@ class AssistantController:
 
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
         if self.bot is None:
+            breakpoint()
             return None, None
         bot_res = self.bot.send_user_message(text)
         write_output('SENVA: ' + str(bot_res))  

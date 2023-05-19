@@ -123,6 +123,7 @@ class DigitalAssistant(Namespace):
             write_output("emitting bot_response")
             socketio.emit('bot_response', bot_res)
         else:
+            write_output('shutting down bot')
             socketio.emit('bot_repsonse', {
                 'msg': 'bot is shutdown' 
             })
