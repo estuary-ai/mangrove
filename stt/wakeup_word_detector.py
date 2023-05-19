@@ -11,15 +11,13 @@ class WakeUpVoiceDetector(Thread):
             self,
             access_key = 
                 [
-                    "9DG6ZfAltia6TEuOiU/IImtAsttIfCeyxpks3SuNVbOY8LWkbOSjHQ==",
-                    "ABrqFVk5qLvuLQjkGQx+fWTQwRWAt57Yc2BI0JbzZ4odNwe6JXXiZQ=="
+                    "fBji1XWFPwYfoO9yl7H8fqvp2mNm6S1lpliku/u74Jfb2XuiIZjciQ=="
                 ],
             keyword_paths = [
                 [
-                    "models/pvprocupine/%s/sen-va_en_windows_v2_2_0/sen-va_en_windows_v2_2_0.ppn",
-                    "models/pvprocupine/%s/Hello-Eva_en_windows_v2_2_0/Hello-Eva_en_windows_v2_2_0.ppn"
-                ],
-                ["models/pvprocupine/%s/sen-va_en_linux_v2_2_0/sen-va_en_linux_v2_2_0.ppn"]
+                    "models\pvprocupine\0\Traveller_en_windows_v2_2_0\Traveller_en_windows_v2_2_0.ppn",
+                    "models\pvprocupine\0\حبيبي_ar_windows_v2_2_0\حبيبي_ar_windows_v2_2_0.ppn"
+                ]
             ],
             sensitivities=None):
         super(WakeUpVoiceDetector, self).__init__()
