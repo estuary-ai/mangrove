@@ -135,6 +135,7 @@ class AssistantController:
 
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
         if self.bot is None:
+            breakpoint()
             return None, None
         bot_res = self.bot.send_user_message(text)
         write_output('SENVA: ' + str(bot_res))  
