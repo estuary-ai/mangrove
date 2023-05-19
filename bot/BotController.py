@@ -7,7 +7,7 @@ from rasa.utils.endpoints import EndpointConfig
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230513-234656.tar.gz',
+                 model_path='models/rasa-model/20230514-225732.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         print("Loading RASA Agent...")
@@ -33,7 +33,9 @@ class BotController:
         #Deciphering RASA's response
         texts = []
         commands = []
-        
+
+        print(commands)
+
         for message in messages:
             if 'text' in message:
                 text = message['text']
@@ -44,11 +46,11 @@ class BotController:
         #Compiling responses
         response = {}
         response['text'] = texts
-        response['commands'] = [{}]
+        response['commands'] = commands
 
         # Flatten commands
-        for command in commands:
-            for key in command.keys():
-                response['commands'][0][key] = str(command[key])
+        # for command in commands:
+        #     for key in command.keys():
+        #         response['commands'][0][key] = str(command[key])
 
         return response

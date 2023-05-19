@@ -13,13 +13,11 @@ nlu:
     - how do I reach there?
     - [hide](switch:off) navigation menu
     - [close](switch:off) the navigation menu
-    - [close](switch:off) the pathfinder
     - [show](switch:on) me the path
     - which path do I take?
     - [show](switch:on) me all the paths
     - which route should I take?
     - navigate me there using any available path
-    
     - [open](switch:on) [long](feature:long-range) range navigation
     - [close](switch:off) [long](feature:long-range) range navigation
 
@@ -31,7 +29,9 @@ nlu:
 - intent: short_range_nav_settings
   examples: |
     - [open](switch:on) [short](feature:short-range) range navigation settings
+    - [show](switch:on) [short](feature:short-range) range navigation settings
     - [close](switch:off) [short](feature:short-range) range navigation settings
+    - [hide](switch:off) [short](feature:short-range) range navigation settings
 
 
 
@@ -39,18 +39,17 @@ stories:
 - story: displaying navigation menu
   steps:
   - intent: navigation
-  - action: utter_navigation
-  - action: action_navigation_text
+  - action: action_navigation
   - action: action_restart
 
 - story: enabling short range navigation
   steps:
   - intent: short_range_navigation
-  - action: utter_short_range_navigation
+  - action: action_short_range_navigation
   - action: action_restart
 
 - story: open short range navigation settings
   steps:
   - intent: short_range_nav_settings
-  - action: utter_short_nav_settings
+  - action: action_short_nav_settings
   - action: action_restart

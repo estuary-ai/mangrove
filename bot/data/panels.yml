@@ -1,0 +1,76 @@
+version: '3.1'
+
+nlu:
+
+- intent: show_vitals
+  examples: |
+    - [show](switch:on) me my [vitals](panel)
+    - [open](switch:on) [vitals](panel) panel
+    - [hide](switch:off) [vitals](panel) view
+    - [close](switch:off) the [vitals](panel) window
+
+- intent: show_suit
+  examples: |    
+    - [show](switch:on) [suit](panel) window
+    - [open](switch:on) [suit](panel) panel
+    - [hide](switch:off) [suit](panel) panel
+    - [close](switch:off) [suit](panel) window
+
+- intent: show_spectrometry
+  examples: |
+    - [show](switch:on) the [spectrometry](panel) graphs
+    - [open](switch:on) [spectrometry](panel) window
+    - [hide](switch:off) the [spectrometry](panel) panel
+    - [close](switch:off) [spectrometry](panel)
+
+- intent: show_warnings
+  examples: |
+    - [show](switch:on) me the detected [anomalies](panel:warnings)
+    - [open](switch:on) the [anomalies](panel:warnings) tab
+    - [hide](switch:off) the [anomalies](panel:warnings)
+    - [close](switch:off) [anomalies](panel:warnings)
+    - what [anomalies](panel:warnings) were detected
+    - what are the [anomalies](panel:warnings)
+    - [anomalies](panel:warnings)
+    - [show](switch:on) me the [warnings](panel)
+    - [display](switch:on) all [warnings](panel)
+    - [open](switch:on) [warnings](panel) window
+    - [hide](switch:off) the [warnings](panel)
+    - [close](switch:off) [warnings](panel)
+    - what [warnings](panel) were caught
+    - [warnings](panel)
+
+- intent: show_cautions
+  examples: |
+    - [show](switch:on) all [cautions](panel)
+    - [open](switch:on) the [cautions](panel) window
+    - [hide](switch:off) [cautions](panel) tab
+    - [close](switch:off) [cautions](panel) panel
+    - [display](switch:on) [cautions](panel)
+    - what [cautions](panel) are to be 
+    - [cautions](panel)
+
+- intent: clear_warnings
+  examples: |
+    - clear [warnings](panel)
+    - clear all [anomalies](panel:warnings)
+    - acknowledge all [warnings](panel)
+    - acknowledge [anomalies](panel:warnings)
+    
+# - can you tell me how much [battery]{"panel":"vitals","feature":"battery"} I have left?
+# - how much [battery]{"panel":"vitals","feature":"battery"} left?
+# - what is my [heart rate]{"panel":"vitals","feature":"heart_rate"}
+# - [show](switch:on) my [heart rate]{"panel":"vitals","feature":"heart_rate"} readings
+
+
+stories:
+- story: toggling a panel
+  steps:
+  - or:
+    - intent: show_vitals
+    - intent: show_suit
+    - intent: show_spectrometry
+    - intent: show_warnings
+    - intent: show_cautions
+  - action: action_show_panel
+  - action: action_restart

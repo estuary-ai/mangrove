@@ -1,15 +1,17 @@
 import time
+import json
 import typing
 from stt import STTController, WakeUpVoiceDetector, AudioPacket
 from bot import BotController
 from tts import TTSController
 from storage_manager import StorageManager, write_output
-from stt import DataBuffer
+
 DEFINED_PAUSE_PERIOD=0.5 # in seconds pause between stt responses
 
 class AssistantController:
     
-    def __init__(self, verbose=True, shutdown_bot=True):
+    def __init__(self, verbose=True, shutdown_bot=True, name='SENVA'):
+        self.name = name
         self.verbose = verbose
         self.wakeUpWordDetector = WakeUpVoiceDetector()
         write_output("Initialized WakeUpWordDetector")
@@ -30,45 +32,67 @@ class AssistantController:
         # Debuggers and Auxilarly variables
         self.is_sample_tagging = False
         self.indicator_bool = True
-        self.writing_command_audio_threads_list = []
-        self.last_response_ts = time.time() # JUST DUMMY
-        
+        self.writing_command_audio_threads_list = []        
         # self.data_buffer = DataBuffer(frame_size=320)
+        self.is_awake = False
 
+    def startup(self) -> bytes:
+        """Startup Upon Connection and return bot voice for introduction
+
+        Returns:
+            bytes: audio bytes for introduction
+        """
+        self.reset_audio_buffers()
+        self.initiate_audio_stream()
+        bot_voice_bytes = self.read_text(
+            "Hello, AI server connection is succesful. "
+            f"This is Your assistant, {self.name}.",
+            plain_text=True
+        )
+        return bot_voice_bytes
         
     def reset_audio_buffers(self):
+        """Resetting session and command audio logging buffers
+        """
         self.session_audio_buffer = AudioPacket.get_null_packet()
         self.command_audio_buffer = AudioPacket.get_null_packet()
-    
-    def get_audio_buffers(self):
-        return self.session_audio_buffer, self.command_audio_buffer
     
     def initiate_audio_stream(self):
         self.stt.create_stream()
         
-    def destroy_stream(self):
-        StorageManager.ensure_completion()
-        self.is_sample_tagging = False
-        self.stt.reset_audio_stream()
-        
-    def reset_audio_stream(self):
-        self.stt.reset_audio_stream()
-        
-    def read_text(self, data: any):
-        if isinstance(data, dict):
-            audio_bytes = self.tts.get_feature_read_bytes(
-                data['feature'], data['values'], data['units']
-            )
-        elif isinstance(data, str):
+    def read_text(self, data: any, plain_text=False):
+        if plain_text:
             audio_bytes = self.tts.get_plain_text_read_bytes(data)
         else:
-            raise Exception("Only dict and str are supported types")
+            # READING VITALS
+            # TODO Include transcription in audio bytes sent
+            try:
+                if isinstance(data, str):
+                    data = json.loads(str(data))
+                audio_bytes = self.tts.get_feature_read_bytes(
+                    data['feature'], data['values'], data['units']
+                )
+            except:
+                raise Exception('Data should be JSON format')
+            raise Exception("Only dict/json and str are supported types")
         return audio_bytes
     
-    def is_wake_word_detected(self, audio_data):
+    def feed_audio_stream(self, audio_data):        
         audio_packet = AudioPacket(audio_data)
-        # self.data_buffer.add(audio_packet) # TODO useless now
-        return self.wakeUpWordDetector.process_audio_stream(audio_packet)
+        if self.is_awake:
+            if self.is_command_buffer_empty():
+                self.initiate_audio_stream()
+                write_output("recieving first stream of audio command")
+                
+            self.stt_res_buffer = None
+            self.command_audio_buffer += audio_packet
+            self.session_audio_buffer += audio_packet # TODO note that this includes is_awake only
+            self.stt.feed(audio_packet)
+        else:
+            self.wakeUpWordDetector.feed_audio(audio_packet)
+            
+    def is_wake_word_detected(self):
+        return self.wakeUpWordDetector.process_audio_stream()
     
     def is_command_buffer_empty(self):
         return len(self.command_audio_buffer) == 0
@@ -77,46 +101,32 @@ class AssistantController:
         stt_res = self.stt.process_audio_buffer()
         if stt_res:
             StorageManager.write_audio_file(
-                stt_res['text'],
-                self.command_audio_buffer.bytes # TODO include meta-data
+                self.command_audio_buffer,
+                text=stt_res['text']
             )
             self.command_audio_buffer = AudioPacket.get_null_packet()
-            self.last_response_ts = time.time()
-
-        return stt_res        
-        
-    def process_audio_stream(self, audio_data):
-        if time.time() - self.last_response_ts <= DEFINED_PAUSE_PERIOD:
-            return None
+        return stt_res                        
     
-        audio_packet = AudioPacket(audio_data)
+    def clean_up(self):
+        """Clean up upon disconnection and delegate logging
+        """
+        self.is_awake = False
+        session_audio_buffer, command_audio_buffer =\
+            self.session_audio_buffer, self.command_audio_buffer
+            
+        self.is_sample_tagging = False
+        self.stt.reset_audio_stream()
+
+        if len(command_audio_buffer) > 0:
+            StorageManager.play_audio_packet(command_audio_buffer)
+            
+        StorageManager.write_audio_file(
+            session_audio_buffer,
+            include_session_id=True
+        )
         
-        # self.data_buffer.add(audio_packet) # TODO useless now
-        
-        self.stt_res_buffer = None
-        self.command_audio_buffer += audio_packet
-        self.session_audio_buffer += audio_packet
-        
-        self.stt.process_audio_stream(audio_packet)
-                
-        
-    def process_sample_tagging_if_on(self):
-        if self.is_sample_tagging:
-            write_output("is sample taggin on..")
-            # TERMINATION SCHEME BY <OVER> IN SAMPLE-TAGGING
-            if self.stt_res_buffer is not None:
-                # TODO check if this is even reachable!
-                write_output("appending to buffer - sample tagging")
-                self.stt_res_buffer = self.stt._combine_outcomes(
-                    [self.stt_res_buffer, stt_res]
-                )
-            self.stt_res_buffer = stt_res
-            if not ("over" in stt_res['text'].rstrip()[-30:]):
-                return True                
-            stt_res = self.stt_res_buffer
-            self.stt_res_buffer = None
-        return False
-        
+        StorageManager.ensure_completion()
+
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
         if self.bot is None:
             return None, None
@@ -125,8 +135,10 @@ class AssistantController:
         bot_texts = bot_res.get('text')
         voice_bytes = None
         if bot_texts is not None:
-            voice_bytes = self.tts.get_audio_bytes_stream(' '.join(bot_texts))
-    
+            voice_bytes = self.tts.get_plain_text_read_bytes(
+                ' '.join(bot_texts)
+            )
+
         self.check_bot_commands(bot_res)
 
         return bot_res, voice_bytes
@@ -161,3 +173,23 @@ class AssistantController:
         else:
             write_output('no commands')
     
+    def process_if_procedural_step(self):
+        # TODO enclude all types of procedures (i.e UIA Egress Procedure)
+        self._process_sample_tagging_if_on()
+        
+    def _process_sample_tagging_if_on(self):
+        if self.is_sample_tagging:
+            write_output("is sample taggin on..")
+            # TERMINATION SCHEME BY <OVER> IN SAMPLE-TAGGING
+            if self.stt_res_buffer is not None:
+                # TODO check if this is even reachable!
+                write_output("appending to buffer - sample tagging")
+                self.stt_res_buffer = self.stt._combine_outcomes(
+                    [self.stt_res_buffer, stt_res]
+                )
+            self.stt_res_buffer = stt_res
+            if not ("over" in stt_res['text'].rstrip()[-30:]):
+                return True                
+            stt_res = self.stt_res_buffer
+            self.stt_res_buffer = None
+        return False

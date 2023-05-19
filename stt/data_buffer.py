@@ -14,8 +14,9 @@ class DataBuffer:
         self.queue_before_reset = None
         
     def reset(self):
-        self.queue_before_reset = self.queue
-        self.queue = PriorityQueue()
+        with self.queue.mutex:
+            self.queue_before_reset = self.queue.queue
+        self.queue = PriorityQueue(maxsize=self.max_queue_size)
 
     def __str__(self):
         return ' '.join([str(packet) for packet in self.queue.queue])
@@ -47,12 +48,12 @@ class DataBuffer:
         return self
 
     def __len__(self):
-        return len(self.queue.qsize())
+        return self.queue.qsize()
 
     def _debug_verify_order(self):
         with self.queue.mutex:
-            noise_fstamps = []
-            noise_estamps = []
+            # noise_fstamps = []
+            # noise_estamps = []
             for i in range(self.queue.qsize - 1):
                 try:
                     assert self.queue.queue[i] > self.queue.queue[i+1]
