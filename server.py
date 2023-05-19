@@ -105,12 +105,7 @@ class DigitalAssistant(Namespace):
                     if bot_res: # None only if bot is shutdown
                         write_output("emitting bot_response")
                         socketio.emit('bot_response', bot_res)
-                    else:
-                        write_output('shutting down bot')
-                        socketio.emit('bot_repsonse', {
-                            'msg': 'bot is shutdown' 
-                        })
-                
+
     def apply_communication_logic(self):        
         stt_res = self.assistant_controller.process_audio_buffer()
         if stt_res is None:
