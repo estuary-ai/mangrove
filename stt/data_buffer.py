@@ -48,7 +48,7 @@ class DataBuffer:
         return self
 
     def __len__(self):
-        return len(self.queue.qsize())
+        return self.queue.qsize()
 
     def _debug_verify_order(self):
         with self.queue.mutex:

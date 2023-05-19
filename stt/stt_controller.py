@@ -14,26 +14,33 @@ from .vad_collector import vad_collector
 class STTController:
     def __init__(self, 
                  sample_rate=16000,
-                 model_path='models/ds-model/deepspeech-0.9.3-models',
-                 load_scorer=False,
-                 silence_threshold=200,
+                 model_acoustic_path='models/ds-model/deepspeech-0.9.3-models',
+                #  model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
+                 model_scorer_path='models\ds-model\lm_unopt_senva\kenlm',
+                 load_scorer=True,
+                 silence_threshold=300,
                  vad_aggressiveness=3,
                  frame_size=320,
+                 scorer_alpha_beta=[0.931289039105002, 1.1834137581510284],
                  verbose=True):
         
+        self.verbose=verbose
         self.frame_size = frame_size
         self.SAMPLE_RATE = sample_rate
-        self.model = deepspeech.Model(model_path + ".pbmm")
+        self.model = deepspeech.Model(model_acoustic_path + ".pbmm")
         if load_scorer:
-            self.model.enableExternalScorer(model_path + ".scorer")
-        
+            self._log('Enabling External Scorer.', end='\n')
+            self.model.enableExternalScorer(model_scorer_path + ".scorer")
+            # self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
+            # self.model.setScorerAlphaBeta(*scorer_alpha_beta)
+            self._log(f"Establishing a beam width of {self.model.beamWidth()}", end='\n')
+            
         self.buffer = DataBuffer(self.frame_size)
         # ms of inactivity at the end of the command before processing
         self.SILENCE_THRESHOLD = silence_threshold #(silence_threshold//10)*320*2
         self.buffered_silences = collections.deque(maxlen=2)
         self.idx_silence_frame_start = None
         self.vad = webrtcvad.Vad(vad_aggressiveness)
-        self.verbose=verbose
 
         self.debug_total_size = 0
         self.debug_silence_size = 0
@@ -110,6 +117,7 @@ class STTController:
         self.num_recorded_chunks += 1
         frame_inc_silence = _concat_buffered_silence(frame)
         self._feed_audio_content(frame_inc_silence)
+
     
     def _reset_silence_buffer(self):
         # TODO try increasing size
@@ -147,7 +155,7 @@ class STTController:
             self._log('.') # silence detected while not recording
             self.buffered_silences.append(frame)
     
-    def process_audio_stream(self, audio_packet):          
+    def feed(self, audio_packet):          
         freq = (3000//20)**320*2 # 3 seconds
         verbose_cond = (self.debug_total_size % freq) == 0
         verbose_cond &= (self.debug_total_size > freq)
@@ -174,19 +182,30 @@ class STTController:
         if len(outcomes) > 0:
             return self._combine_outcomes(outcomes)
     
-    # def process_audio_buffer_new(self):
-    #     while True:
-    #         for bytes_segment in vad_collector(
-    #             sample_rate=self.SAMPLE_RATE,
-    #             frame_duration_ms=30, # TODO
-    #             padding_duration_ms=300, # TODO
-    #             vad=self.vad,
-    #             frames=self.buffer
-    #         ):
-    #             audio = np.frombuffer(bytes_segment, dtype=np.int16)
-    #             # TODO
+    # def process_audio_buffer(self):
+    #     outcomes = []
+    #     for voiced_chunk in vad_collector(
+    #         sample_rate=self.SAMPLE_RATE,
+    #         frame_duration_ms=30, # TODO
+    #         padding_duration_ms=300, # TODO
+    #         vad=self.vad,
+    #         buffer=self.buffer,
+    #         logger=self._log
+    #     ):
+    #         self._log(f'DEBUG Got voiced_chunk of size = {len(voiced_chunk)}')            
+    #         bytes_segment = voiced_chunk.bytes
+    #         self.debug_feed_frames += voiced_chunk
+    #         self.stream_context.feedAudioContent(
+    #             np.frombuffer(bytes_segment, dtype=np.int16)
+    #         )
+    #         results = self._finish_stream() # INTERMEDIATE POSSIBLE
+    #         if results is not None:
+    #             outcomes.append(results)
+    #             self.create_stream()
+    #     if len(outcomes) > 0:
+    #         self.reset_audio_stream()
+    #         return self._combine_outcomes(outcomes)
     
-
     def _combine_outcomes(self, outcomes):
         merged_outcome = { 
             'text': "",
