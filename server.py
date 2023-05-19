@@ -61,6 +61,17 @@ class DigitalAssistant(Namespace):
         
     def on_trial(self, data):
         write_output(f'received trial: {data}')
+    
+    def on_stream_text(self, command):
+        if not isinstance(command, str):
+            raise Exception("Datatype is not supported")
+        # breakpoint()
+        command = {"text": command}
+        write_output(f'\nUser: {command}')
+        self.bot_respond(command)
+        
+        
+        
 
     def bg_responding_task(self):
         # READ BUFFER AND EMIT AS NEEDED
@@ -96,7 +107,10 @@ class DigitalAssistant(Namespace):
         is_procedural_step = self.assistant_controller.process_if_procedural_step()
         if is_procedural_step:
             return
+        
+        self.bot_respond(stt_res)
     
+    def bot_respond(self, stt_res):
         bot_res, bot_voice_bytes =\
             self.assistant_controller.respond(stt_res['text'])
 
