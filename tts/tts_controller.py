@@ -22,7 +22,9 @@ class TTSController:
             # write_output(f'Chosen: {voices[voice_id].id}')
             self.engine.setProperty('voice', voices[voice_id].id)
         elif engine == "tts":
-            self.engine = TTS(TTS.list_models()[0])
+            temp = TTS.list_models()
+            # breakpoint()
+            self.engine = TTS(temp[0])
         # ENGINE INIT END
         
         self.storage_path = storage_path
