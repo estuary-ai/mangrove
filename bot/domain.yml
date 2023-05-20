@@ -25,6 +25,8 @@ intents:
   - show_spectrometry
   - show_warnings
   - show_cautions
+  - show_tss
+  - show_ai
 
   - next_spectrometry_graph
 
@@ -68,6 +70,8 @@ slots:
     - spectrometry
     - warnings
     - cautions
+    - tss
+    - ai
     mappings:
     - type: from_entity
       entity: panel

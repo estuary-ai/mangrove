@@ -6,3 +6,10 @@ rules:
   steps:
   - intent: goodbye
   - action: utter_goodbye
+
+- rule: NLU Fallback
+  steps:
+  - intent: nlu_fallback
+  - action: utter_fallback
+  - action: utter_fallback_json
+  - action: action_restart

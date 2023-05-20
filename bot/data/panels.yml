@@ -31,8 +31,8 @@ nlu:
     - [show](switch:on) [life support](panel:vitals)
     - [open](switch:on) the [life support](panel:vitals) panel
     - [show](switch:on) me my [vitals](panel)
-    - [pull up](switch:on) vitals
-    - [pull up](switch:on) life support
+    - [pull up](switch:on) [vitals](panel)
+    - [pull up](switch:on) [life support](panel:vitals)
     - what are my [vitals](panel)
     - how are my [vitals](panel) doing
     - how is my [life support](panel:vitals)
@@ -98,6 +98,42 @@ nlu:
     - what [cautions](panel) are to be 
     - [cautions](panel)
 
+- intent: show_tss
+  examples: |
+    - [show](switch:on) me the [tss](panel)
+    - [open](switch:on) [tss](panel) panel
+    - [show](switch:on) [telemetry](panel:tss)
+    - [open](switch:on) the [telemetry](panel:tss) panel
+    - [show](switch:on) me my [tss](panel)
+    - [pull up](switch:on) [tss](panel)
+    - [pull up](switch:on) [telemetry](panel:tss) stream
+    - what are my [tss](panel)
+    - how are my [tss](panel) doing
+    - what are the [telemetry](panel:tss) values
+    - [hide](switch:off) [tss](panel) view
+    - [close](switch:off) the [tss](panel) window
+    - [dismiss](switch:off) [tss](panel) panel
+    - [hide](switch:off) [telemetry](panel:tss)
+    - [dismiss](switch:off) my [telemetry](panel:tss)
+
+- intent: show_ai
+  examples: |
+    - [show](switch:on) me the [ai](panel)
+    - [open](switch:on) [ai](panel) panel
+    - [show](switch:on) [assistant](panel:ai)
+    - [open](switch:on) the [assistant](panel:ai) panel
+    - [show](switch:on) me my [ai](panel)
+    - [pull up](switch:on) [ai](panel)
+    - [pull up](switch:on) [assistant](panel:ai) stream
+    - what are my [ai](panel)
+    - how are my [ai](panel) doing
+    - what are the [assistant](panel:ai) values
+    - [hide](switch:off) [ai](panel) view
+    - [close](switch:off) the [ai](panel) window
+    - [dismiss](switch:off) [ai](panel) panel
+    - [hide](switch:off) [assistant](panel:ai)
+    - [dismiss](switch:off) my [assistant](panel:ai)
+
 - intent: clear_warnings
   examples: |
     - clear [warnings](panel)
@@ -132,5 +168,7 @@ stories:
     - intent: show_spectrometry
     - intent: show_warnings
     - intent: show_cautions
+    - intent: show_tss
+    - intent: show_ai
   - action: action_show_panel
   - action: action_restart

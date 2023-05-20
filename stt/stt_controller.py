@@ -16,12 +16,12 @@ class STTController:
                  sample_rate=16000,
                  model_acoustic_path='models/ds-model/deepspeech-0.9.3-models',
                 #  model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
-                 model_scorer_path='models\ds-model\lm_unopt_senva\kenlm',
+                 model_scorer_path='models/ds-model/lm_unopt_senva/kenlm',
                  load_scorer=True,
                  silence_threshold=300,
                  vad_aggressiveness=3,
                  frame_size=320,
-                 scorer_alpha_beta=[0.931289039105002, 1.1834137581510284],
+                 scorer_alpha_beta=[0.8837872437480643, 2.8062638242800135],
                  verbose=True):
         
         self.verbose=verbose

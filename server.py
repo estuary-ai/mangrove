@@ -116,9 +116,9 @@ class DigitalAssistant(Namespace):
         socketio.emit('stt_response', stt_res)
     
         # TODO check logic of is_awake
-        is_procedural_step = self.assistant_controller.process_if_procedural_step()
-        if is_procedural_step:
-            return
+        # is_procedural_step = self.assistant_controller.process_if_procedural_step()
+        # if is_procedural_step:
+        #     return
         
         self.bot_respond(stt_res)
     

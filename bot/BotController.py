@@ -9,7 +9,7 @@ from .procedures import EgressProcedure
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230517-143243.tar.gz',
+                 model_path='models/rasa-model/20230519-192641.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         self.egress_procedure = EgressProcedure()
