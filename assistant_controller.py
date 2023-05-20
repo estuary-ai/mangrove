@@ -74,8 +74,7 @@ class AssistantController:
                     data['feature'], data['values'], data['units']
                 )
             except:
-                raise Exception('Data should be JSON format')
-            raise Exception("Only dict/json and str are supported types")
+                raise Exception("Only dict/json and str are supported types")
         return audio_bytes
     
     def feed_audio_stream(self, audio_data):        
@@ -176,11 +175,11 @@ class AssistantController:
     
     def process_if_procedural_step(self):
         # TODO enclude all types of procedures (i.e UIA Egress Procedure)
-        self._process_sample_tagging_if_on()
+        self._process_sample_tagging_if_on() # TODO
         
         response = self.bot.process_procedures_if_on()
         if response is None:
-            return None, None
+            return False
         return response
 
 
