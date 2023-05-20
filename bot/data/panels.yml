@@ -31,8 +31,8 @@ nlu:
     - [show](switch:on) [life support](panel:vitals)
     - [open](switch:on) the [life support](panel:vitals) panel
     - [show](switch:on) me my [vitals](panel)
-    - [pull up](switch:on) vitals
-    - [pull up](switch:on) life support
+    - [pull up](switch:on) [vitals](panel)
+    - [pull up](switch:on) [life support](panel:vitals)
     - what are my [vitals](panel)
     - how are my [vitals](panel) doing
     - how is my [life support](panel:vitals)
@@ -73,37 +73,71 @@ nlu:
 
 - intent: show_warnings
   examples: |
-    - [show](switch:on) me the detected [anomalies](panel:warnings)
-    - [open](switch:on) the [anomalies](panel:warnings) tab
-    - [hide](switch:off) the [anomalies](panel:warnings)
-    - [close](switch:off) [anomalies](panel:warnings)
-    - what [anomalies](panel:warnings) were detected
-    - what are the [anomalies](panel:warnings)
-    - [anomalies](panel:warnings)
-    - [show](switch:on) me the [warnings](panel)
-    - [display](switch:on) all [warnings](panel)
-    - [open](switch:on) [warnings](panel) window
-    - [hide](switch:off) the [warnings](panel)
-    - [close](switch:off) [warnings](panel)
-    - what [warnings](panel) were caught
-    - [warnings](panel)
+    - [show](switch:on) me the detected [anomalies](panel:anomaly)
+    - [open](switch:on) the [anomalies](panel:anomaly) tab
+    - [hide](switch:off) the [anomalies](panel:anomaly)
+    - [close](switch:off) [anomalies](panel:anomaly)
+    - what [anomalies](panel:anomaly) were detected
+    - what are the [anomalies](panel:anomaly)
+    - [anomalies](panel:anomaly)
+    - [show](switch:on) me the [warnings](panel:anomaly)
+    - [display](switch:on) all [warnings](panel:anomaly)
+    - [open](switch:on) [warnings](panel:anomaly) window
+    - [hide](switch:off) the [warnings](panel:anomaly)
+    - [close](switch:off) [warnings](panel:anomaly)
+    - what [warnings](panel:anomaly) were caught
+    - [warnings](panel:anomaly)
+    - [show](switch:on) all [cautions](panel:anomaly)
+    - [open](switch:on) the [cautions](panel:anomaly) window
+    - [hide](switch:off) [cautions](panel:anomaly) tab
+    - [close](switch:off) [cautions](panel:anomaly) panel
+    - [display](switch:on) [cautions](panel:anomaly)
+    - what [cautions](panel:anomaly) are to be 
+    - [cautions](panel:anomaly)
 
-- intent: show_cautions
+- intent: show_tss
   examples: |
-    - [show](switch:on) all [cautions](panel)
-    - [open](switch:on) the [cautions](panel) window
-    - [hide](switch:off) [cautions](panel) tab
-    - [close](switch:off) [cautions](panel) panel
-    - [display](switch:on) [cautions](panel)
-    - what [cautions](panel) are to be 
-    - [cautions](panel)
+    - [show](switch:on) me the [tss](panel)
+    - [open](switch:on) [tss](panel) panel
+    - [show](switch:on) [telemetry](panel:tss)
+    - [open](switch:on) the [telemetry](panel:tss) panel
+    - [show](switch:on) me my [tss](panel)
+    - [pull up](switch:on) [tss](panel)
+    - [pull up](switch:on) [telemetry](panel:tss) stream
+    - what are my [tss](panel)
+    - how are my [tss](panel) doing
+    - what are the [telemetry](panel:tss) values
+    - [hide](switch:off) [tss](panel) view
+    - [close](switch:off) the [tss](panel) window
+    - [dismiss](switch:off) [tss](panel) panel
+    - [hide](switch:off) [telemetry](panel:tss)
+    - [dismiss](switch:off) my [telemetry](panel:tss)
+
+- intent: show_ai
+  examples: |
+    - [show](switch:on) me the [ai](panel)
+    - [open](switch:on) [ai](panel) panel settings
+    - [show](switch:on) [assistant](panel:ai)
+    - [open](switch:on) the [assistant](panel:ai) panel
+    - [show](switch:on) me the [ai](panel) window
+    - [pull up](switch:on) [ai](panel)
+    - [pull up](switch:on) [assistant](panel:ai) stream
+    - [show](switch:on) [ai](panel) settings
+    - [display](switch:on) [assistant](panel) settings
+    - [hide](switch:off) [ai](panel) view
+    - [close](switch:off) the [ai](panel) window
+    - [dismiss](switch:off) [ai](panel) panel
+    - [hide](switch:off) [assistant](panel:ai)
+    - [dismiss](switch:off) my [assistant](panel:ai)
 
 - intent: clear_warnings
   examples: |
-    - clear [warnings](panel)
-    - clear all [anomalies](panel:warnings)
-    - acknowledge all [warnings](panel)
-    - acknowledge [anomalies](panel:warnings)
+    - clear [warnings](panel:anomaly)
+    - clear all [anomalies](panel:anomaly)
+    - acknowledge all [warnings](panel:anomaly)
+    - acknowledge [anomalies](panel:anomaly)
+    - dismiss [cautions](panel:anomaly)
+    - dismiss [warnings](panel:anomaly)
     
 # - can you tell me how much [battery]{"panel":"vitals","feature":"battery"} I have left?
 # - how much [battery]{"panel":"vitals","feature":"battery"} left?
@@ -132,5 +166,7 @@ stories:
     - intent: show_spectrometry
     - intent: show_warnings
     - intent: show_cautions
+    - intent: show_tss
+    - intent: show_ai
   - action: action_show_panel
   - action: action_restart

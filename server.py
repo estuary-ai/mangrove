@@ -49,7 +49,7 @@ class DigitalAssistant(Namespace):
         with self.lock:
             self.assistant_controller.clean_up()    
     
-    def on_tts_read(self, data):
+    def on_read_tts(self, data):
         write_output(f'request to read data {data}')
         audio_bytes = self.assistant_controller.read_text(data)
         emit("bot_voice", audio_bytes)
@@ -125,9 +125,9 @@ class DigitalAssistant(Namespace):
         socketio.emit('stt_response', stt_res)
     
         # TODO check logic of is_awake
-        is_procedural_step = self.assistant_controller.process_if_procedural_step()
-        if is_procedural_step:
-            return
+        # is_procedural_step = self.assistant_controller.process_if_procedural_step()
+        # if is_procedural_step:
+        #     return
         
         self.bot_respond(stt_res)
     

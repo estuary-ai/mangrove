@@ -1,5 +1,34 @@
-# version: '3.1'
+version: '3.1'
 
-# nlu:
+nlu:
 
-# - intent: 
+- intent: rover_go_to
+  examples: |
+    - rover go to point [a](feature)
+    - take rover to point of interest [b](feature)
+    - navigate rover to location [c](feature)
+    - transport rover to area of interest [d](feature)
+    - rover to position [e](feature)
+    - send rover to poi [f](feature)
+# target: Rover, action: A~J
+
+- intent: rover_come_back
+  examples: |
+    - rover come back here
+    - come back rover
+    - bring the rover back
+    - retrieve rover
+    - come back to me rover
+    - navigate rover back to me location
+    - transport rover to me
+    - retract rover
+# target: Rover, action: user
+
+stories:
+- story: Navigate rover to point of interest
+  steps:
+  - or:
+    - intent: rover_go_to
+    - intent: rover_come_back
+  - action: action_rover_navigate
+  - action: action_restart
