@@ -8,6 +8,18 @@ from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted, SlotSet
 
+class ActionErrorMessage(Action):
+
+    def name(self) -> Text:
+        return 'action_error_message'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        dispatcher.utter_message(text='Sorry I did not get that', custom={ 'target': 'Error', 'additionalInfo': [] })
+
+        return [Restarted()]
+
+
 class ActionEvaTime(Action):
 
     def name(self) -> Text:
@@ -20,6 +32,7 @@ class ActionEvaTime(Action):
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]
 
+
 class ActionPanelFollow(Action):
 
     def name(self) -> Text:
@@ -30,8 +43,11 @@ class ActionPanelFollow(Action):
 
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
             switch_ = 'on'
+            action = 'follow'
+        else:
+            action = 'unfollow'
 
-        cmd = { 'target': 'Panel', 'action': 'follow', 'additionalInfo': [switch_] }
+        cmd = { 'target': 'Panel', 'action': action, 'additionalInfo': ['eye'] }
 
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]
@@ -46,10 +62,11 @@ class ActionClosePanel(Action):
 
         text='Closing the panel'
 
-        cmd = { 'target': 'Panel', 'action': 'close', 'additionalInfo': [] }
+        cmd = { 'target': 'Panel', 'action': 'close', 'additionalInfo': ['eye'] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionShowPanel(Action):
 
@@ -58,6 +75,9 @@ class ActionShowPanel(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         panel = tracker.get_slot('panel')
+        if panel not in [ 'vitals','suit','spectrometry','warnings','cautions','tss','ai' ]:
+            return ActionErrorMessage().run(dispatcher, tracker, domain)
+
         switch_ = tracker.get_slot('switch_')
 
         if switch_ is None or switch_ == 'on' or switch_ != 'off':
@@ -72,6 +92,7 @@ class ActionShowPanel(Action):
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionNavigation(Action):
 
@@ -221,7 +242,7 @@ class ActionRemoveWaypoint(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         text='Deleting the waypoint'
 
-        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['selected'] }
+        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['eye'] }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -273,6 +294,44 @@ class ActionShowWaypoints(Action):
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
 
+
+class ActionRoverGoTo(Action):
+
+    def name(self) -> Text:
+        return 'action_rover_go_to'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        vitals_type = tracker.get_intent_of_latest_message()[5:]
+
+        cmd = { 'target': 'Vitals', 'action': 'distract', 'additionalInfo': [vitals_type] }
+
+        dispatcher.utter_message(custom=cmd)
+        return [Restarted()]
+
+
+class ActionRoverNavigate(Action):
+
+    def name(self) -> Text:
+        return 'action_rover_navigate'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        intent_type = tracker.get_intent_of_latest_message()[6:]
+
+        if intent_type == 'come_back':
+            text = 'Bringing rover back to you'
+            target_dest = 'home'
+        elif intent_type == 'go_to':
+            target_dest = tracker.get_slot('nav_target')
+            text = 'finding route to playstation location %s' % target_dest
+
+        cmd = { 'Rover': 'Vitals', 'action': 'navigate', 'additionalInfo': [target_dest] }
+
+        dispatcher.utter_message(custom=cmd)
+        return [Restarted()]
+
+
 class ActionReadVitals(Action):
 
     def name(self) -> Text:
@@ -285,4 +344,34 @@ class ActionReadVitals(Action):
         cmd = { 'target': 'Vitals', 'action': 'read', 'additionalInfo': [vitals_type] }
 
         dispatcher.utter_message(custom=cmd)
+        return [Restarted()]
+
+
+class ActionCalibrateCompass(Action):
+
+    def name(self) -> Text:
+        return 'action_calibrate_compass'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        text = 'Calibrating compass using GPS'
+
+        cmd = { 'target': 'LongRangeNavigation', 'action': 'compass', 'additionalInfo': [] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
+        return [Restarted()]
+
+
+class ActionSetNorth(Action):
+
+    def name(self) -> Text:
+        return 'action_set_north'
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        text = 'Manually setting true North'
+
+        cmd = { 'target': 'LongRangeNavigation', 'action': 'north', 'additionalInfo': [] }
+
+        dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]

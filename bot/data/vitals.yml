@@ -34,17 +34,17 @@ nlu:
     - read me my [primary Oxygen](feature:primary_o2) percentage
     - how much [primary Oxygen](feature:primary_o2) do I have left
 
-- intent: read_primary_o2_pressure
-  examples: |
-    - read me my [primary O2 pressure](feature:primary_o2_pressure)
-    - read me my [primary O2 pressure](feature:primary_o2_pressure) information
-    - what is my [primary O2 pressure](feature:primary_o2_pressure)
-    - read me my [primary air pressure](feature:primary_o2_pressure)
-    - read me my [primary air pressure](feature:primary_o2_pressure) information
-    - what is my [primary air pressure](feature:primary_o2_pressure)
-    - read me my [primary Oxygen pressure](feature:primary_o2_pressure)
-    - read me my [primary Oxygen pressure](feature:primary_o2_pressure) information
-    - what is my [primary Oxygen pressure](feature:primary_o2_pressure)
+# - intent: read_primary_o2_pressure
+#   examples: |
+#     - read me my [primary O2 pressure](feature:primary_o2_pressure)
+#     - read me my [primary O2 pressure](feature:primary_o2_pressure) information
+#     - what is my [primary O2 pressure](feature:primary_o2_pressure)
+#     - read me my [primary air pressure](feature:primary_o2_pressure)
+#     - read me my [primary air pressure](feature:primary_o2_pressure) information
+#     - what is my [primary air pressure](feature:primary_o2_pressure)
+#     - read me my [primary Oxygen pressure](feature:primary_o2_pressure)
+#     - read me my [primary Oxygen pressure](feature:primary_o2_pressure) information
+#     - what is my [primary Oxygen pressure](feature:primary_o2_pressure)
 
 - intent: read_secondary_o2
   examples: |
@@ -61,17 +61,17 @@ nlu:
     - read me my [secondary Oxygen](feature:secondary_o2) percentage
     - how much [secondary Oxygen](feature:secondary_o2) do I have left
 
-- intent: read_secondary_o2_pressure
-  examples: |
-    - read me my [secondary O2 pressure](feature:secondary_o2_pressure)
-    - read me my [secondary O2 pressure](feature:secondary_o2_pressure) information
-    - what is my [secondary O2 pressure](feature:secondary_o2_pressure)
-    - read me my [secondary air pressure](feature:secondary_o2_pressure)
-    - read me my [secondary air pressure](feature:secondary_o2_pressure) information
-    - what is my [secondary air pressure](feature:secondary_o2_pressure)
-    - read me my [secondary Oxygen pressure](feature:secondary_o2_pressure)
-    - read me my [secondary Oxygen pressure](feature:secondary_o2_pressure) information
-    - what is my [secondary Oxygen pressure](feature:secondary_o2_pressure)
+# - intent: read_secondary_o2_pressure
+#   examples: |
+#     - read me my [secondary O2 pressure](feature:secondary_o2_pressure)
+#     - read me my [secondary O2 pressure](feature:secondary_o2_pressure) information
+#     - what is my [secondary O2 pressure](feature:secondary_o2_pressure)
+#     - read me my [secondary air pressure](feature:secondary_o2_pressure)
+#     - read me my [secondary air pressure](feature:secondary_o2_pressure) information
+#     - what is my [secondary air pressure](feature:secondary_o2_pressure)
+#     - read me my [secondary Oxygen pressure](feature:secondary_o2_pressure)
+#     - read me my [secondary Oxygen pressure](feature:secondary_o2_pressure) information
+#     - what is my [secondary Oxygen pressure](feature:secondary_o2_pressure)
 
 - intent: read_o2_time
   examples: |
@@ -94,16 +94,16 @@ nlu:
     - what is my [suit pressure](feature:suit_pressure)
     - how is my [suit pressure](feature:suit_pressure)
 
-- intent: read_suit_o2_pressure
+- intent: read_o2_pressure
   examples: |
-    - read me my [suit oxygen pressure](feature:suit_o2_pressure)
-    - read me my [suit o2 pressure](feature:suit_o2_pressure)
-    - read me my [suit oxygen pressure](feature:suit_o2_pressure) information
-    - read me my [suit o2 pressure](feature:suit_o2_pressure) information
-    - what is my [suits oxygen pressure](feature:suit_o2_pressure)
-    - what is my [suits o2 pressure](feature:suit_o2_pressure)
-    - how is my [suits oxygen pressure](feature:suit_o2_pressure)
-    - how is my [suits o2 pressure](feature:suit_o2_pressure)
+    - read me my [oxygen pressure](feature:suit_o2_pressure)
+    - read me my [o2 pressure](feature:suit_o2_pressure)
+    - read me my [oxygen pressure](feature:suit_o2_pressure) information
+    - read me my [o2 pressure](feature:suit_o2_pressure) information
+    - what is my [oxygen pressure](feature:suit_o2_pressure)
+    - what is my [o2 pressure](feature:suit_o2_pressure)
+    - how is my [oxygen pressure](feature:suit_o2_pressure)
+    - how is my [o2 pressure](feature:suit_o2_pressure)
     - what is my [suit's oxygen pressure](feature:suit_o2_pressure)
     - what is my [suit's o2 pressure](feature:suit_o2_pressure)
     - how is my [suit's oxygen pressure](feature:suit_o2_pressure)

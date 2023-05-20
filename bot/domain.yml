@@ -16,6 +16,8 @@ intents:
   - navigate_closest
   - navigate_point
   - show_breadcrumbs
+  - calibrate_compass
+  - set_north
 
   - panel_follow
   - close_panel
@@ -47,6 +49,9 @@ intents:
   - undo_waypoint
   - clear_all_waypoints
   - show_waypoints
+
+  - rover_go_to
+  - rover_come_back
 
   - start_egress
   - current_egress_step_number
@@ -118,6 +123,12 @@ slots:
     - type: from_entity
       entity: feature
       intent: navigate_point
+    - type: from_entity
+      entity: feature
+      intent: rover_go_to
+    - type: from_entity
+      entity: feature
+      intent: rover_come_back
   
   egress_procedure:
     type: text
@@ -168,6 +179,8 @@ actions:
   - action_short_nav_settings
   - action_navigate
   - action_show_breadcrumbs
+  - action_calibrate_compass
+  - action_set_north
 
   - action_eva_time
 
@@ -184,6 +197,8 @@ actions:
   - action_undo_waypoint
   - action_clear_all_waypoints
   - action_show_waypoints
+
+  - action_rover_navigate
 
   - action_start_egress
   - action_current_egress_step_number

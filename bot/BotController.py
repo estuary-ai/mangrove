@@ -9,7 +9,7 @@ from .procedures import EgressProcedure
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230519-192641.tar.gz',
+                 model_path='models/rasa-model/20230520-091122.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         self.egress_procedure = EgressProcedure()
@@ -51,7 +51,7 @@ class BotController:
                         self.egress_procedure.restart()
                         # start video stream
                         # open egress checklist
-                        commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
+                        # commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
                         # set world state to egress in progress
                     elif command['action'] == 'current_step_number':
                         cur_step = self.egress_procedure.get_current_step()
