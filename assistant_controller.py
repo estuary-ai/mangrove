@@ -176,11 +176,11 @@ class AssistantController:
     
     def process_if_procedural_step(self):
         # TODO enclude all types of procedures (i.e UIA Egress Procedure)
-        self._process_sample_tagging_if_on()
+        self._process_sample_tagging_if_on() # TODO
         
         response = self.bot.process_procedures_if_on()
         if response is None:
-            return None, None
+            return False
         return response
 
 

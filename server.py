@@ -96,15 +96,24 @@ class DigitalAssistant(Namespace):
                         socketio.emit('wake_up')    
                         self.assistant_controller.is_awake = True
                     
-                    bot_res, bot_voice_bytes = self.assistant_controller.process_if_procedural_step()
+                    is_procedural = self.assistant_controller.process_if_procedural_step()
                     # Include timestamps
-                    if bot_voice_bytes:
-                        write_output('emmiting bot_voice')
-                        socketio.emit('bot_voice', bot_voice_bytes)
-                    
-                    if bot_res: # None only if bot is shutdown
-                        write_output("emitting bot_response")
-                        socketio.emit('bot_response', bot_res)
+                    if is_procedural:
+                        bot_res, bot_voice_bytes = is_procedural
+                        # Include timestamps
+                        if bot_voice_bytes:
+                            write_output('emmiting bot_voice')
+                            socketio.emit('bot_voice', bot_voice_bytes)
+                        
+                        if bot_res: # None only if bot is shutdown
+                            write_output("emitting bot_response")
+                            socketio.emit('bot_response', bot_res)
+                        else:
+                            write_output('shutting down bot')
+                            socketio.emit('bot_repsonse', {
+                                'msg': 'bot is shutdown' 
+                            })
+
 
     def apply_communication_logic(self):        
         stt_res = self.assistant_controller.process_audio_buffer()
