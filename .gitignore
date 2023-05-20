@@ -3,6 +3,7 @@
 env/
 .rasa/
 .vs/
+.venv/
 
 #rasa bloat
 credentials.yml
@@ -15,5 +16,15 @@ debug-and-drafts/res-speech/*.*
 samples/
 res-speech/*.*
 
+models/ds-model/
+# models/ds-model/*.zip
+
+
 debug-and-drafts/web_microphone_websocket
 sample-audio-binary*/*.*
+.fake
+DeepSpeech
+tmp
+*.log
+*.txt
+*.zip

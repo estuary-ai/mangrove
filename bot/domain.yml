@@ -1,114 +1,168 @@
-version: "2.0"
+version: "3.1"
 
 intents:
-  - capture_audio
-  - click
-  - collapse_alert
-  - declutter
-  - exit
-  - expand_alert
-  - goodbye
   - greet
-  - map
-  - navigation
-  - omw
-  - place_pin
-  - read_condition
-  - roger
-  - sample_tagging
-  - select_pin
+  - goodbye
+  - affirm
+  - deny
+  - capture_audio
+
+  - eva_time
+
+  - long_range_navigation
+  - short_range_navigation
+  - short_range_nav_settings
+  - navigate_home
+  - navigate_closest
+  - navigate_point
+  - show_breadcrumbs
+  - calibrate_compass
   - set_north
+
+  - panel_follow
+  - close_panel
   - show_panel
-  - standby
-  - take_photo
-  - terrain
-  - toggle_feature
-  - toggle_follow
+  - show_vitals
+  - show_suit
+  - show_spectrometry
+  - show_warnings
+  - show_cautions
+  - show_tss
+  - show_ai
+
+  - next_spectrometry_graph
+
+  - read_vitals
+  - read_battery
+  - read_battery_time
+  - read_primary_o2
+  - read_primary_o2_pressure
+  - read_secondary_o2
+  - read_secondary_o2_pressure
+  - read_o2_time
+  - read_heart_rate
+  - read_suit_pressure
+  - read_suit_o2_pressure
+
+  - add_waypoint
+  - remove_waypoint
+  - undo_waypoint
+  - clear_all_waypoints
+  - show_waypoints
+
+  - rover_go_to
+  - rover_come_back
+
+  - start_egress
+  - current_egress_step_number
+  - current_egress_step
+  - next_egress_step
+  - repeat_egress_step
+  - exit_egress
+  - confirm_egress_completion
 
 entities:
-  - color
-  - feature
   - panel
-  - switch_
+  - switch
+  - feature
 
 slots:
-  color:
+  panel:
     type: categorical
     values:
-      - green
-      - red
-      - blue
-  feature:
-    type: text
-  panel:
-    type: text
+    - vitals
+    - suit
+    - spectrometry
+    - warnings
+    - cautions
+    - tss
+    - ai
+    mappings:
+    - type: from_entity
+      entity: panel
+
   switch_:
     type: text
     initial_value: "on"
-  lighting_conditions:
+    mappings:
+    - type: from_entity
+      entity: switch
+
+  waypoint_type:
+    type: categorical
+    values:
+    - warning
+    - poi
+    mappings:
+    - type: from_entity
+      entity: feature
+      intent: add_waypoint
+    
+  nav_target:
+    type: categorical
+    values:
+    - home
+    - closest
+    - a
+    - b
+    - c
+    - d
+    - e
+    - f
+    - g
+    - h
+    - i
+    - j
+    mappings:
+    - type: from_entity
+      entity: feature
+      intent: navigate_home
+    - type: from_entity
+      entity: feature
+      intent: navigate_closest
+    - type: from_entity
+      entity: feature
+      intent: navigate_point
+    - type: from_entity
+      entity: feature
+      intent: rover_go_to
+    - type: from_entity
+      entity: feature
+      intent: rover_come_back
+  
+  egress_procedure:
     type: text
-  outcrop_appearance:
-    type: text
-  mechanism_used:
-    type: text
-  size_and_shape:
-    type: text
-  sample_appearance:
-    type: text
-  geo_interpretation:
-    type: text
+    initial_value: "off"
+    mappings:
+    - type: custom
+
+  vitals_type:
+    type: categorical
+    values:
+    - battery
+    - battery_time
+    - primary_o2
+    - primary_o2_pressure
+    - secondary_o2
+    - secondary_o2_pressure
+    - o2_time
+    - heart_rate
+    - suit_pressure
+    - suit_o2_pressure
+    mappings:
+    - type: from_entity
+      entity: feature
+      intent: read_vitals
 
 responses:
+  utter_greet:
+  - text: "Hi!"
 
-  utter_ask_lighting_conditions:
-  - text: "What are the lighting conditions?"
+  utter_did_that_help:
+  - text: "Did that help you?"
 
-  utter_ask_outcrop_appearance:
-  - text: "How does the outcrop appear?"
-
-  utter_ask_mechanism_used:
-  - text: "What mechanism are you using to sample?"
-
-  utter_ask_size_and_shape:
-  - text: "What is the sample's size and shape?"
-
-  utter_ask_sample_appearance:
-  - text: "What is the sample's appearance?"
-
-  utter_ask_geo_interpretation:
-  - text: "What is your initial geologic interpretation of this sample?"
-
-  utter_sample_tagged:
-  - text: "Your sample has been succesfully tagged!"
-
-  utter_capture_audio:
-  - custom:
-      capture_audio: true
-
-  utter_capture_audio_text:
-  - text: "Capturing audio"
-
-  utter_click:
-  - custom:
-      click: true
-
-  utter_collapse_alert:
-  - custom:
-      LSAR: "collapse_alert"
-
-  utter_declutter:
-  - custom:
-      clear_screen: true
-
-  utter_declutter_text:
-  - text: "Clearing your screen"
-
-  utter_exit:
-  - text: "Exited current flow. Let me know if I can help you in any other way."
-
-  utter_expand_alert:
-  - custom:
-      LSAR: "expand_alert"
+  utter_goodbye:
+  - text: "Bye"
 
   utter_fallback_json:
   - custom:
@@ -119,116 +173,46 @@ responses:
   - text: "Could you repeat that?"
   - text: "Please try again."
 
-  utter_goodbye:
-  - text: "Bye"
-
-  utter_greet:
-  - text: "Hi!"
-
-  utter_map:
-  - custom:
-      toggle: true
-      feature: "map"
-      switch_: "{switch_}"
-
-  utter_navigation:
-  - custom:
-      toggle: true
-      feature: "navigation"
-      switch_: "{switch_}"
-
-  utter_omw:
-  - custom:
-      LSAR: "omw"
-
-  utter_place_pin:
-  - custom:
-      place_pin: True
-
-  utter_place_pin_text:
-  - text: "Placing pin in the current direction"
-
-  utter_read_condition:
-  - custom:
-      LSAR: "read_condition"
-
-  utter_roger:
-  - custom:
-      LSAR: "roger"
-
-  utter_select_pin:
-  - custom:
-      select_pin: true
-      color: "{color}"
-
-  utter_set_north:
-  - custom:
-      set_north: true
-
-  utter_set_north_text:
-  - text: "Setting this orientation as North"
-
-  utter_show_panel:
-  - custom:
-      toggle: true
-      feature: "{panel}"
-      switch_: "{switch_}"
-
-  utter_standby:
-  - custom:
-      LSAR: "standby"
-
-  utter_take_photo:
-  - custom:
-      take_photo: true
-
-  utter_take_photo_text:
-  - text: "Capturing a photo"
-
-  utter_terrain:
-  - custom:
-      toggle: true
-      feature: "terrain"
-      switch_: "{switch_}"
-
-  utter_toggle_feature:
-  - custom:
-      toggle: true
-      feature: "{feature}"
-      switch_: "{switch_}"
-
-  utter_toggle_follow:
-  - custom:
-      toggle: true
-      feature: "follow"
-      switch_: "on"
-
-  utter_toggle_follow_text:
-  - text: "Follow me enabled"
-
-forms:
-  form_sample_tagging:
-    lighting_conditions:
-    - type: from_text
-    outcrop_appearance:
-    - type: from_text
-    mechanism_used:
-    - type: from_text
-    size_and_shape:
-    - type: from_text
-    sample_appearance:
-    - type: from_text
-    geo_interpretation:
-    - type: from_text
-
 actions:
-  - action_map_text
-  - action_navigation_text
-  - action_terrain_text
-  - action_initiate_sample
-  - validate_form_sample_tagging
-  - action_sample_tagging
+  - action_show_navigation
+  - action_short_range_navigation
+  - action_short_nav_settings
+  - action_navigate
+  - action_show_breadcrumbs
+  - action_calibrate_compass
+  - action_set_north
+
+  - action_eva_time
+
+  - action_panel_follow
+  - action_close_panel
   - action_show_panel
+
+  - action_next_spectrometry_graph
+
+  - action_read_vitals
+  
+  - action_add_waypoint
+  - action_remove_waypoint
+  - action_undo_waypoint
+  - action_clear_all_waypoints
+  - action_show_waypoints
+
+  - action_rover_navigate
+
+  - action_start_egress
+  - action_current_egress_step_number
+  - action_current_egress_step
+  - action_next_egress_step
+  - action_repeat_egress_step
+  - action_exit_egress
+  - action_confirm_egress_completion
+
+
+checkpoints:
+  - checkpoint_egress_started
+  - checkpoint_egress_ended 
+
 
 session_config:
   session_expiration_time: 60
