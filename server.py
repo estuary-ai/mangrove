@@ -49,7 +49,7 @@ class DigitalAssistant(Namespace):
         with self.lock:
             self.assistant_controller.clean_up()    
     
-    def on_tts_read(self, data):
+    def on_read_tts(self, data):
         write_output(f'request to read data {data}')
         audio_bytes = self.assistant_controller.read_text(data)
         emit("bot_voice", audio_bytes)

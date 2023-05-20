@@ -71,13 +71,14 @@ class TTSController:
 
     def get_feature_read_bytes(self, feature, values, units=None):
         
-        text = feature + " is equal to "
-        if units is None:
+        text = feature.replace("_", " ") + " is equal to "
+        if not units:
             units = ["" for _ in values]
 
         for value, unit in zip(values, units):
+            write_output(value)
             text += self._textify_number(round(Decimal(value), 2)) + " " + unit
-
+        write_output(text)
         return self._get_audio_bytes_stream(text)
     
     def get_plain_text_read_bytes(self, text):

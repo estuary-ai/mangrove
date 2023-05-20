@@ -74,8 +74,7 @@ class AssistantController:
                     data['feature'], data['values'], data['units']
                 )
             except:
-                raise Exception('Data should be JSON format')
-            raise Exception("Only dict/json and str are supported types")
+                raise Exception("Only dict/json and str are supported types")
         return audio_bytes
     
     def feed_audio_stream(self, audio_data):        

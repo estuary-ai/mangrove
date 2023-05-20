@@ -16,7 +16,8 @@ debug-and-drafts/res-speech/*.*
 samples/
 res-speech/*.*
 
-models/ds-model/*.zip
+models/ds-model/
+# models/ds-model/*.zip
 
 
 debug-and-drafts/web_microphone_websocket
