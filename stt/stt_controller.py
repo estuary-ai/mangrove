@@ -18,10 +18,11 @@ class STTController:
                 #  model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
                  model_scorer_path='models\ds-model\lm_unopt_senva\kenlm',
                  load_scorer=True,
-                 silence_threshold=300,
+                 silence_threshold=400,
                  vad_aggressiveness=3,
                  frame_size=320,
-                 scorer_alpha_beta=[0.931289039105002, 1.1834137581510284],
+                 scorer_alpha_beta=[0.8837872437480643, 2.8062638242800135],
+                #  scorer_alpha_beta=[0.931289039105002, 1.1834137581510284],
                  verbose=True):
         
         self.verbose=verbose
@@ -31,8 +32,8 @@ class STTController:
         if load_scorer:
             self._log('Enabling External Scorer.', end='\n')
             self.model.enableExternalScorer(model_scorer_path + ".scorer")
-            # self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
-            # self.model.setScorerAlphaBeta(*scorer_alpha_beta)
+            self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
+            self.model.setScorerAlphaBeta(*scorer_alpha_beta)
             self._log(f"Establishing a beam width of {self.model.beamWidth()}", end='\n')
             
         self.buffer = DataBuffer(self.frame_size)
