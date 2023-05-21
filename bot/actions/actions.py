@@ -326,7 +326,7 @@ class ActionRoverNavigate(Action):
             target_dest = tracker.get_slot('nav_target')
             text = 'finding route to playstation location %s' % target_dest
 
-        cmd = { 'Rover': 'Vitals', 'action': 'navigate', 'additionalInfo': [target_dest] }
+        cmd = { 'target': 'Rover', 'action': 'navigate', 'additionalInfo': [target_dest] }
 
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]

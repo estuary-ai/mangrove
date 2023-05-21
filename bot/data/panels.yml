@@ -28,6 +28,7 @@ nlu:
   examples: |
     - [show](switch:on) me the [vitals](panel)
     - [open](switch:on) [vitals](panel) panel
+    - [open](switch:on) [vitals](panel)
     - [show](switch:on) [life support](panel:vitals)
     - [open](switch:on) the [life support](panel:vitals) panel
     - [show](switch:on) me my [vitals](panel)
@@ -41,6 +42,21 @@ nlu:
     - [dismiss](switch:off) [vitals](panel) panel
     - [hide](switch:off) [life support](panel:vitals)
     - [dismiss](switch:off) my [life support](panel:vitals)
+    - [show](switch:on) me the [vital](panel:vitals)
+    - [open](switch:on) [vita](panel:vitals) panel
+    - [show](switch:on) [life](panel:vitals)
+    - [open](switch:on) the [life sup](panel:vitals) panel
+    - [show](switch:on) me my [vital](panel:vitals)
+    - [pull up](switch:on) [vita](panel:vitals)
+    - [pull up](switch:on) [life](panel:vitals)
+    - what are my [vita](panel:vitals)
+    - how are my [vitals](panel:vitals) doing
+    - how is my [life suppo](panel:vitals)
+    - [hide](switch:off) [vital](panel:vitals) view
+    - [close](switch:off) the [vita](panel:vitals) window
+    - [dismiss](switch:off) [vit](panel:vitals) panel
+    - [hide](switch:off) [life](panel:vitals)
+    - [dismiss](switch:off) my [life sup](panel:vitals)
 
 - intent: show_suit
   examples: |    
@@ -101,17 +117,21 @@ nlu:
     - [open](switch:on) [tss](panel) panel
     - [show](switch:on) [telemetry](panel:tss)
     - [open](switch:on) the [telemetry](panel:tss) panel
+    - [show](switch:on) [connection](panel:tss)
+    - [open](switch:on) the [connection](panel:tss) panel
     - [show](switch:on) me my [tss](panel)
     - [pull up](switch:on) [tss](panel)
     - [pull up](switch:on) [telemetry](panel:tss) stream
-    - what are my [tss](panel)
-    - how are my [tss](panel) doing
-    - what are the [telemetry](panel:tss) values
+    - show [tss](panel) settings
+    - show [telemetry](panel) settings
+    - show [connection](panel) settings
     - [hide](switch:off) [tss](panel) view
     - [close](switch:off) the [tss](panel) window
     - [dismiss](switch:off) [tss](panel) panel
     - [hide](switch:off) [telemetry](panel:tss)
     - [dismiss](switch:off) my [telemetry](panel:tss)
+    - [hide](switch:off) [connection](panel:tss)
+    - [dismiss](switch:off) my [connection](panel:tss)
 
 - intent: show_ai
   examples: |
