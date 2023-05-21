@@ -120,11 +120,7 @@ class AssistantController:
         if len(command_audio_buffer) > 0:
             StorageManager.play_audio_packet(command_audio_buffer)
             
-        StorageManager.write_audio_file(
-            session_audio_buffer,
-            include_session_id=True
-        )
-        
+        StorageManager.write_audio_file(session_audio_buffer)
         StorageManager.ensure_completion()
 
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
