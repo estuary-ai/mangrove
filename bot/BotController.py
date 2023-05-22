@@ -65,7 +65,7 @@ class BotController:
                             texts.append('Completed all steps in procedure')
                         else:
                             command['additionalInfo'] = [cur_step.stepId, cur_step.target]
-                            texts.append(next_step.text)
+                            texts.append(cur_step.text)
                         commands.append(command)    
                     elif command['action'] == 'next_step':
                         next_step = self.egress_procedure.get_next_step()
