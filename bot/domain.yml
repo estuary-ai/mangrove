@@ -102,16 +102,16 @@ slots:
     values:
     - home
     - closest
-    - a
-    - b
-    - c
-    - d
-    - e
-    - f
-    - g
-    - h
-    - i
-    - j
+    - alpha
+    - bravo
+    - charlie
+    - delta
+    - echo
+    - foxtrot
+    - golf
+    - hotel
+    - india
+    - juliet
     mappings:
     - type: from_entity
       entity: feature
