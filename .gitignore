@@ -15,8 +15,6 @@ debug-and-drafts/res-speech/*.*
 
 samples/
 res-speech/*.*
-
-models/ds-model/
 # models/ds-model/*.zip
 
 
