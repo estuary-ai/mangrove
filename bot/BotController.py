@@ -83,10 +83,10 @@ class BotController:
                         # set world state to egress exited
                     elif command['action'] == 'confirm_completion':
                         if self.egress_procedure.is_finished():
-                            commands['additionalInfo'] = ['true']
+                            command['additionalInfo'] = ['true']
                             texts.append('All steps of the egress procedure have been completed')
                         else:
-                            commands['additionalInfo'] = ['false']
+                            command['additionalInfo'] = ['false']
                             texts.append('The egress procedure has not been completed')
                 else:
                     commands.append(command)
