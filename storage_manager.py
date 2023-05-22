@@ -16,10 +16,35 @@ class StorageManager:
     
     def __init__(self):
         self.audio_files_dir = 'sample-audio-binary'
+        self.logging_dir = 'world-state-logs'
         self.threads_pool = []
         if not path.exists(self.audio_files_dir):
             makedirs(self.audio_files_dir)
+        if not path.exists(self.logging_dir):
+            makedirs(self.logging_dir)
     
+    @classmethod
+    def establish_session(cls):
+        cls = StorageManager()
+        cls._generate_session_id()
+
+    def _generate_session_id(self):
+        try:
+            self.log_file.close()
+        except:
+            # No log file open
+            pass
+        self.session_id = str(time.time())
+        self.log_file = open(f'session_{self.session_id}.log', mode='w')
+    
+    def clean_up(cls):
+        cls = StorageManager()
+        try:
+            cls.log_file.close()
+        except:
+            # No log file open
+            write_output('No log file open to close.')
+        
     def _enqueue_task(self, func, *args):
         self = StorageManager()
         thread = Thread(
@@ -30,21 +55,21 @@ class StorageManager:
         self.threads_pool.append(thread)
         
     @classmethod
-    def play_audio_packet(self, audio_packet, transcription=None, block=False):
+    def play_audio_packet(cls, audio_packet, transcription=None, block=False):
         def play_save_packet(audio_packet, transcription=None):
             write_output('Here is response frames played out.. pay attention')
             sd.play(np.frombuffer(audio_packet.bytes, dtype=np.int16), 16000)
             sd.wait()
             if transcription is not None:
-                with open(f"sample-audio-binary/{transcription}_{str(time.time())}.txt", mode='wb') as f:
+                with open(f"sample-audio-binary/{transcription}_{cls.session_id}.txt", mode='wb') as f:
                     f.write(audio_packet.bytes)
                 
         # TODO Write meta data too
-        self = StorageManager()
+        cls = StorageManager()
         if block:
             play_save_packet(audio_packet, transcription)
         else:
-            self._enqueue_task(play_save_packet, audio_packet, transcription)
+            cls._enqueue_task(play_save_packet, audio_packet, transcription)
         
     def _write_bin(self, audio_buffer, text, prefix):
         # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)        
@@ -94,6 +119,15 @@ class StorageManager:
                 continue
             thread.join()
             
+    def log_state(self, state):
+        self = StorageManager()
+        def _write_state(state):
+            self.log_file.write(str(state))
+            self.log_file.flush()
+        self._enqueue_task(_write_state, state)
+        
+            
 def write_output(msg, end='\n'):
     print(str(msg), end=end, flush=True)
+    
     

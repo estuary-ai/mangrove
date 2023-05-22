@@ -1,10 +1,12 @@
+#!/usr/bin/env python -W ignore::DeprecationWarning
+
 import os, argparse
 from flask import Flask
 from flask_socketio import SocketIO, Namespace, emit
 from assistant_controller import AssistantController
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
-from memory import get_world_state
+from memory import WorldState
 
 # log.basicConfig(filename='output.log', level=log.INFO)
 
@@ -40,6 +42,7 @@ class DigitalAssistant(Namespace):
         
     def on_connect(self):
         write_output('client connected\n')
+        StorageManager.establish_session()
         bot_voice_bytes = self.assistant_controller.startup()
         if bot_voice_bytes:
             write_output('emmiting bot_voice')
@@ -48,7 +51,8 @@ class DigitalAssistant(Namespace):
     def on_disconnect(self):
         write_output('client disconnected\n')
         with self.lock:
-            self.assistant_controller.clean_up()    
+            self.assistant_controller.clean_up()  
+        StorageManager.clean_up()  
     
     def on_read_tts(self, data):
         write_output(f'request to read data {data}')
@@ -72,9 +76,7 @@ class DigitalAssistant(Namespace):
         self.bot_respond(command)
         
     def on_update_world_state(self, state):
-        world_state = get_world_state()
-        world_state.update(state)
-        
+        WorldState.update(state)
 
     def bg_responding_task(self):
         # READ BUFFER AND EMIT AS NEEDED

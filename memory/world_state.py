@@ -1,4 +1,5 @@
 import json
+from storage_manager import StorageManager
 
 class GpsState:
 
@@ -267,6 +268,13 @@ class RoverState:
 
 
 class WorldState:
+    
+    _self = None
+
+    def __new__(cls):
+        if cls._self is None:
+            cls._self = super().__new__(cls)
+        return cls._self
 
     def __init__(self) -> None:
         self.gps_state = GpsState()
@@ -277,12 +285,10 @@ class WorldState:
         self.rover_state = RoverState()
         # self.bot_state = BotState()
 
-    def update(self, state, save=True):
+    def update(self, state):
+        self.self = WorldState()
         state = json.loads(state)
-        if save:
-            import time
-            with open(f"world_state_logs/{time.time()}_log.txt", mode="w") as f:
-                f.write(str(state))                
+        StorageManager.log_state(state)
         self.gps_state.update(state['gps_msg'])
         self.imu_state.update(state['imu_msg'])
         self.sim_state.update(state['simulation_states'])
