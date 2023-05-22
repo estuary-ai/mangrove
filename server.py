@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, Namespace, emit
 from assistant_controller import AssistantController
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
+from memory import get_world_state
 
 # log.basicConfig(filename='output.log', level=log.INFO)
 
@@ -71,8 +72,9 @@ class DigitalAssistant(Namespace):
         self.bot_respond(command)
         
     def on_world_state_update(self, state):
-        # TODO 
-        pass
+        world_state = get_world_state()
+        world_state.update(state)
+        write_output('world state updated')
         
 
     def bg_responding_task(self):
