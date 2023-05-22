@@ -37,6 +37,7 @@ class StorageManager:
         self.session_id = str(time.time())
         self.log_file = open(f'session_{self.session_id}.log', mode='w')
     
+    @classmethod
     def clean_up(cls):
         cls = StorageManager()
         try:
