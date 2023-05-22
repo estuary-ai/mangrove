@@ -9,7 +9,7 @@ from .procedures import EgressProcedure
 class BotController:
 
     def __init__(self,
-                 model_path='models/rasa-model/20230520-091122.tar.gz',
+                 model_path='models/rasa-model/20230521-172806.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
         
         self.egress_procedure = EgressProcedure()
@@ -83,10 +83,10 @@ class BotController:
                         # set world state to egress exited
                     elif command['action'] == 'confirm_completion':
                         if self.egress_procedure.is_finished():
-                            commands['additionalInfo'] = ['true']
+                            command['additionalInfo'] = ['true']
                             texts.append('All steps of the egress procedure have been completed')
                         else:
-                            commands['additionalInfo'] = ['false']
+                            command['additionalInfo'] = ['false']
                             texts.append('The egress procedure has not been completed')
                 else:
                     commands.append(command)

@@ -6,10 +6,9 @@ nlu:
   examples: |
     - [show](switch:on) long range navigation
     - view long range navigation
-    - long range navigation
+    - longrange navigation
     - long range navigation menu
-    - [hide](switch:off) long range navigation menu
-    - [open](switch:on) [long](feature:long-range) range navigation
+    - [open](switch:on) longrange navigation
     - [show](switch:on) map
     - [view](switch:on) map
     - map
@@ -20,25 +19,38 @@ nlu:
     - [bring up](switch:on) the map
     - [show](switch:on) me the map
     - [close](switch:off) the long range navigation menu
-    - [close](switch:off) [long range](feature:long-range) navigation
-    - [hide](switch:off) the map
+    - [close](switch:off) longrange navigation
+    - [close](switch:off) long range navigation
     - [close](switch:off) the map
-    - [hide](switch:off) map menu
     - [close](switch:off) map
+    - [dismiss](switch:off) the longrange navigation menu
+    - [hide](switch:off) long range navigation menu
+    - [hide](switch:off) longrange nav
+    - [hide](switch:off) the map
+    - [hide](switch:off) map menu
+    - [put away](switch:off) the map
 
 - intent: short_range_navigation
   examples: |
-    - [enable](switch:on) [short range](feature:short-range) navigation
-    - [show](switch:on) [short range](feature:short-range) navigation
-    - [disable](switch:off) [short range](feature:short-range) navigation
-    - [hide](switch:off) [short range](feature:short-range) navigation
+    - [enable](switch:on) short range navigation
+    - [enable](switch:on) shortrange navigation
+    - [show](switch:on) short range navigation
+    - [show](switch:on) shortrange navigation
+    - [disable](switch:off) short range navigation
+    - [disable](switch:off) shortrange navigation
+    - [hide](switch:off) short range navigation
+    - [hide](switch:off) shortrange navigation
 
 - intent: short_range_nav_settings
   examples: |
-    - [open](switch:on) [short](feature:short-range) range navigation settings
-    - [show](switch:on) [short](feature:short-range) range navigation settings
-    - [close](switch:off) [short](feature:short-range) range navigation settings
-    - [hide](switch:off) [short](feature:short-range) range navigation settings
+    - [open](switch:on) short range navigation settings
+    - [open](switch:on) shortrange navigation settings
+    - [show](switch:on) short range navigation settings
+    - [show](switch:on) shortrange navigation settings
+    - [close](switch:off) short range navigation settings
+    - [close](switch:off) shortrange navigation settings
+    - [hide](switch:off) short range navigation settings
+    - [hide](switch:off) shortrange navigation settings
 
 - intent: set_long_nav_mode
   examples: |

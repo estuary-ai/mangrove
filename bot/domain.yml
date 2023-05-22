@@ -18,6 +18,7 @@ intents:
   - show_breadcrumbs
   - calibrate_compass
   - set_north
+  - set_long_nav_mode
 
   - panel_follow
   - close_panel
@@ -36,13 +37,11 @@ intents:
   - read_battery
   - read_battery_time
   - read_primary_o2
-  - read_primary_o2_pressure
   - read_secondary_o2
-  - read_secondary_o2_pressure
   - read_o2_time
   - read_heart_rate
   - read_suit_pressure
-  - read_suit_o2_pressure
+  - read_o2_pressure
 
   - add_waypoint
   - remove_waypoint
@@ -103,16 +102,16 @@ slots:
     values:
     - home
     - closest
-    - a
-    - b
-    - c
-    - d
-    - e
-    - f
-    - g
-    - h
-    - i
-    - j
+    - alpha
+    - bravo
+    - charlie
+    - delta
+    - echo
+    - foxtrot
+    - golf
+    - hotel
+    - india
+    - juliet
     mappings:
     - type: from_entity
       entity: feature
@@ -142,13 +141,11 @@ slots:
     - battery
     - battery_time
     - primary_o2
-    - primary_o2_pressure
     - secondary_o2
-    - secondary_o2_pressure
     - o2_time
     - heart_rate
     - suit_pressure
-    - suit_o2_pressure
+    - o2_pressure
     mappings:
     - type: from_entity
       entity: feature
@@ -171,7 +168,16 @@ responses:
   utter_fallback:
   - text: "Sorry, I didn't quite catch that. Could you try again?"
   - text: "Could you repeat that?"
-  - text: "Please try again."
+  - text: "I did not quite understand that. Please try again."
+
+  utter_ask_rephrase:
+  - text: "Sorry, I didn't quite catch that. Could you try again?"
+  - text: "Could you repeat that?"
+  - text: "I did not quite understand that. Please try again."
+
+  utter_default:
+  - text: "I'm sorry, this is beyond my capabilities."
+  - text: "I'm sorry, I can't help you."
 
 actions:
   - action_show_navigation
