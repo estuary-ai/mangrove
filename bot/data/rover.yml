@@ -4,12 +4,16 @@ nlu:
 
 - intent: rover_go_to
   examples: |
-    - rover go to point [a](feature)
-    - take rover to point of interest [b](feature)
-    - navigate rover to location [c](feature)
-    - transport rover to area of interest [d](feature)
-    - rover to position [e](feature)
-    - send rover to poi [f](feature)
+    - rover go to point [alpha](feature)
+    - take rover to point of interest [beta](feature)
+    - navigate rover to location [charlie](feature)
+    - transport rover to area of interest [delta](feature)
+    - rover to position [echo](feature)
+    - send rover to poi [foxtrot](feature)
+    - rover go to location [golf](feature)
+    - take rover to point [hotel](feature)
+    - navigate rover to marker [india](feature)
+    - transport rover to area of interest [juliet](feature)
 # target: Rover, action: A~J
 
 - intent: rover_come_back

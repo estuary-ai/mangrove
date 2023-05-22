@@ -173,6 +173,8 @@ class ActionNavigate(Action):
         elif point == 'closest':
             text = 'Calculating path to the closest point'
         else:
+            if point in [ 'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india', 'juliet' ]:
+                point = point[0]
             text = 'Calculating path to point %s' % point
 
         cmd = { 'target': 'Breadcrumb', 'action': 'navigate', 'additionalInfo': [point] }
@@ -295,21 +297,6 @@ class ActionShowWaypoints(Action):
         return [Restarted()]
 
 
-class ActionRoverGoTo(Action):
-
-    def name(self) -> Text:
-        return 'action_rover_go_to'
-
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-
-        vitals_type = tracker.get_intent_of_latest_message()[5:]
-
-        cmd = { 'target': 'Vitals', 'action': 'distract', 'additionalInfo': [vitals_type] }
-
-        dispatcher.utter_message(custom=cmd)
-        return [Restarted()]
-
-
 class ActionRoverNavigate(Action):
 
     def name(self) -> Text:
@@ -324,11 +311,14 @@ class ActionRoverNavigate(Action):
             target_dest = 'home'
         elif intent_type == 'go_to':
             target_dest = tracker.get_slot('nav_target')
-            text = 'finding route to playstation location %s' % target_dest
+            if target_dest not in [ 'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india', 'juliet' ]:
+                return ActionErrorMessage().run(dispatcher, tracker, domain)
+            target_dest = target_dest[0]
+            text = 'Taking rover to location %s' % target_dest
 
         cmd = { 'target': 'Rover', 'action': 'navigate', 'additionalInfo': [target_dest] }
 
-        dispatcher.utter_message(custom=cmd)
+        dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
 
 
