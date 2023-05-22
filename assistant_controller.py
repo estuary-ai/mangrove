@@ -47,8 +47,7 @@ class AssistantController:
         self.initiate_audio_stream()
         bot_voice_bytes = self.read_text(
             "Hello, AI server connection is succesful. "
-            f"This is Your assistant, {self.name}.",
-            plain_text=True
+            f"This is Your assistant, {self.name}."
         )
         return bot_voice_bytes
         
@@ -61,19 +60,19 @@ class AssistantController:
     def initiate_audio_stream(self):
         self.stt.create_stream()
         
-    def read_text(self, data: any, plain_text=False):
-        if plain_text:
-            audio_bytes = self.tts.get_plain_text_read_bytes(data)
-        else:
-            # READING VITALS
-            # TODO Include transcription in audio bytes sent
-            try:
-                if isinstance(data, str):
-                    data = json.loads(str(data))
-                audio_bytes = self.tts.get_feature_read_bytes(
-                    data['feature'], data['values'], data['units']
-                )
-            except:
+    def read_text(self, data: any):
+        # READING VITALS
+        # TODO Include transcription in audio bytes sent
+        try:
+            if isinstance(data, str):
+                data = json.loads(str(data))
+            audio_bytes = self.tts.get_feature_read_bytes(
+                data['feature'], data['values'], data['units']
+            )
+        except:
+            if isinstance(data, str):
+                audio_bytes = self.tts.get_plain_text_read_bytes(data)
+            else:
                 raise Exception("Only dict/json and str are supported types")
         return audio_bytes
     
@@ -120,11 +119,7 @@ class AssistantController:
         if len(command_audio_buffer) > 0:
             StorageManager.play_audio_packet(command_audio_buffer)
             
-        StorageManager.write_audio_file(
-            session_audio_buffer,
-            include_session_id=True
-        )
-        
+        StorageManager.write_audio_file(session_audio_buffer)
         StorageManager.ensure_completion()
 
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
