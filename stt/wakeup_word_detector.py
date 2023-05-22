@@ -11,10 +11,13 @@ class WakeUpVoiceDetector(Thread):
             self,
             access_key = 
                 [
-                    "fBji1XWFPwYfoO9yl7H8fqvp2mNm6S1lpliku/u74Jfb2XuiIZjciQ=="
+                    "Sf/52ItzMqpOpPQbsiN8g4WNOu+7VclIJZlwMZyI5+1KNlDZjZBrGA==",
+                    "GJxnDyQx7BWTkVdrE4sW/raxWZGmpxXmLN71urcgCugdSURn5enYBA==",
+                    "126kyqRJC8iIG41p8NZqo6DNb3wKrAN1Ilv+PQ/xdMxn8Q8MfTvCsQ=="
                 ],
             keyword_paths = [
                 [
+                    "models/pvprocupine/%s/Hello-Eva_en_windows_v2_2_0/hello-Eva_en_windows_v2_2_0.ppn",
                     "models/pvprocupine/%s/Traveller_en_windows_v2_2_0/Traveller_en_windows_v2_2_0.ppn",
                     "models/pvprocupine/%s/habibi_en_windows_v2_2_0/habibi_en_windows_v2_2_0.ppn"
                 ]
