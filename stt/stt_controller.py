@@ -1,3 +1,4 @@
+import os, json
 import time
 import collections.abc
 import numpy as np
@@ -9,20 +10,25 @@ from storage_manager import StorageManager
 from .focus_level import FocusLevel, init_words_focus_assets
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
-from .vad_collector import vad_collector
+# from .vad_collector import vad_collector
 
 class STTController:
     def __init__(self, 
                  sample_rate=16000,
                  model_acoustic_path='models/ds-model/deepspeech-0.9.3-models',
-                #  model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
-                 model_scorer_path='models/ds-model/lm_unopt_senva/kenlm',
+                 model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
+                 custom_scorer_path_prefix='models/ds-model/custom_scorers',
+                #  custom_scorer=None,
+                 custom_scorer='lm_unopt_senva_small', # Override default scorer path
+                #  custom_scorer='lm_unopt_senva_large', # Override default scorer path
+                #  custom_scorer='lm_unopt_apollo11_senva_large', # Override default scorer path
                  load_scorer=True,
+                 use_opt_params=True,
                  silence_threshold=400,
                  vad_aggressiveness=3,
                  frame_size=320,
-                 scorer_alpha_beta=[0.8837872437480643, 2.8062638242800135],
-                #  scorer_alpha_beta=[0.931289039105002, 1.1834137581510284],
+                 scorer_alpha_beta=[0.8837872437480643, 2.8062638242800135], # Overridden by custom
+                 override_by_custom_if_defined=True,
                  verbose=True):
         
         self.verbose=verbose
@@ -30,10 +36,21 @@ class STTController:
         self.SAMPLE_RATE = sample_rate
         self.model = deepspeech.Model(model_acoustic_path + ".pbmm")
         if load_scorer:
-            self._log('Enabling External Scorer.', end='\n')
-            self.model.enableExternalScorer(model_scorer_path + ".scorer")
-            self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
-            self.model.setScorerAlphaBeta(*scorer_alpha_beta)
+            if custom_scorer is not None:
+                model_scorer_path = os.path.join(
+                    custom_scorer_path_prefix,
+                    custom_scorer, "kenlm"
+                )
+            self._log(f'Enabling External Scorer: {model_scorer_path}.scorer', end='\n')
+            self.model.enableExternalScorer(f"{model_scorer_path}.scorer")
+            if use_opt_params:
+                if override_by_custom_if_defined:
+                    scorer_alpha_beta = self.load_optimal_values(
+                        custom_scorer_path_prefix,
+                        custom_scorer
+                    )
+                self._log(f"Setting Scorer alpha, beta to {scorer_alpha_beta} respectively.", end='\n')
+                self.model.setScorerAlphaBeta(*scorer_alpha_beta)
             self._log(f"Establishing a beam width of {self.model.beamWidth()}", end='\n')
             
         self.buffer = DataBuffer(self.frame_size)
@@ -51,6 +68,14 @@ class STTController:
 
         # TODO
         self.init_words_focus_assets()
+        
+    def load_optimal_values(self, custom_scorer_path_prefix, scorer_name):
+        with open(os.path.join(custom_scorer_path_prefix, "optimal_hyperparams.json")) as f:
+            custom_scorers_meta = json.load(f)
+        return \
+            custom_scorers_meta[scorer_name]['alpha'],\
+            custom_scorers_meta[scorer_name]['beta']
+        
 
     def feed_silence(self, milliseconds=200):
         num_bytes = (milliseconds//10)*320*2
