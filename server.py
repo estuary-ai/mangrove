@@ -71,7 +71,7 @@ class DigitalAssistant(Namespace):
         write_output(f'\nUser: {command}')
         self.bot_respond(command)
         
-    def on_world_state_update(self, state):
+    def on_update_world_state(self, state):
         world_state = get_world_state()
         world_state.update(state)
         write_output('world state updated')

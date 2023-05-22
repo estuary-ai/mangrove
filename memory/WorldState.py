@@ -1,5 +1,4 @@
-# from bot.BotState import BotState
-
+import json
 
 class GpsState:
 
@@ -278,7 +277,13 @@ class WorldState:
         self.rover_state = RoverState()
         # self.bot_state = BotState()
 
-    def update(self, state):
+    def update(self, state, save=True):
+        state = json.loads(state)
+        if save:
+            with open("{time.time()}_log.txt", mode="w") as f:
+                f.write(state)
+                
+        breakpoint()
         self.gps_state.update(state['gps_state'])
         self.imu_state.update(state['imu_state'])
         self.sim_state.update(state['sim_state'])
