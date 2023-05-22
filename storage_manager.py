@@ -1,4 +1,5 @@
 import time
+import wave
 import numpy as np
 import sounddevice as sd   
 from os import path, makedirs
@@ -45,22 +46,44 @@ class StorageManager:
         else:
             self._enqueue_task(play_save_packet, audio_packet, transcription)
         
+    def _write_bin(self, audio_buffer, text, prefix):
+        # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)        
+        with open(
+            path.join(
+                self.audio_files_dir, 
+                f'{prefix}{text.replace(" ", "_")}_binary.txt'
+            ),
+            mode='wb'
+        ) as f:
+            f.write(audio_buffer.bytes)
+        
+    def _write_wav(self, audio_buffer, text, prefix):
+        # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)        
+        with wave.open(
+            path.join(
+                self.audio_files_dir, 
+                f'{prefix}{text.replace(" ", "_")}.wav'
+            ),
+            mode='w'
+        ) as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(
+                np.frombuffer(audio_buffer.bytes, dtype=np.int16)
+            )
+        
     @classmethod
-    def write_audio_file(self, audio_buffer, text='', include_session_id=False):
+    def write_audio_file(self, audio_buffer, text='', format='wav'):
         self = StorageManager()
-        def _write(audio_buffer, text, prefix):
-            # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)        
-            with open(
-                path.join(
-                    self.audio_files_dir, 
-                    f'{prefix}{text.replace(" ", "_")}_binary.txt'
-                ),
-                mode='wb'
-            ) as f:
-                f.write(audio_buffer.bytes)
-                
-        prefix = str(int(time.time()*1000)) if include_session_id else ""
-        self._enqueue_task(_write, audio_buffer, text, prefix)
+        
+        _write = {
+            'binary': lambda a, t, p:  self._write_bin(a, t, p),
+            'wav': lambda a, t, p:  self._write_wav(a, t, p),
+        }
+        
+        session_id = f'session_{int(time.time()*1000)}_'
+        self._enqueue_task(_write[format], audio_buffer, text, session_id)
     
     @classmethod
     def ensure_completion(self):
