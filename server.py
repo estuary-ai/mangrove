@@ -74,7 +74,6 @@ class DigitalAssistant(Namespace):
     def on_update_world_state(self, state):
         world_state = get_world_state()
         world_state.update(state)
-        write_output('world state updated')
         
 
     def bg_responding_task(self):

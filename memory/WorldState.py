@@ -279,13 +279,10 @@ class WorldState:
 
     def update(self, state, save=True):
         state = json.loads(state)
-        breakpoint()
         if save:
             import time
-            with open(f"{time.time()}_log.txt", mode="w") as f:
-                f.write(str(state))
-                
-        breakpoint()
+            with open(f"world_state_logs/{time.time()}_log.txt", mode="w") as f:
+                f.write(str(state))                
         self.gps_state.update(state['gps_msg'])
         self.imu_state.update(state['imu_msg'])
         self.sim_state.update(state['simulation_states'])
