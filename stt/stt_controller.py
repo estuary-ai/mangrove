@@ -13,24 +13,26 @@ from .audio_packet import AudioPacket
 # from .vad_collector import vad_collector
 
 class STTController:
-    def __init__(self, 
-                 sample_rate=16000,
-                 model_acoustic_path='models/ds-model/deepspeech-0.9.3-models',
-                 model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
-                 custom_scorer_path_prefix='models/ds-model/custom_scorers',
-                #  custom_scorer=None,
-                 custom_scorer='lm_unopt_senva_small', # Override default scorer path
-                #  custom_scorer='lm_unopt_senva_large', # Override default scorer path
-                #  custom_scorer='lm_unopt_apollo11_senva_large', # Override default scorer path
-                 load_scorer=True,
-                 use_opt_params=True,
-                 silence_threshold=400,
-                 vad_aggressiveness=3,
-                 frame_size=320,
-                 scorer_alpha_beta=[0.8837872437480643, 2.8062638242800135], # Overridden by custom
-                 override_by_custom_if_defined=True,
-                 verbose=True):
-        
+    def __init__(
+            self, 
+            sample_rate=16000,
+            model_acoustic_path='models/ds-model/deepspeech-0.9.3-models',
+            model_scorer_path='models/ds-model/deepspeech-0.9.3-models',
+            custom_scorer_path_prefix='models/ds-model/custom_scorers',
+            # custom_scorer=None,
+            custom_scorer='lm_unopt_senva_small', # Override default scorer path
+            # custom_scorer='lm_unopt_senva_large', # Override default scorer path
+            # custom_scorer='lm_unopt_apollo11_senva_large', # Override default scorer path
+            load_scorer=True,
+            use_opt_params=True,
+            silence_threshold=450,
+            vad_aggressiveness=3,
+            frame_size=320,
+            scorer_alpha_beta=[0.8837872437480643, 2.8062638242800135], # Overridden by custom
+            override_by_custom_if_defined=True,
+            verbose=False
+        ):
+
         self.verbose=verbose
         self.frame_size = frame_size
         self.SAMPLE_RATE = sample_rate

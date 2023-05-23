@@ -51,7 +51,7 @@ class BotController:
                         self.egress_procedure.restart()
                         # start video stream
                         # open egress checklist
-                        # commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
+                        commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
                         # set world state to egress in progress
                     elif command['action'] == 'current_step_number':
                         cur_step = self.egress_procedure.get_current_step()
@@ -88,6 +88,7 @@ class BotController:
                         else:
                             command['additionalInfo'] = ['false']
                             texts.append('The egress procedure has not been completed')
+                    texts = []
                 else:
                     commands.append(command)
         
@@ -95,7 +96,7 @@ class BotController:
         response = {}
         response['text'] = texts
         response['commands'] = commands
-
+ 
         print(commands)
 
         # Flatten commands

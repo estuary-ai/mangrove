@@ -24,11 +24,11 @@ socketio = SocketIO(
     # logger=True, engineio_logger=True
 )
 
-# @socketio.on_error_default  # handles all namespaces without an explicit error handler
-# def default_error_handler(e):
-#     write_output(f'Error debug {e}')
-#     # stt.reset_audio_stream()
-#     # # TODO reset anything   
+@socketio.on_error_default  # handles all namespaces without an explicit error handler
+def default_error_handler(e):
+    write_output(f'Error debug {e}')
+    # stt.reset_audio_stream()
+    # # TODO reset anything   
         
 class DigitalAssistant(Namespace):
     def __init__(self, namespace, assistant_name='SENVA'):
