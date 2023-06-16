@@ -1,5 +1,6 @@
 #!/usr/bin/env python -W ignore::DeprecationWarning
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import os, argparse
 from flask import Flask
 from flask_socketio import SocketIO, Namespace, emit
@@ -8,48 +9,39 @@ from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from memory import WorldState
 
-# log.basicConfig(filename='output.log', level=log.INFO)
+# import tensorflow as tf
 
-import tensorflow as tf
-print(tf.config.list_physical_devices('GPU'))
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# @socketio.on_error_default  # handles all namespaces without an explicit error handler
+# def default_error_handler(e):
+#     write_output(f'Error debug {e}')
+#     # stt.reset_audio_stream()
+#     # # TODO reset anything   
     
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(
-    app,
-    cors_allowed_origins='*',
-    cors_credentials=True,
-    # async_mode='gevent'
-    # logger=True, engineio_logger=True
-)
-
-@socketio.on_error_default  # handles all namespaces without an explicit error handler
-def default_error_handler(e):
-    write_output(f'Error debug {e}')
-    # stt.reset_audio_stream()
-    # # TODO reset anything   
-        
+socketio: SocketIO = None  
 class DigitalAssistant(Namespace):
-    def __init__(self, namespace, assistant_name='SENVA'):
-        super()
+    """Digital Assistant SocketIO Namespace"""
+    
+    def __init__(self, namespace='/', assistant_name='SENVA', shutdown_bot=False, verbose=False):
+        super().__init__(namespace)
         self.namespace = namespace
-        self.assistant_controller = AssistantController(name=assistant_name)
+        self.assistant_controller = AssistantController(
+            name=assistant_name, shutdown_bot=shutdown_bot, verbose=verbose
+        )
         self.lock = Lock()        
-        
         self.responding_task = socketio.start_background_task(self.bg_responding_task)
-        write_output("Server is about to be Up and Running..")
+        self.verbose = verbose # TODO use it
+        logging.info("Server is about to be Up and Running..")
         
     def on_connect(self):
-        write_output('client connected\n')
+        logging.info('client connected')
         StorageManager.establish_session()
         bot_voice_bytes = self.assistant_controller.startup()
         if bot_voice_bytes:
-            write_output('emmiting bot_voice')
+            logging.info('emmiting bot_voice')
             socketio.emit('bot_voice', bot_voice_bytes)
             
     def on_disconnect(self):
-        write_output('client disconnected\n')
+        logging.info('client disconnected\n')
         with self.lock:
             self.assistant_controller.clean_up()  
         StorageManager.clean_up()  
@@ -72,7 +64,7 @@ class DigitalAssistant(Namespace):
             raise Exception("Datatype is not supported")
         # breakpoint()
         command = {"text": command}
-        write_output(f'\nUser: {command}')
+        logging.info(f'User: {command}')
         self.bot_respond(command)
         
     def on_update_world_state(self, state):
@@ -85,8 +77,8 @@ class DigitalAssistant(Namespace):
             socketio.sleep(0.01)
             # counter += 1
             with self.lock:
-                if self.assistant_controller.is_awake:
-                    # write_output(f'is awake {counter}: {self.assistant_controller.is_awake}', end='\r')
+                if self.assistant_controller.is_awake():
+                    # write_output(f'is awake {counter}: {self.assistant_controller.is_awake()}', end='\r')
                     self.apply_communication_logic()
                     # TODO introduce timeout
                 else:
@@ -95,9 +87,9 @@ class DigitalAssistant(Namespace):
                         self.assistant_controller.is_wake_word_detected()
                     # write_output(f'took {time.time() - start}', end='\r')
                     if wakeUpWordDetected:
-                        write_output("detected wakeup word")
+                        logging.info("detected wakeup word")
                         socketio.emit('wake_up')    
-                        self.assistant_controller.is_awake = True
+                        # Now assisant is awake
                     
                     is_procedural = self.assistant_controller.process_if_procedural_step()
                     # Include timestamps
@@ -105,26 +97,25 @@ class DigitalAssistant(Namespace):
                         bot_res, bot_voice_bytes = is_procedural
                         # Include timestamps
                         if bot_voice_bytes:
-                            write_output('emmiting bot_voice')
+                            logging.info('emmiting bot_voice')
                             socketio.emit('bot_voice', bot_voice_bytes)
                         
                         if bot_res: # None only if bot is shutdown
-                            write_output("emitting bot_response")
+                            logging.info("emitting bot_response")
                             socketio.emit('bot_response', bot_res)
                         else:
-                            write_output('shutting down bot')
+                            logging.warn('bot is shutdown')
                             socketio.emit('bot_repsonse', {
                                 'msg': 'bot is shutdown' 
                             })
 
-
-    def apply_communication_logic(self):        
+    def apply_communication_logic(self):  
         stt_res = self.assistant_controller.process_audio_buffer()
         if stt_res is None:
             return
-        self.assistant_controller.is_awake = False
-   
-        write_output(f'\nUser: {stt_res}')
+        
+        # Now assisant is not awake
+        logging.info(f'User: {stt_res}')
         socketio.emit('stt_response', stt_res)
     
         # TODO check logic of is_awake
@@ -138,43 +129,74 @@ class DigitalAssistant(Namespace):
         bot_res, bot_voice_bytes =\
             self.assistant_controller.respond(stt_res['text'])
 
-        # Include timestamps
+        # TODO Include timestamps
         if bot_voice_bytes:
-            write_output('emmiting bot_voice')
+            logging.info('emmiting bot_voice')
             socketio.emit('bot_voice', bot_voice_bytes)
         
         if bot_res: # None only if bot is shutdown
-            write_output("emitting bot_response")
+            logging.info("emitting bot_response")
             socketio.emit('bot_response', bot_res)
         else:
-            write_output('shutting down bot')
+            logging.warn('bot is shutdown')
             socketio.emit('bot_repsonse', {
                 'msg': 'bot is shutdown' 
             })
 
 
 if __name__ == "__main__":    
+    # TODO use a yml config file with internal configurations
     parser = argparse.ArgumentParser(description='Digital Assistant Endpoint')
     parser.add_argument('--cpu', dest='cpu', type=bool, default=False, help='Use CPU instead of GPU')
     parser.add_argument('--port', dest='port', type=int, default=4000, help='Port number')
+    parser.add_argument('--name', dest='name', type=str, default='Traveller',
+                        help='Digital Assistant Name')
+    parser.add_argument('--shutdown_bot', dest='shutdown_bot', type=bool, default=False,
+                        help='Shutdown bot')
+    parser.add_argument('--debug', dest='debug', type=bool, default=False, help='Debug mode')
+    parser.add_argument('--verbose', dest='verbose', type=bool, default=False, help='Verbose mode')
+    parser.add_argument('--log', dest='log', type=bool, default=False, help='Log mode')
+    parser.add_argument('--flask_secret_key', dest='flask_secret_key', 
+                        type=str, default='secret!', help='Flask secret key')
     args = parser.parse_args()
 
-    # TODO use digital_assistant_name to set introduction msg
-    digital_assistant_name = 'Traveller'
-    digital_assistant = DigitalAssistant('/', assistant_name=digital_assistant_name)
-    socketio.on_namespace(digital_assistant)    
+
 
     if args.cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    else:
+        # print(tf.config.list_physical_devices('GPU'))
+        # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+        pass
         
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = args.flask_secret_key
+    socketio = SocketIO(
+        app,
+        cors_allowed_origins='*', cors_credentials=True,
+        logger=args.log, engineio_logger=args.log
+    )
+
+    digital_assistant_name = args.name
+    digital_assistant = DigitalAssistant(
+        namespace='/', 
+        assistant_name=digital_assistant_name,
+        shutdown_bot=args.shutdown_bot,
+        verbose=args.verbose
+    )
+    socketio.on_namespace(digital_assistant)    
+    
+    # Show all loggings levels in console
+    logging.basicConfig(level=logging.DEBUG)
+    
     # host_ip_address = socket.gethostbyname(socket.gethostname())
-    write_output(f'\nYour Digital Assistant {digital_assistant_name} running on port {args.port}')
-    write_output('Hints:')
-    write_output('1. Run "ipconfig" in your terminal and use Wireless LAN adapter Wi-Fi IPv4 Address')
-    write_output('2. Ensure your client is connected to the same WIFI connection')
-    write_output('3. Ensure firewall shields are down in this particular network type with python')
-    write_output('4. Ensure your client microphone is not used by any other services such as windows speech-to-text api')
-    write_output('Fight On!')
+    logging.info(f'\nYour Digital Assistant {digital_assistant_name} running on port {args.port}')
+    logging.info('Hints:')
+    logging.info('1. Run "ipconfig" in your terminal and use Wireless LAN adapter Wi-Fi IPv4 Address')
+    logging.info('2. Ensure your client is connected to the same WIFI connection')
+    logging.info('3. Ensure firewall shields are down in this particular network type with python')
+    logging.info('4. Ensure your client microphone is not used by any other services such as windows speech-to-text api')
+    logging.info('Fight On!')
     
     socketio.run(
         app, host='0.0.0.0',

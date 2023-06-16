@@ -10,8 +10,16 @@ from storage_manager import StorageManager, write_output
 DEFINED_PAUSE_PERIOD=0.5 # in seconds pause between stt responses
 
 class AssistantController:
+    """Main controller for the assistant."""
     
     def __init__(self, verbose=True, shutdown_bot=False, name='SENVA'):
+        """Initialize the assistant controller.
+        
+        Args:
+            verbose (bool, optional): Whether to print debug messages. Defaults to True.
+            shutdown_bot (bool, optional): Whether to shutdown the bot. Defaults to False.
+            name (str, optional): Name of the assistant. Defaults to 'SENVA'.
+        """
         self.name = name
         self.verbose = verbose
         self.wakeUpWordDetector = WakeUpVoiceDetector()
@@ -35,7 +43,15 @@ class AssistantController:
         self.indicator_bool = True
         self.writing_command_audio_threads_list = []        
         # self.data_buffer = DataBuffer(frame_size=320)
-        self.is_awake = False
+        self._is_awake = False
+
+    def is_awake(self):
+        """Check if assistant is awake
+        
+        Returns:
+            bool: Whether assistant is awake
+        """
+        return self._is_awake
 
     def startup(self) -> bytes:
         """Startup Upon Connection and return bot voice for introduction
@@ -58,9 +74,11 @@ class AssistantController:
         self.command_audio_buffer = AudioPacket.get_null_packet()
     
     def initiate_audio_stream(self):
+        """ Initiate audio stream for STT"""
         self.stt.create_stream()
         
     def read_text(self, data: any):
+        """ Read text using TTS and return audio bytes"""
         # READING VITALS
         # TODO Include transcription in audio bytes sent
         try:
@@ -76,9 +94,18 @@ class AssistantController:
                 raise Exception("Only dict/json and str are supported types")
         return audio_bytes
     
-    def feed_audio_stream(self, audio_data):        
+    def feed_audio_stream(self, audio_data):   
+        """ Feed audio stream to STT if awake or WakeUpWordDetector if not awake
+        
+        Args:
+            audio_data (bytes): Audio data in bytes
+        
+        Returns:
+            dict: STT response
+        
+        """     
         audio_packet = AudioPacket(audio_data)
-        if self.is_awake:
+        if self._is_awake:
             if self.is_command_buffer_empty():
                 self.initiate_audio_stream()
                 write_output("recieving first stream of audio command")
@@ -91,12 +118,16 @@ class AssistantController:
             self.wakeUpWordDetector.feed_audio(audio_packet)
             
     def is_wake_word_detected(self):
-        return self.wakeUpWordDetector.process_audio_stream()
+        """ Check if wake word is detected and set is_awake accordingly"""
+        self._is_awake = self.wakeUpWordDetector.process_audio_stream()
+        return self._is_awake
     
     def is_command_buffer_empty(self):
+        """Check if command buffer is empty"""
         return len(self.command_audio_buffer) == 0
         
     def process_audio_buffer(self):
+        """Process audio buffer and return STT response """
         stt_res = self.stt.process_audio_buffer()
         if stt_res:
             StorageManager.write_audio_file(
@@ -104,12 +135,13 @@ class AssistantController:
                 text=stt_res['text']
             )
             self.command_audio_buffer = AudioPacket.get_null_packet()
+            self._is_awake = False
+            print('i am not awake anymore', flush=True) # TODO remove
         return stt_res                        
     
     def clean_up(self):
-        """Clean up upon disconnection and delegate logging
-        """
-        self.is_awake = False
+        """Clean up upon disconnection"""
+        self._is_awake = False
         session_audio_buffer, command_audio_buffer =\
             self.session_audio_buffer, self.command_audio_buffer
             
@@ -123,6 +155,15 @@ class AssistantController:
         StorageManager.ensure_completion()
 
     def respond(self, text: str) -> typing.Tuple[dict, bytes]:
+        """Respond to user message and return bot response and voice bytes
+        # TODO consider adding timeout to this function and remove deprecated logic
+        
+        Args:
+            text (str): User message
+        
+        Returns:
+            typing.Tuple[dict, bytes]: Bot response and voice bytes        
+        """
         if self.bot is None:
             return None, None
         bot_res = self.bot.send_user_message(text)
@@ -138,6 +179,7 @@ class AssistantController:
 
         return bot_res, voice_bytes
     
+    # TODO migrate logic to if procedural step
     def check_bot_commands(self, bot_res):
         def setup_sample_tagging():
             write_output('set in sample tagging')
@@ -168,7 +210,12 @@ class AssistantController:
         else:
             write_output('no commands')
     
+    
+    # TODO complete this function
     def process_if_procedural_step(self):
+        if self.bot is None:
+            return None
+        
         # TODO enclude all types of procedures (i.e UIA Egress Procedure)
         self._process_sample_tagging_if_on() # TODO
         

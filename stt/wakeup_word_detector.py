@@ -6,7 +6,8 @@ from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
 
 class WakeUpVoiceDetector(Thread):
-
+    """Wake Up Word Detector using Porcupine"""
+    
     def __init__(
             self,
             access_key = 
@@ -23,6 +24,13 @@ class WakeUpVoiceDetector(Thread):
                 ]
             ],
             sensitivities=None):
+        """Initialize WakeUpVoiceDetector
+        
+        Args:
+            access_key (List[str], optional): Accesses keys for Porcupine.
+            keyword_paths (List[List[str]], optional): Pathes to keywords files. 
+            sensitivities (List[float], optional): Sensitivities for keywords. Defaults to None (equal senstivities).
+        """
         super(WakeUpVoiceDetector, self).__init__()
 
         try:
@@ -57,12 +65,23 @@ class WakeUpVoiceDetector(Thread):
         self.buffer = DataBuffer(self.frame_size)
     
     def reset_data_buffer(self):
+        """Reset data buffer"""
         self.buffer.reset()
 
     def feed_audio(self, audio_packet: AudioPacket):
+        """Feed audio packet to buffer
+        
+        Args:
+            audio_packet (AudioPacket): Audio packet to feed procupine hot-word detector
+        """
         self.buffer.add(audio_packet)
         
-    def process_audio_stream(self): 
+    def process_audio_stream(self) -> bool: 
+        """Process audio stream and return True if wake word is detected
+        
+        Returns:
+            bool: True if wake word is detected    
+        """
         # Utilize full audio_packet instead
         for frame in self.buffer:
             # Process only proper frame sizes

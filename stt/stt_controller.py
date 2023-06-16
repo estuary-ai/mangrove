@@ -1,18 +1,18 @@
+import logging
 import os, json
 import time
 import collections.abc
 import numpy as np
 import deepspeech
 import webrtcvad
-from functools import reduce
-                                      
+from functools import reduce                    
 from storage_manager import StorageManager
 from .focus_level import FocusLevel, init_words_focus_assets
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
-# from .vad_collector import vad_collector
-
+    
 class STTController:
+    """Speech to Text Controller using DeepSpeech"""
     def __init__(
             self, 
             sample_rate=16000,
@@ -32,7 +32,27 @@ class STTController:
             override_by_custom_if_defined=True,
             verbose=False
         ):
-
+        """Initialize STT Controller
+        
+        Args:
+            sample_rate (int, optional): Sample rate. Defaults to 16000.
+            model_acoustic_path (str, optional): Path to deepspeech acoustic model. Defaults to 'models/ds-model/deepspeech-0.9.3-models'.
+            model_scorer_path (str, optional): Path to deepspeech scorer model. Defaults to 'models/ds-model/deepspeech-0.9.3-models'.
+            custom_scorer_path_prefix (str, optional): Path prefix of custom scorers. Defaults to 'models/ds-model/custom_scorers'.
+            custom_scorer (str, optional): Name of custom scorer (Override default scorer path). Defaults to None.
+            load_scorer (bool, optional): Whether to load scorer. Defaults to True.
+            use_opt_params (bool, optional): Whether to use optimal parameters. Defaults to True.
+            silence_threshold (int, optional): Silence threshold. Defaults to 450.
+            vad_aggressiveness (int, optional): VAD aggressiveness. Defaults to 3.
+            frame_size (int, optional): Speech frame size. Defaults to 320.
+            scorer_alpha_beta (list, optional): Scorer alpha and beta. Defaults to [0.8837872437480643, 2.8062638242800135] which is optimal values for default pretrained 0.9.3 deepspeech scorer.
+            override_by_custom_if_defined (bool, optional): Whether to override scorer alpha and beta if custom scorer is defined. Defaults to True.
+            verbose (bool, optional): Whether to print debug messages. Defaults to False.
+        
+        Raises:
+            ValueError: If custom scorer is defined but not found
+        """
+        
         self.verbose=verbose
         self.frame_size = frame_size
         self.SAMPLE_RATE = sample_rate
@@ -72,6 +92,12 @@ class STTController:
         self.init_words_focus_assets()
         
     def load_optimal_values(self, custom_scorer_path_prefix, scorer_name):
+        """Load optimal values for scorer from json file
+        
+        Args:
+            custom_scorer_path_prefix (str): Path prefix of custom scorers
+            scorer_name (str): Name of scorer
+        """
         with open(os.path.join(custom_scorer_path_prefix, "optimal_hyperparams.json")) as f:
             custom_scorers_meta = json.load(f)
         return \
@@ -79,12 +105,18 @@ class STTController:
             custom_scorers_meta[scorer_name]['beta']
         
 
-    def feed_silence(self, milliseconds=200):
+    def feed_silence(self, milliseconds: int=200):
+        """Feed silence to stream context
+        
+        Args:
+            milliseconds (int, optional): Silence duration in milliseconds. Defaults to 200.
+        """
         num_bytes = (milliseconds//10)*320*2
         silence_bytes = b'\x00\x00'*num_bytes
         self.stream_context.feedAudioContent(np.frombuffer(silence_bytes, np.int16))
         
     def create_stream(self):
+        """Create a new stream context"""
         self.stream_context = self.model.createStream()        
         self.feed_silence()
         self.num_recorded_chunks = 0
@@ -92,6 +124,7 @@ class STTController:
         self.debug_feed_frames = AudioPacket.get_null_packet()
 
     def _finish_stream(self):
+        """Finish stream and return transcription if any found"""
         if self.stream_context is not None:
             self._log("\nTry to finalize Stream", end="\n", force=True)
             time_start_recog = round(time.time() * 1000)       
@@ -116,13 +149,25 @@ class STTController:
 
 
     def _feed_audio_content(self, frame: AudioPacket):
+        """Feed audio content to stream context
+        
+        Args:
+            frame (AudioPacket): Audio packet of voice frame
+        """
         self.debug_feed_size += len(frame)
         self.recorded_audio_length += frame.duration
         self.debug_feed_frames += frame
         self.stream_context.feedAudioContent(np.frombuffer(frame.bytes, np.int16))
 
-    def _process_voice(self, frame):
-        def _concat_buffered_silence(frame):
+    def _process_voice(self, frame: AudioPacket):
+        """Process voice frame and feed to stream context
+        
+        Args:
+            frame (AudioPacket): Audio packet of voice frame
+        """
+        def _concat_buffered_silence(frame: AudioPacket):
+            """Concatenate buffered silence to voice frame"""
+            
             if len(self.buffered_silences) > 0:
                 # if there were silence buffers append them
                 # DEBUG START
@@ -148,11 +193,21 @@ class STTController:
 
     
     def _reset_silence_buffer(self):
+        """Reset silence buffer"""
         # TODO try increasing size
         self.buffered_silences = collections.deque(maxlen=2)
 
     # TODO make _process_silence using samples count or percentge instead of time
     def _process_silence(self, frame: AudioPacket):
+        """Process silence frame and finish stream if silence threshold is reached
+        
+        Args:
+            frame (AudioPacket): Audio packet of silence frame
+            
+        Returns:
+            dict: Transcription if any found and stream finished while silence threshold is reached
+        """
+        
         if self.num_recorded_chunks > 0: # recording is on
             self._log('-') # silence detected while recording
             self.debug_feed_size -= len(frame)
@@ -183,7 +238,12 @@ class STTController:
             self._log('.') # silence detected while not recording
             self.buffered_silences.append(frame)
     
-    def feed(self, audio_packet):          
+    def feed(self, audio_packet: AudioPacket):       
+        """ Feed audio packet to STT Controller
+        
+        Args:
+            audio_packet (AudioPacket): Audio packet to feed
+        """   
         freq = (3000//20)**320*2 # 3 seconds
         verbose_cond = (self.debug_total_size % freq) == 0
         verbose_cond &= (self.debug_total_size > freq)
@@ -193,6 +253,7 @@ class STTController:
         self.buffer.add(audio_packet) 
 
     def process_audio_buffer(self):
+        """ Process audio buffer and return transcription if any found"""
         outcomes = [] 
         # Process only proper frame sizes
         for frame in self.buffer:
@@ -235,6 +296,14 @@ class STTController:
     #         return self._combine_outcomes(outcomes)
     
     def _combine_outcomes(self, outcomes):
+        """ Combine outcomes of multiple segments into one
+        
+        Args: 
+            outcomes (list): List of outcomes (transcriptions)
+            
+        Returns:
+            dict: Merged outcome
+        """
         merged_outcome = { 
             'text': "",
             'recog_time': 0,
@@ -250,6 +319,7 @@ class STTController:
         return merged_outcome
     
     def reset_audio_stream(self):
+        """ Reset audio stream context"""
         self._log('[reset]', end='\n')
         self.create_stream()        
         self.num_recorded_chunks = 0
@@ -258,6 +328,14 @@ class STTController:
         self.buffer.reset()
 
     def _log(self, msg, end="", force=False):
+        """ Log message to console if verbose is True or force is True with flush
+        
+        Args:
+            msg (str): Message to log
+            end (str, optional): End character. Defaults to "". 
+            force (bool, optional): Force logging. Defaults to False.   
+        
+        """
         if self.verbose or force:
             print(msg, end=end, flush=True)
 
@@ -268,6 +346,13 @@ class STTController:
                 words,
                 boostValues=None,
                 defaultBoost=FocusLevel.POS_MEDIUM.value):
+        """ Add focus to model
+        
+        Args: 
+            words (list): List of words to focus on
+            boostValues (list, optional): List of boost values. Defaults to None.
+            defaultBoost (int, optional): Default boost value. Defaults to FocusLevel.POS_MEDIUM.value.
+        """
         if boostValues is None:
             boostValues = [defaultBoost for _ in words]
         elif not isinstance(boostValues, list):
@@ -279,6 +364,7 @@ class STTController:
             self.model.addHotWord(word, boost)
 
     def init_words_focus_assets(self):
+        """ Initialize words focus assets"""
         # print(len(init_words_focus_assets()))
         self.regular_neg_lo_focus,\
         self.regular_pos_lo_focus,\
@@ -288,6 +374,7 @@ class STTController:
         self.tagging_hi_focus = init_words_focus_assets()
    
     def set_regular_focus(self):
+        """ Set regular focus"""
         self.model.clearHotWords()
         self.add_focus(self.regular_pos_lo_focus, boostValues=FocusLevel.POS_LOW)
         self.add_focus(self.regular_pos_med_focus, boostValues=FocusLevel.POS_MEDIUM)
@@ -295,10 +382,12 @@ class STTController:
         self.add_focus(self.regular_neg_lo_focus, boostValues=FocusLevel.NEG_LOW)
     
     def set_sample_tagging_focus(self):
+        """ Set sample tagging scenario focus"""
         self.model.clearHotWords()
         self.set_regular_focus()
         self.add_focus(self.tagging_med_focus, boostValues=FocusLevel.POS_MEDIUM)
         self.add_focus(self.tagging_hi_focus, boostValues=FocusLevel.POS_HIGH)
         
     def remove_focus(self):
+        """ Remove all focus"""
         self.model.clearHotWords()
