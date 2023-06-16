@@ -7,10 +7,21 @@ from rasa.utils.endpoints import EndpointConfig
 from .procedures import EgressProcedure
 
 class BotController:
-
+    """Bot Controller class that handles the RASA agent and supports the following functions:
+        - Send user message to RASA agent
+        - Process procedures such as UIA Egress Procedure
+    """
+    
     def __init__(self,
                  model_path='models/rasa-model/20230521-172806.tar.gz',
                  endpoint_config_address='http://localhost:5055/webhook'):
+        """ Constructor
+        
+        Args:
+            model_path (str): Path to RASA model
+            endpoint_config_address (str): Address of RASA action server
+        
+        """
         
         self.egress_procedure = EgressProcedure()
         print("Loading RASA Agent...")
@@ -21,6 +32,14 @@ class BotController:
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     def send_user_message(self, request):
+        """ Send user message to RASA agent and return response
+        
+        Args:
+            request (str): User message
+        
+        Returns:
+            response (dict): Response from RASA agent
+        """
 
         # user_message = request.get('Body')
         # conversation_id = request.get('From')
@@ -107,4 +126,5 @@ class BotController:
         return response
 
     def process_procedures_if_on(self):
+        # TODO: Implement
         pass

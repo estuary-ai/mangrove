@@ -4,6 +4,7 @@ from itertools import chain
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
 
+# NOTE: this is not used in the current implementation
 def vad_collector(
         sample_rate, frame_duration_ms,
         padding_duration_ms, vad, buffer: DataBuffer,

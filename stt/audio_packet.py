@@ -7,7 +7,13 @@ DEFAULT_SAMPLERATE = 16000
 AudioPacket = TypeVar('AudioPacket', bound='AudioPacket')
 class AudioPacket(object):
     """Represents a "Packet" of audio data."""
-    def __init__(self, data_json, is_processed=False):        
+    def __init__(self, data_json, is_processed=False):   
+        """ Initialize AudioPacket from json data or bytes
+        
+        Args:
+            data_json (dict or bytes): json data or bytes
+            is_processed (bool, optional): If True, data_json is bytes. Defaults to False.
+        """     
         if not isinstance(data_json, dict):
             data_json = json.loads(str(data_json))
         
@@ -28,7 +34,30 @@ class AudioPacket(object):
         self.duration = ((self.frame_size/16000)/2.0)*1000
         self.id = data_json.get('packetID')
     
+    @staticmethod
+    def verify_format(data_json):
+        """Verify that data_json is in the correct format
+        
+        Args:
+            data_json (dict): json data
+        """
+        
+        for key in ['sampleRate', 'bytes', 'numChannels']:
+            if key not in data_json.keys():
+                return False
+            
+        
     def preprocess_audio_buffer(self, buffer, sample_rate, num_channels):
+        """ Preprocess audio buffer to 16k 1ch int16 bytes format
+        
+        Args:
+            buffer (np.array(float)): audio buffer
+            sample_rate (int): sample rate of buffer
+            num_channels (int): number of channels of buffer
+        
+        Returns:
+            bytes: preprocessed audio buffer
+        """
         # Merge Channels if > 1
         one_channel_buffer = np.zeros(len(buffer)//num_channels)
         channel_contribution = 1/num_channels
@@ -59,6 +88,14 @@ class AudioPacket(object):
         return bytes(buffer_int16)    
     
     def __add__(self, __audio_packet: Type[AudioPacket]):
+        """ Add two audio packets together and return new packet with combined bytes
+        
+        Args:
+            __audio_packet (AudioPacket): AudioPacket to add
+            
+        Returns:
+            AudioPacket: New AudioPacket with combined bytes
+        """
         # ensure no errs, and snippets are consecutive
         if self > __audio_packet:
             raise Exception(
@@ -80,10 +117,26 @@ class AudioPacket(object):
         )
     
     def __calculate_new_timestamp(self, start_byte_idx):
+        """ Calculate new relative timestamp based on start_byte_idx
+        
+        Args: 
+            start_byte_idx (int): start byte index of new packet
+        
+        Returns:
+            int: new relative timestamp
+        """
         offset = (start_byte_idx/len(self.bytes)) * self.duration
         return self.timestamp + offset
     
     def __getitem__(self, key):
+        """ Get item from AudioPacket
+        
+        Args:
+            key (int or slice): index or slice
+        
+        Returns:
+            AudioPacket: new AudioPacket with sliced bytes
+        """
         if isinstance(key, slice):
             # Note that step != 1 is not supported
             start, stop, step = key.indices(len(self))
@@ -128,6 +181,7 @@ class AudioPacket(object):
    
     @staticmethod
     def get_null_packet():
+        """ Get null/dummy AudioPacket"""
         return AudioPacket(
             {
                 "bytes": b"",

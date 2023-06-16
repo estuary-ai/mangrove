@@ -1,6 +1,9 @@
+"""Deprecated"""
+
 from enum import Enum
 
 class FocusLevel(Enum):
+    """Enum class for focus levels of the deepspeech model scorer."""
     POS_HIGH = 10.5
     POS_MEDIUM = 6.0
     POS_LOW = 1.0
@@ -8,9 +11,8 @@ class FocusLevel(Enum):
     NEG_MEDIUM = -4.0
     NEG_HIGH = -9.0
 
-    # TODO for sure better train a domain specific language model instead
-
 def init_words_focus_assets():
+    """Initialize the focus assets for the deepspeech model scorer."""
     regular_neg_lo_focus = [
         'lo', 'then', 'altaforte', 'generate', 'la',
         'stan', 'plate', 'his', 'her', 
@@ -110,10 +112,8 @@ def init_words_focus_assets():
 
 
 
-
-
-
 def _remove_from(lists):
+    """Auxillary Function for init_words_focus_assets"""
     newListOfSets = []
     for i in range(len(lists)-1):
         othersSet = set()

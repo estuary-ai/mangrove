@@ -1,4 +1,6 @@
 #cache
+blackbox
+.vscode
 *__pycache__/
 env/
 .rasa/
