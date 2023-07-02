@@ -1,4 +1,4 @@
-# Eva - SENVA's Digital Assistant:
+# Traveller (Also known as Eva) - SENVA's Digital Assistant:
 This repository hosts a server implementation hosting the **Senva Project** Digital Assistant (**Traveller**, previously called **Eva**) backend, which is typically deployed in a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts **SUITs**. It corresponds to the ongoing effort of **Team AEGIS** project at the **NASA-SUITs** Challenge in the following years:
 
 - **2023**: **University of Southern California (USC)** with **University of Berkley (UCBerkley)** 
