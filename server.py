@@ -149,15 +149,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Digital Assistant Endpoint')
     parser.add_argument('--cpu', dest='cpu', type=bool, default=False, help='Use CPU instead of GPU')
     parser.add_argument('--port', dest='port', type=int, default=4000, help='Port number')
-    parser.add_argument('--name', dest='name', type=str, default='Traveller',
-                        help='Digital Assistant Name')
-    parser.add_argument('--shutdown_bot', dest='shutdown_bot', type=bool, default=False,
-                        help='Shutdown bot')
+    parser.add_argument('--name', dest='name', type=str, default='Traveller', help='Digital Assistant Name')
+    parser.add_argument('--shutdown_bot', dest='shutdown_bot', type=bool, default=True, help='Shutdown bot')
     parser.add_argument('--debug', dest='debug', type=bool, default=False, help='Debug mode')
     parser.add_argument('--verbose', dest='verbose', type=bool, default=False, help='Verbose mode')
     parser.add_argument('--log', dest='log', type=bool, default=False, help='Log mode')
-    parser.add_argument('--flask_secret_key', dest='flask_secret_key', 
-                        type=str, default='secret!', help='Flask secret key')
+    parser.add_argument('--flask_secret_key', dest='flask_secret_key', type=str, default='secret!', help='Flask secret key')
     args = parser.parse_args()
 
 

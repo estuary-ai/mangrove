@@ -2,11 +2,25 @@ import numpy as np
 import sounddevice as sd
 from functools import reduce
 from .audio_packet import AudioPacket
-from queue import PriorityQueue
+from queue import PriorityQueue, Queue
+from queue import Empty as QueueEmpty
+from queue import Full as QueueFull
+from loguru import logger
+from threading import RLock
+
 
 class DataBuffer:
     """Data buffer for audio packets"""
-    def __init__(self, frame_size=320, max_queue_size=100):
+    
+    class Empty(Exception):
+        """Exception raised when queue is empty"""
+        pass
+
+    class Full(Exception):
+        """Exception raised when queue is full"""
+        pass
+
+    def __init__(self, frame_size=320, max_queue_size=100000):
         """Initialize data buffer
         
         Args:
@@ -15,27 +29,36 @@ class DataBuffer:
         """
         self.max_queue_size = max_queue_size
         self.queue = PriorityQueue(maxsize=self.max_queue_size)
+        self.leftover = None
         self.default_frame_size = frame_size
         self.queue_before_reset = None
+        self._len = 0
+        self._lock = RLock()
         
     def reset(self):
         """Reset queue to empty state"""
         with self.queue.mutex:
             self.queue_before_reset = self.queue.queue
         self.queue = PriorityQueue(maxsize=self.max_queue_size)
-
+        
     def __str__(self):
         return ' '.join([str(packet) for packet in self.queue.queue])
  
-    def add(self, audio_packet: AudioPacket):
+    def put(self, audio_packet: AudioPacket, timeout=0.5):
         """Add audio packet to queue
         
         Args:
             audio_packet (AudioPacket): Audio packet to add to queue
         """
-        self.queue.put(audio_packet)
+        with self._lock:
+            try:
+                # self._len += len(audio_packet)/self.default_frame_size
+                self._len += len(audio_packet)
+                self.queue.put(audio_packet, timeout=timeout)
+            except QueueFull:
+                raise DataBuffer.Full
 
-    def read(self, frame_size=None):
+    def get(self, frame_size=None, timeout=0.5):
         """Get next frame of audio packets from queue given frame size 
 
         Args:
@@ -47,20 +70,70 @@ class DataBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
+        
+        # data: AudioPacket = AudioPacket.get_null_packet()
+
+        # import time
+        # if timeout is not None:
+        #     endtime = time.time() + timeout
+        #     while len(data) < frame_size:
+        #         # # TODO debug further
+        #         # while not self.queue.qsize():
+        #         remaining = endtime - time.time()
+        #         new_packet = self.queue.get(timeout=remaining)
+        #         data += new_packet
+        # else:
+        # import time
+        # while True:
+        #     # check if queue is empty
+        #     endtime = time.time() + timeout
+        #     while self.queue.qsize() == 0:
+        #         remaining = endtime - time.time()
+        #         if remaining < 0:
+        #             raise DataBuffer.Empty
+        #         time.sleep(0.01)
+        #     break     
+
+        # with self._lock:
+        
         frame_size = frame_size or self.default_frame_size
-        data: AudioPacket = AudioPacket.get_null_packet()
-        # self.queue.mutex.acquire()
-        while (len(data) < frame_size) and self.queue.qsize():
-            new_packet = self.queue.get()
-            data += new_packet
-        if len(data) < frame_size:
-            if len(data) > 0:
-                self.add(data)
-            return None
-        frame = data[:frame_size]
-        leftover = data[frame_size:]
-        self.queue.put(leftover)
-        # self.queue.mutex.release()
+        chunk_len = 0
+        data_packets = Queue() # Maybe not necessary
+        if self.leftover is not None:
+            data_packets.put_nowait(self.leftover)
+            chunk_len += len(self.leftover)
+            self._len -= len(self.leftover)
+            
+        while chunk_len < frame_size:
+            try:
+                if timeout == -1:
+                    new_packet = self.queue.get_nowait()
+                else:
+                    new_packet = self.queue.get(timeout=timeout) 
+                # if resample is not None:
+                #     new_packet = new_packet.resample(resample)   
+            except QueueEmpty:
+                # if len(data_packets) == 0:
+                if data_packets.qsize() == 0:
+                    if timeout != -1:
+                        logger.warning('DataBuffer Queue is empty')
+                    raise DataBuffer.Empty
+                else:
+                    break        
+            data_packets.put_nowait(new_packet)
+            chunk_len += len(new_packet)
+            self._len -= len(new_packet)
+
+        data_packets = [data_packets.get_nowait() for _ in range(data_packets.qsize())]
+        data = sum(data_packets, AudioPacket.get_null_packet())
+        frame, leftover = data[:frame_size], data[frame_size:]
+        
+        if len(leftover) > 0:
+            self.leftover = leftover
+            self._len += len(leftover)
+        else:
+            self.leftover = None
+        
         return frame
     
     def __next__(self):
@@ -72,8 +145,11 @@ class DataBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes        
         """
-        ret = self.read()
-        if ret is None:
+        try:
+            ret = self.get(timeout=0.1)
+            # if ret is None:
+            #     raise StopIteration
+        except:
             raise StopIteration
         return ret
         
@@ -82,10 +158,10 @@ class DataBuffer:
         """Get iterator of audio packets from queue given frame size"""
         return self
 
-    def __len__(self):
+    def size_of_leftover(self):
         """Get length of queue"""
-        return self.queue.qsize()
-
+        return self._len
+    
     def _debug_verify_order(self):
         """Verify that queue is in order (For Debugging only) """
         with self.queue.mutex:
@@ -100,9 +176,13 @@ class DataBuffer:
                         print(f'same {i} == {i+1}')
                     except:
                         print(f'error at {i}, and {i+1}')
-                
+                            
     def _debug_play_buffer(self):
         """Play audio buffer (For Debugging only)"""
         with self.queue.mutex:
             packet = reduce(lambda x,y : x+y, self.queue.queue)
-            sd.play(np.frombuffer(packet.bytes, dtype=np.int16),16000)
+            sd.play(np.frombuffer(packet.bytes, dtype=np.int16), 16000)
+            
+    def empty(self):
+        """Check if queue is empty"""
+        return self.queue.qsize() == 0 and self.leftover is None

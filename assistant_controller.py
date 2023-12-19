@@ -2,7 +2,6 @@ import time
 import json
 import typing
 from stt import STTController, WakeUpVoiceDetector, AudioPacket
-from bot import BotController
 from tts import TTSController
 from storage_manager import StorageManager, write_output
 
@@ -22,7 +21,7 @@ class AssistantController:
         """
         self.name = name
         self.verbose = verbose
-        self.wakeUpWordDetector = WakeUpVoiceDetector()
+        self.wake_up_word_detector = WakeUpVoiceDetector()
         write_output("Initialized WakeUpWordDetector")
         
         self.stt = STTController()
@@ -32,6 +31,7 @@ class AssistantController:
         
         self.bot = None
         if not shutdown_bot:
+            from bot import BotController
             self.bot = BotController()
             write_output("Initialized Bot Controller")
         
@@ -115,11 +115,11 @@ class AssistantController:
             self.session_audio_buffer += audio_packet # TODO note that this includes is_awake only
             self.stt.feed(audio_packet)
         else:
-            self.wakeUpWordDetector.feed_audio(audio_packet)
+            self.wake_up_word_detector.feed_audio(audio_packet)
             
     def is_wake_word_detected(self):
         """ Check if wake word is detected and set is_awake accordingly"""
-        self._is_awake = self.wakeUpWordDetector.process_audio_stream()
+        self._is_awake = self.wake_up_word_detector.is_wake_word_detected()
         return self._is_awake
     
     def is_command_buffer_empty(self):
