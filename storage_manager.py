@@ -81,7 +81,7 @@ class StorageManager:
     def play_audio_packet(cls, audio_packet, transcription=None, block=False):
         def play_save_packet(audio_packet, transcription=None):
             write_output('Here is response frames played out.. pay attention')
-            sd.play(audio_packet.get_float(), 16000)
+            sd.play(audio_packet.float, 16000)
             sd.wait()
             # if transcription is not None:
             #     session_id = f'session_{int(time.time()*1000)}_'

@@ -18,10 +18,10 @@ def int_or_str(text):
         return text
 
 class RecordStream:
-    # essential logic adapted from https://python-sounddevice.readthedocs.io/en/0.4.6/examples.html 
+    # essential logic adapted from https://python-sounddevice.readthedocs.io/en/0.4.6/examples.html
     def __init__(self, data_buffer, url, blocksize):
         print('Setting up MicStream simulation from url')
-        self.data_buffer = data_buffer        
+        self.data_buffer = data_buffer
         self.url = url
         try:
             info = ffmpeg.probe(self.url)
@@ -40,11 +40,11 @@ class RecordStream:
 
         self.channels = stream['channels']
         self.samplerate = float(stream['sample_rate'])
-        
+
         self.blocksize = blocksize
-        
+
         print(f'Recording  with {self.channels} channels and {self.samplerate} Hz samplerate ...')
-        
+
     def setup_readsize(self, reading_stream_samplesize):
         self.read_size = self.blocksize * self.channels * reading_stream_samplesize
         print(f'Setup read size: {self.read_size} bytes of audio!')
@@ -77,7 +77,7 @@ class RecordStream:
                         'bytes': mic_chunk
                     },
                 )
-                assert audio_packet.timestamp + audio_packet.duration >= prev_timestamp, f'{audio_packet.timestamp} + {audio_packet.duration} < {prev_timestamp}'                
+                assert audio_packet.timestamp + audio_packet.duration >= prev_timestamp, f'{audio_packet.timestamp} + {audio_packet.duration} < {prev_timestamp}'
                 prev_timestamp = audio_packet.timestamp + audio_packet.duration
                 self.data_buffer.put(audio_packet)
                 # i+= 1
@@ -85,37 +85,37 @@ class RecordStream:
                 # print(f'Put audio packet into buffer: {i} packets')
                 # print(f'Put audio packet into buffer: {len(mic_chunk)} bytes')
             print('Recording stopped')
-        
+
         recording_thread = threading.Thread(target=_read, args=(self,))
         recording_thread.start()
-        
+
         return recording_thread
-   
+
 class SpeakerStream:
-    # essential logic adapted from https://python-sounddevice.readthedocs.io/en/0.4.6/examples.html 
-    
+    # essential logic adapted from https://python-sounddevice.readthedocs.io/en/0.4.6/examples.html
+
     def __init__(self, data_buffer: DataBuffer, blocksize, samplerate, channels, device):
         print('Opening Speaker stream ...')
         self.data_buffer: DataBuffer = data_buffer
         self.blocksize = blocksize
         self.device = device
         self.reset_stream(samplerate, channels)
-        
+
         from stt.stt_controller import STTController
         self.stt_controller = STTController()
         self.stt_controller.create_stream()
-        
+
         print('Speaker stream opened')
-    
+
         self.played_audio = AudioPacket.get_null_packet()
         self.num_played_packets = 0
-        
+
     def reset_stream(self, samplerate=None, channels=None):
         if hasattr(self, 'stream'):
             if self.stream.active:
                 self.stream.stop()
             self.stream.close()
-        
+
         self.samplerate = samplerate if samplerate is not None else self.samplerate
         self.channels = channels if channels is not None else self.channels
         self.stream = sd.RawOutputStream(
@@ -123,25 +123,25 @@ class SpeakerStream:
             device=self.device, channels=self.channels, dtype='float32',
             callback=self.callback, finished_callback=self.finished_callback
         )
-        
+
     def finished_callback(self):
         # TODO something here
         # self.stream.close()
         print('Playback finished')
-        
+
     def callback(self, outdata, frames, _time, status):
         assert frames == self.blocksize
         if status.output_underflow:
             print('Output underflow: increase blocksize?', file=sys.stderr)
             raise sd.CallbackAbort
         assert not status
-        
-        try:    
+
+        try:
             audio_packet = self.data_buffer.get(frame_size=self.blocksize*self.get_samplesize(), timeout=-1)
             self.stt_controller.feed(audio_packet)
             self.played_audio += audio_packet
             self.num_played_packets += 1
-            audio_bytes = audio_packet.bytes      
+            audio_bytes = audio_packet.bytes
         except DataBuffer.Empty:
             audio_bytes = b'\x00' * len(outdata) # silence
         except Exception as e:
@@ -149,7 +149,7 @@ class SpeakerStream:
             traceback.print_exc()
             print('Buffer is empty: increase buffersize?', file=sys.stderr)
             raise sd.CallbackAbort
-        
+
         if len(audio_bytes) < len(outdata):
             # print(f'Audio buffer is not full: {len(audio_bytes)} < {len(outdata)}', file=sys.stderr)
             # outdata[:len(audio_bytes)] = audio_bytes
@@ -157,14 +157,14 @@ class SpeakerStream:
             raise sd.CallbackStop
         else:
             outdata[:] = audio_bytes
-    
+
     def get_samplesize(self):
-        return self.stream.samplesize        
+        return self.stream.samplesize
 
     def listen_to_playback(self):
         self.reset_stream()
         self.stream.start()
-            
+
         # self.playing_thread = threading.Thread(target=_play)
         # self.playing_thread.start()
 
@@ -187,26 +187,26 @@ if __name__ == '__main__':
         parser.error('blocksize must not be zero')
     if args.buffersize < 1:
         parser.error('buffersize must be at least 1')
-        
-            
+
+
     try:
         data_buffer = DataBuffer(frame_size=args.blocksize, max_queue_size=args.buffersize)
-        # q = queue.Queue(maxsize=args.buffersize)     
+        # q = queue.Queue(maxsize=args.buffersize)
         record_stream = RecordStream(data_buffer, args.url, args.blocksize)
-            
+
         from stt.audio_packet import TARGET_SAMPLERATE
         listening_stream = SpeakerStream(
-            data_buffer, args.blocksize, 
+            data_buffer, args.blocksize,
             # 16000, 1, # 32000, 1,
             TARGET_SAMPLERATE, 1,
-            # record_stream.samplerate, 1, # record_stream.channels, 
+            # record_stream.samplerate, 1, # record_stream.channels,
             args.device
-        )        
+        )
         record_stream.setup_readsize(listening_stream.get_samplesize())
-        
+
         while True:
             recording_thread = record_stream.read_url_stream()
-            
+
             # create thread to call process_audio_buffer
             def _process_audio_buffer():
                 import backoff
@@ -221,22 +221,22 @@ if __name__ == '__main__':
                     @backoff.on_exception(backoff.expo, DataBuffer.Empty)
                     def _process_buffer():
                         return listening_stream.stt_controller.process_audio_buffer()
-                    
+
                     transcription = _process_buffer()
                     if transcription is not None:
                         logger.info(f'Getting transcription ... as silence was detected')
                         logger.debug(f'Transcription: {transcription}')
                         complete_transcription.append(transcription)
-                        
+
                 _str = ''
                 for i, transcription in enumerate(complete_transcription):
                     _str += f'#{i}: {transcription}\n'
                 logger.success(f'Complete transcription: {_str}')
-            
+
             processing_thread = threading.Thread(target=_process_audio_buffer)
-            processing_thread.start()        
-            
-            listening_stream.listen_to_playback()    
+            processing_thread.start()
+
+            listening_stream.listen_to_playback()
 
             logger.info('> Recording ...')
             while True:
@@ -244,10 +244,10 @@ if __name__ == '__main__':
                 if not recording_thread.is_alive() and data_buffer.empty():
                     break
             logger.info('> Recording finished')
-            
+
             logger.info(f'Waiting for processing thread to finish ...')
             while processing_thread.is_alive(): processing_thread.join(0.1)
-            
+
             logger.info(f'number of played packets: {listening_stream.num_played_packets}')
             logger.success('Done processing audio buffer')
             logger.info('Force finishing stream ... (just in case)')
@@ -255,18 +255,18 @@ if __name__ == '__main__':
             if transcription is not None:
                 logger.info(f'Getting transcription ... if no silence was detected')
                 logger.warning(f'Transcription: {transcription}')
-                
+
             logger.info(f'number of played packets: {listening_stream.num_played_packets}')
             logger.success('Done one recording')
-            
+
             # print('> Recording ...')
             # while True:
             #     recording_thread.join(0.5)
             #     if not recording_thread.is_alive():
             #         break
             # print('> Recording finished')
-            
-            
+
+
             # frame_size = 512*4
             # audio_packets = []
             # while True:
@@ -274,22 +274,22 @@ if __name__ == '__main__':
             #         audio_packets.append(data_buffer.get(frame_size=frame_size, timeout=-1))
             #     except DataBuffer.Empty:
             #         break
-            
+
             # import torch
-          
+
             # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             # model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
             #                   model='silero_vad',
             #                   force_reload=True,
             #                   onnx=False)
             # model.to(device)
-            
+
             # (get_speech_timestamps,
             # save_audio,
             # read_audio,
             # VADIterator,
             # collect_chunks) = utils
-            
+
             # vad_iterator = VADIterator(model)
             # # from webrtcvad import Vad
             # # vad = Vad(3)
@@ -300,7 +300,7 @@ if __name__ == '__main__':
             #     if len(audio_packet.bytes) < frame_size:
             #         print(f'Packet {i+1}/{num_of_packets} is too short: {len(audio_packet.bytes)} bytes')
             #         continue
-            #     chunk = torch.tensor(audio_packet.get_float()).to(device)
+            #     chunk = torch.tensor(audio_packet.float).to(device)
             #     speech_prob = model(chunk, audio_packet.sample_rate).item()
             #     if speech_prob > 0.9:
             #         print(f'Packet {i+1}/{num_of_packets} is speech: {speech_prob}')
@@ -318,16 +318,16 @@ if __name__ == '__main__':
             #     # print(f'is speech: {is_speech}')
             #     # if is_speech:
             #     #     listening_stream.stt_controller.feed(audio_packet)
-            
-            
+
+
             if input('Press Enter to start recording') == 'q': break
         print('Waiting for last playback to finish ...')
-        
-        
-        
-        
+
+
+
+
     except KeyboardInterrupt:
-        parser.exit(0, '\nInterrupted by user')     
+        parser.exit(0, '\nInterrupted by user')
     except queue.Full:
         # A timeout occurred, i.e. there was an error in the callback
         parser.exit(1)
