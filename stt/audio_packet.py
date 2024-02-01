@@ -1,193 +1,295 @@
 import json
+import functools
 import numpy as np
-from typing import TypeVar, Type
+from decimal import *
+from typing import Type
+from loguru import logger
 
-DEFAULT_SAMPLERATE = 16000
+TARGET_SAMPLERATE = 16000
 
-AudioPacket = TypeVar('AudioPacket', bound='AudioPacket')
+
+@functools.total_ordering
 class AudioPacket(object):
     """Represents a "Packet" of audio data."""
-    def __init__(self, data_json, is_processed=False):   
-        """ Initialize AudioPacket from json data or bytes
-        
+
+    resampling = 0
+    resampler = None
+
+    def __init__(self, data_json, resample=True, is_processed=False):
+        """Initialize AudioPacket from json data or bytes
+
         Args:
             data_json (dict or bytes): json data or bytes
-            is_processed (bool, optional): If True, data_json is bytes. Defaults to False.
-        """     
+        """
         if not isinstance(data_json, dict):
             data_json = json.loads(str(data_json))
-        
-        self.sample_rate = data_json['sampleRate']
-        self.num_channels = data_json['numChannels']
-        self.timestamp = data_json['timestamp'] # MS
-        
+
+        self._sample_rate = int(data_json["sampleRate"])
+        self._num_channels = int(data_json["numChannels"])
+        self.timestamp = data_json["timestamp"]  # ms
+
         if not is_processed:
-            buffer = np.array(data_json['audio'])
-                
-            self.bytes = self.preprocess_audio_buffer(
-                buffer, self.sample_rate, self.num_channels
-            )   
+            self._bytes = self._preprocess_audio_buffer(
+                data_json.get("bytes", data_json.get("audio")), resample=resample
+            )
         else:
-            self.bytes = data_json['bytes']
-        
-        self.frame_size = len(self.bytes)
-        self.duration = ((self.frame_size/16000)/2.0)*1000
-        self.id = data_json.get('packetID')
-    
+            self._bytes = data_json["bytes"]
+
+        self.frame_size = len(self._bytes)
+
+        self.duration = data_json.get("duration")  # ms
+        if self.duration is None:
+            self.duration = (self.frame_size / self._sample_rate) / (
+                self._num_channels * 4
+            )
+            self.duration *= 1000  # ms
+        self._id = data_json.get("packetID")
+
     @staticmethod
     def verify_format(data_json):
         """Verify that data_json is in the correct format
-        
+
         Args:
             data_json (dict): json data
         """
-        
-        for key in ['sampleRate', 'bytes', 'numChannels']:
+        for key in ["sampleRate", "bytes", "numChannels"]:
             if key not in data_json.keys():
-                return False
-            
-        
-    def preprocess_audio_buffer(self, buffer, sample_rate, num_channels):
-        """ Preprocess audio buffer to 16k 1ch int16 bytes format
-        
+                raise Exception(
+                    f"Invalid AudioPacket format: {key} not in {data_json.keys()}"
+                )
+
+    @property
+    def float(self):
+        """Get audio buffer as float
+
+        Returns:
+            np.array(float): audio buffer as float
+        """
+        return np.frombuffer(self._bytes, dtype=np.float32).copy()
+
+    @property
+    def bytes(self):
+        """Get audio buffer as bytes
+
+        Returns:
+            bytes: audio buffer as bytes
+        """
+        return self._bytes
+
+    @property
+    def sample_rate(self):
+        """Get sample rate
+
+        Returns:
+            int: sample rate
+        """
+        return self._sample_rate
+
+    def _preprocess_audio_buffer(self, buffer, resample=True):
+        """Preprocess audio buffer to 16k 1ch int16 bytes format
+
         Args:
-            buffer (np.array(float)): audio buffer
+            buffer Union(np.array(float)): audio buffer
             sample_rate (int): sample rate of buffer
             num_channels (int): number of channels of buffer
-        
+
         Returns:
             bytes: preprocessed audio buffer
         """
-        # Merge Channels if > 1
-        one_channel_buffer = np.zeros(len(buffer)//num_channels)
-        channel_contribution = 1/num_channels
 
-        for i in range(len(one_channel_buffer)):
-            for channel_i in range(num_channels):
-                one_channel_buffer[i] +=\
-                    buffer[i*num_channels + channel_i]*channel_contribution     
-        
-        # Downsample if necesssary
-        division = sample_rate//DEFAULT_SAMPLERATE
-        buffer_16k_1ch = np.zeros(int(np.ceil(len(one_channel_buffer)/division)))
-        if division > 1:
-            for i in range(len(buffer_16k_1ch)):
-                buffer_16k_1ch[i] = one_channel_buffer[i*division]                
+        # Convert to a NumPy array of float32
+        if isinstance(buffer, bytes):
+            if buffer == b"":
+                # DUMMY AUX PACKET
+                return buffer
+            buffer_float = np.frombuffer(buffer, dtype=np.float32)
         else:
-            buffer_16k_1ch = one_channel_buffer
-        # TODO revise division if < 1
+            buffer_float = np.array(buffer).astype(np.float32)
 
-        # Convert to int16 with scaling
-        # https://gist.github.com/HudsonHuang/fbdf8e9af7993fe2a91620d3fb86a182    
-        dtype = np.dtype('int16')
-        i = np.iinfo(dtype)
-        abs_max = 2 ** (i.bits - 1)
-        offset = i.min + abs_max
-        buffer_int16 = (buffer_16k_1ch * abs_max + offset).clip(i.min, i.max).astype(dtype)
-        
-        return bytes(buffer_int16)    
-    
-    def __add__(self, __audio_packet: Type[AudioPacket]):
-        """ Add two audio packets together and return new packet with combined bytes
-        
+        # buffer_float = buffer_float.copy()*2.0 # Gain
+
+        # Merge Channels if > 1
+        if self._num_channels > 1:
+            # TODO revise
+            # logger.warning(f"AudioPacket has {self._num_channels} channels, merging to 1 channel")
+            src_num_channels = self._num_channels
+            one_channel_buffer = np.zeros(
+                len(buffer_float) // src_num_channels, dtype=np.float32
+            )
+            channel_contribution = 1 / src_num_channels
+            for i in range(len(one_channel_buffer)):
+                for channel_i in range(src_num_channels):
+                    one_channel_buffer[i] += (
+                        buffer_float[i * src_num_channels + channel_i]
+                        * channel_contribution
+                    )
+            self._num_channels = 1
+        else:
+            one_channel_buffer = buffer_float
+
+        # Downsample if necesssary: buffer_16k_1ch
+        src_sample_rate = self._sample_rate
+        if TARGET_SAMPLERATE != src_sample_rate and resample:
+            self._bytes = one_channel_buffer.tobytes()
+            self.resample(TARGET_SAMPLERATE, copy=False)
+            return self._bytes
+        else:
+            return one_channel_buffer.tobytes()
+
+    def resample(self, target_sample_rate, copy=True):
+        # try:
+        if target_sample_rate == self._sample_rate:
+            return self
+
+        # increment resampling counter
+        AudioPacket.resampling += 1
+
+        import torch
+        from torchaudio import functional as F
+        from torchaudio.transforms import Resample
+
+        one_channel_buffer = np.frombuffer(self._bytes, dtype=np.float32)
+        waveform = torch.from_numpy(one_channel_buffer.copy())
+
+        # check if resampler is defined and matching the same sample rates
+        if (
+            AudioPacket.resampler is None
+            or AudioPacket.resampler.orig_freq != self._sample_rate
+            or AudioPacket.resampler.new_freq != target_sample_rate
+        ):
+            AudioPacket.resampler = Resample(self._sample_rate, target_sample_rate)
+            print(f"Resampling {self._sample_rate} -> {target_sample_rate}")
+
+        audio_resampled = AudioPacket.resampler(waveform)
+        audio_resampled = audio_resampled.numpy().tobytes()
+
+        if copy:
+            from copy import deepcopy
+
+            audio_packet = deepcopy(self)
+            audio_packet._bytes = audio_resampled
+            audio_packet._sample_rate = target_sample_rate
+            return audio_packet
+        else:
+            self._bytes = audio_resampled
+            self._sample_rate = target_sample_rate
+            return self
+
+    def __add__(self, _audio_packet: Type["AudioPacket"]):
+        """Add two audio packets together and return new packet with combined bytes
+
         Args:
-            __audio_packet (AudioPacket): AudioPacket to add
-            
+            _audio_packet (AudioPacket): AudioPacket to add
+
         Returns:
             AudioPacket: New AudioPacket with combined bytes
         """
         # ensure no errs, and snippets are consecutive
-        if self > __audio_packet:
-            raise Exception(
-                f"Audio Packets are not in order: {self.timestamp} > {__audio_packet.timestamp}"
-            )
-        
+        # TODO verify + duration work
+        # if self >= _audio_packet:
+        #     raise Exception(
+        #         f"Audio Packets are not in order: {self.timestamp} > {_audio_packet.timestamp}"
+        #     )
+
+        # assert self._sample_rate == _audio_packet.sample_rate, f"Sample rates do not match: {self._sample_rate} != {_audio_packet.sample_rate}"
+        # assert self._num_channels == _audio_packet.num_channels, f"Num channels do not match: {self._num_channels} != {_audio_packet.num_channels}"
+        # assert self.duration == _audio_packet.duration, f"Durations do not match: {self.duration} != {_audio_packet.duration}"
+        # assert self.timestamp + self.duration <= _audio_packet.timestamp, f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} = {self.timestamp + self.duration} > {_audio_packet.timestamp}"
+        # if self.timestamp + self.duration > _audio_packet.timestamp:
+        #     import math
+        #     if math.isclose(self.timestamp + self.duration, _audio_packet.timestamp, abs_tol=0.0001):
+        #         _audio_packet.timestamp = self.timestamp + self.duration
+        #     else:
+        #         raise Exception(
+        #             f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} > {_audio_packet.timestamp}, {self.timestamp + self.duration - _audio_packet.timestamp}"
+        #         )
+
         timestamp = self.timestamp
-        if self.bytes == b'': # DUMMY
-            timestamp = __audio_packet.timestamp
-            
+        if self._bytes == b"":  # DUMMY AUX PACKET
+            timestamp = _audio_packet.timestamp
+
         return AudioPacket(
             {
-            "bytes": self.bytes + __audio_packet.bytes,
-            "timestamp": timestamp,
-            "sampleRate": self.sample_rate,
-            "numChannels": self.num_channels
+                "bytes": self._bytes + _audio_packet._bytes,
+                "timestamp": timestamp,
+                "sampleRate": _audio_packet._sample_rate,  # NOTE: assumes same sample rate,
+                "numChannels": _audio_packet._num_channels,  # NOTE: assumes same num channels
             },
-            is_processed=True
+            resample=False,
+            is_processed=True,
         )
-    
-    def __calculate_new_timestamp(self, start_byte_idx):
-        """ Calculate new relative timestamp based on start_byte_idx
-        
-        Args: 
-            start_byte_idx (int): start byte index of new packet
-        
-        Returns:
-            int: new relative timestamp
-        """
-        offset = (start_byte_idx/len(self.bytes)) * self.duration
-        return self.timestamp + offset
-    
+
     def __getitem__(self, key):
-        """ Get item from AudioPacket
-        
+        """Get item from AudioPacket
+
         Args:
             key (int or slice): index or slice
-        
+
         Returns:
             AudioPacket: new AudioPacket with sliced bytes
         """
         if isinstance(key, slice):
             # Note that step != 1 is not supported
             start, stop, step = key.indices(len(self))
+            if step != 1:
+                raise (NotImplementedError, "step != 1 not supported")
+
+            if start < 0:
+                raise (NotImplementedError, "start < 0 not supported")
+
+            if stop > len(self):
+                raise (NotImplementedError, "stop > len(self) not supported")
+
+            # calculate new timestamp
+            calculated_timestamp = (
+                self.timestamp + float((start / self.frame_size)) * self.duration
+            )
+
             return AudioPacket(
                 {
-                    "bytes": self.bytes[start:stop],
-                    "timestamp": self.__calculate_new_timestamp(start),
-                    "sampleRate": self.sample_rate,
-                    "numChannels": self.num_channels
+                    "bytes": self._bytes[start:stop],
+                    "timestamp": calculated_timestamp,
+                    "sampleRate": self._sample_rate,
+                    "numChannels": self._num_channels,
                 },
-                is_processed=True
-            ) 
-            
+                resample=False,
+                is_processed=True,
+            )
+
         elif isinstance(key, int):
             raise (NotImplementedError, "value as index; only slices")
         elif isinstance(key, tuple):
             raise (NotImplementedError, "Tuple as index; only slices")
         else:
-            raise (TypeError, 'Invalid argument type: {}'.format(type(key)))
-    
+            raise (TypeError, "Invalid argument type: {}".format(type(key)))
+
     def __str__(self) -> str:
-        return (self.timestamp, self.duration, len(self.bytes))
-    
+        return f"{self.timestamp}, {self.duration}, {len(self._bytes)}"
+
     def __eq__(self, __o: object) -> bool:
-        return self.timestamp == __o.timestamp and\
-            self.bytes == __o.bytes
+        return self.timestamp == __o.timestamp
+
+    # and self._bytes == __o.bytes
 
     def __lt__(self, __o: object) -> bool:
         # TODO verify + duration work
         # return self.timestamp + self.duration <= __o.timestamp
         return self.timestamp < __o.timestamp
 
-    def __gt__(self, __o: object) -> bool:
-        # return self.timestamp >= __o.timestamp + __o.duration
-        return self.timestamp > __o.timestamp
-
-    def __ne__(self, __o: object) -> bool:
-        return not(self.__eq__(self, __o))
-    
     def __len__(self) -> int:
-       return len(self.bytes) 
-   
+        return len(self._bytes)
+
     @staticmethod
     def get_null_packet():
-        """ Get null/dummy AudioPacket"""
+        """Get null/dummy AudioPacket"""
         return AudioPacket(
             {
                 "bytes": b"",
                 "timestamp": 0,
-                "sampleRate": DEFAULT_SAMPLERATE,
-                "numChannels": 1            
+                "sampleRate": 0,
+                "numChannels": 0,
+                "duration": 0.0,
             },
-            is_processed=True
+            resample=False,
+            is_processed=True,
         )

@@ -1,95 +1,138 @@
-import pvporcupine
-import sys
-import struct
-from threading import Thread
+import numpy as np
+
+from typing import Tuple, Generator
+from datetime import datetime, timedelta
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
+from .audio_classification_endpoint import HFAudioClassificationEndpoint
 
-class WakeUpVoiceDetector(Thread):
-    """Wake Up Word Detector using Porcupine"""
-    
+class WakeUpVoiceDetector:
     def __init__(
-            self,
-            access_key = 
-                [
-                    "Sf/52ItzMqpOpPQbsiN8g4WNOu+7VclIJZlwMZyI5+1KNlDZjZBrGA==",
-                    "GJxnDyQx7BWTkVdrE4sW/raxWZGmpxXmLN71urcgCugdSURn5enYBA==",
-                    "126kyqRJC8iIG41p8NZqo6DNb3wKrAN1Ilv+PQ/xdMxn8Q8MfTvCsQ=="
-                ],
-            keyword_paths = [
-                [
-                    "models/pvprocupine/%s/Hello-Eva_en_windows_v2_2_0/hello-Eva_en_windows_v2_2_0.ppn",
-                    "models/pvprocupine/%s/Traveller_en_windows_v2_2_0/Traveller_en_windows_v2_2_0.ppn",
-                    "models/pvprocupine/%s/habibi_en_windows_v2_2_0/habibi_en_windows_v2_2_0.ppn"
-                ]
-            ],
-            sensitivities=None):
-        """Initialize WakeUpVoiceDetector
-        
-        Args:
-            access_key (List[str], optional): Accesses keys for Porcupine.
-            keyword_paths (List[List[str]], optional): Pathes to keywords files. 
-            sensitivities (List[float], optional): Sensitivities for keywords. Defaults to None (equal senstivities).
-        """
-        super(WakeUpVoiceDetector, self).__init__()
+        self,
+        audio_classification_endpoint_kwargs: dict={
+            "model_name": "MIT/ast-finetuned-speech-commands-v2",
+            "prediction_prob_threshold": 0.7,
+        },
+        frame_size=1024,
+        device="cuda",
+        verbose=False,
+    ):
+        self.verbose = verbose
+        self.frame_size = frame_size
+        self._input_buffer = DataBuffer(self.frame_size)
+        self._audio_classifier = HFAudioClassificationEndpoint(**audio_classification_endpoint_kwargs, device=device)
+        self._setup_params(format_for_conversion='f32le', chunk_length_s=2.0, stream_chunk_s=0.25)
 
-        try:
-            if sys.platform.startswith('linux'):
-                keyword_paths = keyword_paths[1]
-            elif sys.platform.startswith('win'):
-                keyword_paths = keyword_paths[0]
-                print(f'Keywords set {keyword_paths}')
-            else:
-                raise NotImplementedError()
-        except:
-            raise Exception("Unsupported Platform")    
 
-        alternate_i = 0
-        initialized = False
-        while not initialized:
-            self._access_key = access_key[alternate_i]
-            self._keyword_paths = [k % alternate_i for k in keyword_paths]
-            print(f'Trying keywords_paths {keyword_paths}')
-            self._sensitivities = sensitivities
-            try:            
-                self.porcupine_handle = pvporcupine.create(
-                        access_key=self._access_key,
-                        keyword_paths=self._keyword_paths,
-                        sensitivities=self._sensitivities)
-                initialized = True
-            except:
-                print('Reswitching Access Key')
-                alternate_i += 1 
-                
-        self.frame_size = 1024
-        self.buffer = DataBuffer(self.frame_size)
-    
     def reset_data_buffer(self):
         """Reset data buffer"""
-        self.buffer.reset()
+        self._input_buffer.reset()
 
     def feed_audio(self, audio_packet: AudioPacket):
         """Feed audio packet to buffer
-        
+
         Args:
             audio_packet (AudioPacket): Audio packet to feed procupine hot-word detector
         """
-        self.buffer.add(audio_packet)
-        
-    def process_audio_stream(self) -> bool: 
-        """Process audio stream and return True if wake word is detected
-        
-        Returns:
-            bool: True if wake word is detected    
+        self._input_buffer.put(audio_packet)
+
+    @staticmethod
+    def chunk_bytes_iter(iterator: DataBuffer, chunk_len: int, stride: Tuple[int, int], stream: bool = False):
         """
-        # Utilize full audio_packet instead
-        for frame in self.buffer:
-            # Process only proper frame sizes
-            if len(frame) < self.frame_size:
+        Reads raw bytes from an iterator and does chunks of length `chunk_len`. Optionally adds `stride` to each chunks to
+        get overlaps. `stream` is used to return partial results even if a full `chunk_len` is not yet available.
+        """
+        acc = b""
+        stride_left, stride_right = stride
+        if stride_left + stride_right >= chunk_len:
+            raise ValueError(f"Stride needs to be strictly smaller than chunk_len: ({stride_left}, {stride_right}) vs {chunk_len}")
+
+        _stride_left = 0
+        while True:
+            try:
+                audio_packet = iterator.get(frame_size=chunk_len + stride_left + stride_right, timeout=-1)
+            except:
+                # logger.warning('no packets in buffer')
                 break
-            # print("\nProcessing", flush=True)
-            pcm = struct.unpack_from("h" *self.porcupine_handle.frame_length, frame.bytes)
-            result = self.porcupine_handle.process(pcm)
-            if result >= 0:
-                self.reset_data_buffer()
-                return True
+
+            raw = audio_packet.bytes
+            acc += raw
+            if stream and len(acc) < chunk_len:
+                stride = (_stride_left, 0)
+                yield {"raw": acc[:chunk_len], "stride": stride, "partial": True}
+
+            else:
+                while len(acc) >= chunk_len:
+                    # We are flushing the accumulator
+                    stride = (_stride_left, stride_right)
+                    item = {"raw": acc[:chunk_len], "stride": stride}
+                    if stream:
+                        item["partial"] = False
+                    yield item
+                    _stride_left = stride_left
+                    acc = acc[chunk_len - stride_left - stride_right :]
+
+        # Last chunk
+        # if len(acc) > stride_left:
+        #     item = {"raw": acc, "stride": (_stride_left, 0)}
+        #     if stream:
+        #         item["partial"] = False
+        #     yield item
+
+    def _setup_params(self, format_for_conversion='f32le', chunk_length_s=2.0, stream_chunk_s=0.25):
+        if stream_chunk_s is not None:
+            self.chunk_s = stream_chunk_s
+        else:
+            self.chunk_s = chunk_length_s
+
+        self.sampling_rate = self._audio_classifier.sample_rate
+
+        if format_for_conversion == "s16le":
+            self.dtype = np.int16
+            self.size_of_sample = 2
+        elif format_for_conversion == "f32le":
+            self.dtype = np.float32
+            self.size_of_sample = 4
+        else:
+            raise ValueError(f"Unhandled format `{format_for_conversion}`. Please use `s16le` or `f32le`")
+
+        stride_length_s = chunk_length_s / 6
+
+        self.chunk_len = int(round(self.sampling_rate * chunk_length_s)) * self.size_of_sample
+        if isinstance(stride_length_s, (int, float)):
+            stride_length_s = [stride_length_s, stride_length_s]
+
+        self.stride_left = int(round(self.sampling_rate * stride_length_s[0])) * self.size_of_sample
+        self.stride_right = int(round(self.sampling_rate * stride_length_s[1])) * self.size_of_sample
+
+    def _preprocessed_mic(self) -> Generator:
+        audio_time = datetime.now()
+        delta = timedelta(seconds=self.chunk_s) # TODO calculate based on timestamp of AudioPacket
+        # logger.debug('starting processing...', end='', flush=True)
+        for item in self.chunk_bytes_iter(
+            self._input_buffer, self.chunk_len, stride=(self.stride_left, self.stride_right), stream=True
+        ):
+            # print(">", end="", flush=True)
+            # Put everything back in numpy scale
+            item["raw"] = np.frombuffer(item["raw"], dtype=self.dtype).copy()
+            item["stride"] = (
+                item["stride"][0] // self.size_of_sample,
+                item["stride"][1] // self.size_of_sample,
+            )
+            item["sampling_rate"] = self.sampling_rate
+
+            audio_time += delta # TODO fix audio time to match the transmitted time from AudioPacket
+            if datetime.now() > audio_time + 10 * delta: # TODO put back
+                print(f'time: {audio_time + 10 * delta};;; while now is {datetime.now()}; skipping ...', end='', flush=True)
+                # We're late !! SKIP
+                continue
+            yield item
+        # logger.debug('quitting processing', flush=True)
+
+    def is_wake_word_detected(self) -> bool:
+        """Check if wake word is detected in the audio stream
+
+        Returns:
+            bool: True if wake word is detected
+        """
+        return self._audio_classifier.detect(self._preprocessed_mic())
