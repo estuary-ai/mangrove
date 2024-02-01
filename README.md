@@ -27,11 +27,7 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
     conda activate senva
     ```
 
-3. Install all Eva's libraries dependancies.
-    ```
-    sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0
-    ```
-
+3. Install all Eva's libraries dependancies:
 3.1 Install all Eva's libraries dependancies for Ubuntu 22.04.
     ```
     sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0
