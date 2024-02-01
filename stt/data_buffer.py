@@ -7,7 +7,7 @@ from queue import Empty as QueueEmpty
 from queue import Full as QueueFull
 from loguru import logger
 from threading import RLock
-from audio_packet import AudioPacket
+from .audio_packet import AudioPacket
 
 
 class DataBuffer:
