@@ -1,13 +1,13 @@
 import numpy as np
 import sounddevice as sd
-from typing import Tuple
+
 from functools import reduce
-from .audio_packet import AudioPacket
 from queue import PriorityQueue, Queue
 from queue import Empty as QueueEmpty
 from queue import Full as QueueFull
 from loguru import logger
 from threading import RLock
+from audio_packet import AudioPacket
 
 
 class DataBuffer:

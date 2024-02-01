@@ -1,46 +1,28 @@
-import time
-import threading
 import numpy as np
-from typing import Tuple
+
+from typing import Tuple, Generator
 from datetime import datetime, timedelta
-from loguru import logger
-# from transformers.pipelines.audio_utils import chunk_bytes_iter
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
-
+from .audio_classification_endpoint import HFAudioClassificationEndpoint
 
 class WakeUpVoiceDetector:
     def __init__(
         self,
-        model_name="MIT/ast-finetuned-speech-commands-v2",
-        wake_word="marvin",
+        audio_classification_endpoint_kwargs: dict={
+            "model_name": "MIT/ast-finetuned-speech-commands-v2",
+            "prediction_prob_threshold": 0.7,
+        },
+        frame_size=1024,
         device="cuda",
         verbose=False,
     ):
         self.verbose = verbose
-        self.frame_size = 1024
+        self.frame_size = frame_size
         self._input_buffer = DataBuffer(self.frame_size)
+        self._audio_classifier = HFAudioClassificationEndpoint(**audio_classification_endpoint_kwargs, device=device)
+        self._setup_params(format_for_conversion='f32le', chunk_length_s=2.0, stream_chunk_s=0.25)
 
-        self._lock = threading.Lock()
-        self._output = [False]
-
-        from transformers import pipeline
-
-        self._classifier = pipeline(
-            "audio-classification", model=model_name, device=device
-        )
-
-        if wake_word not in self._classifier.model.config.label2id.keys():
-            raise ValueError(
-                f"Wake word {wake_word} not in set of valid class labels,"
-                f"pick a wake word in the set {self._classifier.model.config.label2id.keys()}."
-            )
-
-        self.wake_word = wake_word
-
-        logger.info(
-            f"Wakeword set is {self.wake_word} out of {self._classifier.model.config.label2id.keys()}"
-        )
 
     def reset_data_buffer(self):
         """Reset data buffer"""
@@ -52,13 +34,7 @@ class WakeUpVoiceDetector:
         Args:
             audio_packet (AudioPacket): Audio packet to feed procupine hot-word detector
         """
-        try:
-            self._input_buffer.put(audio_packet)
-        except:
-            # TODO remove this .. just for debugging purposes now as the wake up word detector classifier not working yet
-            pass
-            # self.reset_data_buffer()
-
+        self._input_buffer.put(audio_packet)
 
     @staticmethod
     def chunk_bytes_iter(iterator: DataBuffer, chunk_len: int, stride: Tuple[int, int], stream: bool = False):
@@ -84,6 +60,7 @@ class WakeUpVoiceDetector:
             if stream and len(acc) < chunk_len:
                 stride = (_stride_left, 0)
                 yield {"raw": acc[:chunk_len], "stride": stride, "partial": True}
+
             else:
                 while len(acc) >= chunk_len:
                     # We are flushing the accumulator
@@ -102,51 +79,47 @@ class WakeUpVoiceDetector:
         #         item["partial"] = False
         #     yield item
 
-    def _preprocessed_mic(self, format_for_conversion='f32le'):
-        # arbitrary values
-        chunk_length_s = 2.0
-        stream_chunk_s = 0.25
-
+    def _setup_params(self, format_for_conversion='f32le', chunk_length_s=2.0, stream_chunk_s=0.25):
         if stream_chunk_s is not None:
-            chunk_s = stream_chunk_s
+            self.chunk_s = stream_chunk_s
         else:
-            chunk_s = chunk_length_s
+            self.chunk_s = chunk_length_s
 
-
-        sampling_rate = self._classifier.feature_extractor.sampling_rate
+        self.sampling_rate = self._audio_classifier.sample_rate
 
         if format_for_conversion == "s16le":
-            dtype = np.int16
-            size_of_sample = 2
+            self.dtype = np.int16
+            self.size_of_sample = 2
         elif format_for_conversion == "f32le":
-            dtype = np.float32
-            size_of_sample = 4
+            self.dtype = np.float32
+            self.size_of_sample = 4
         else:
             raise ValueError(f"Unhandled format `{format_for_conversion}`. Please use `s16le` or `f32le`")
 
         stride_length_s = chunk_length_s / 6
 
-        chunk_len = int(round(sampling_rate * chunk_length_s)) * size_of_sample
+        self.chunk_len = int(round(self.sampling_rate * chunk_length_s)) * self.size_of_sample
         if isinstance(stride_length_s, (int, float)):
             stride_length_s = [stride_length_s, stride_length_s]
 
-        stride_left = int(round(sampling_rate * stride_length_s[0])) * size_of_sample
-        stride_right = int(round(sampling_rate * stride_length_s[1])) * size_of_sample
+        self.stride_left = int(round(self.sampling_rate * stride_length_s[0])) * self.size_of_sample
+        self.stride_right = int(round(self.sampling_rate * stride_length_s[1])) * self.size_of_sample
 
+    def _preprocessed_mic(self) -> Generator:
         audio_time = datetime.now()
-        delta = timedelta(seconds=chunk_s) # TODO calculate based on timestamp of AudioPacket
+        delta = timedelta(seconds=self.chunk_s) # TODO calculate based on timestamp of AudioPacket
         # logger.debug('starting processing...', end='', flush=True)
         for item in self.chunk_bytes_iter(
-            self._input_buffer, chunk_len, stride=(stride_left, stride_right), stream=True
+            self._input_buffer, self.chunk_len, stride=(self.stride_left, self.stride_right), stream=True
         ):
             # print(">", end="", flush=True)
             # Put everything back in numpy scale
-            item["raw"] = np.frombuffer(item["raw"], dtype=dtype).copy()
+            item["raw"] = np.frombuffer(item["raw"], dtype=self.dtype).copy()
             item["stride"] = (
-                item["stride"][0] // size_of_sample,
-                item["stride"][1] // size_of_sample,
+                item["stride"][0] // self.size_of_sample,
+                item["stride"][1] // self.size_of_sample,
             )
-            item["sampling_rate"] = sampling_rate
+            item["sampling_rate"] = self.sampling_rate
 
             audio_time += delta # TODO fix audio time to match the transmitted time from AudioPacket
             if datetime.now() > audio_time + 10 * delta: # TODO put back
@@ -156,45 +129,10 @@ class WakeUpVoiceDetector:
             yield item
         # logger.debug('quitting processing', flush=True)
 
-
-    def run(self):
-        pass
-        # def _classify(prob_threshold=0.5):
-        #     time.sleep(5)
-        #     for prediction in self._classifier(self._preprocessed_mic()):
-        #         print('<<<', end="", flush=True)
-        #         prediction = prediction[0]
-        #         if prediction["label"] == self.wake_word:
-        #             if prediction["score"] > prob_threshold:
-        #                 print("Wake word detected!")
-        #                 with self._lock:
-        #                     self._output[0] += True
-
-        # self._thread = threading.Thread(target=_classify, args=(0.5,), daemon=True)
-        # self._thread.start()
-        # logger.success('running wake up word detector')
-
-    # def is_wake_word_detected(self) -> bool:
-    #     """Return True if wake word is detected
-
-    #     Returns:
-    #         bool: True if wake word is detected
-    #     """
-    #     with self._lock:
-    #         _out = self._output[0]
-    #         self._output[0] = False
-    #         return _out
-
     def is_wake_word_detected(self) -> bool:
-        prob_threshold = 0.7
-        is_detected = False
-        for prediction in self._classifier(self._preprocessed_mic()):
-            print('<', end="", flush=True)
-            prediction = prediction[0]
-            if prediction["label"] == self.wake_word:
-                if prediction["score"] > prob_threshold:
-                    is_detected = True
-                    break
-        if is_detected:
-            return True
-        return False
+        """Check if wake word is detected in the audio stream
+
+        Returns:
+            bool: True if wake word is detected
+        """
+        return self._audio_classifier.detect(self._preprocessed_mic())

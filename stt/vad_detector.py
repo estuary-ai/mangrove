@@ -1,14 +1,15 @@
-import time
 import webrtcvad
 import torch
 import collections
+from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Union, List
-from loguru import logger
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
 
-class VoiceActivityDetector:
+
+class VoiceActivityDetector(ABC):
+
     def __init__(self, silence_threshold: int=200, frame_size: int=320*3, verbose=False):
         self.silence_threshold = silence_threshold
         self.frame_size = frame_size
@@ -29,6 +30,7 @@ class VoiceActivityDetector:
         self.buffered_silences = collections.deque(maxlen=2)
         self.num_recorded_chunks = 0
 
+    @abstractmethod
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]):
         raise NotImplementedError
 
