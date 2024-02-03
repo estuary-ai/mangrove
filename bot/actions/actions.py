@@ -1,21 +1,30 @@
-#Standard Packages
+# Standard Packages
 import json
 import os
 from typing import Any, Text, Dict, List
 
-#Rasa Packages
+# Rasa Packages
 from rasa_sdk import Action, Tracker, FormValidationAction
 from rasa_sdk.executor import CollectingDispatcher
 from rasa_sdk.events import Restarted, SlotSet
 
+
 class ActionErrorMessage(Action):
 
     def name(self) -> Text:
-        return 'action_error_message'
+        return "action_error_message"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
-        dispatcher.utter_message(text='Sorry I did not get that', custom={ 'target': 'Error', 'additionalInfo': [] })
+        dispatcher.utter_message(
+            text="Sorry I did not get that",
+            custom={"target": "Error", "additionalInfo": []},
+        )
 
         return [Restarted()]
 
@@ -23,11 +32,16 @@ class ActionErrorMessage(Action):
 class ActionEvaTime(Action):
 
     def name(self) -> Text:
-        return 'action_eva_time'
+        return "action_eva_time"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
-        cmd = { 'target': 'Time', 'action': 'open', 'additionalInfo': [] }
+        cmd = {"target": "Time", "action": "open", "additionalInfo": []}
 
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]
@@ -36,18 +50,23 @@ class ActionEvaTime(Action):
 class ActionPanelFollow(Action):
 
     def name(self) -> Text:
-        return 'action_panel_follow'
+        return "action_panel_follow"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch_ = tracker.get_slot('switch_')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'follow'
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "follow"
         else:
-            action = 'unfollow'
+            action = "unfollow"
 
-        cmd = { 'target': 'Panel', 'action': action, 'additionalInfo': ['eye'] }
+        cmd = {"target": "Panel", "action": action, "additionalInfo": ["eye"]}
 
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]
@@ -56,13 +75,18 @@ class ActionPanelFollow(Action):
 class ActionClosePanel(Action):
 
     def name(self) -> Text:
-        return 'action_close_panel'
+        return "action_close_panel"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
-        text='Closing the panel'
+        text = "Closing the panel"
 
-        cmd = { 'target': 'Panel', 'action': 'close', 'additionalInfo': ['eye'] }
+        cmd = {"target": "Panel", "action": "close", "additionalInfo": ["eye"]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -71,24 +95,37 @@ class ActionClosePanel(Action):
 class ActionShowPanel(Action):
 
     def name(self) -> Text:
-        return 'action_show_panel'
+        return "action_show_panel"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        panel = tracker.get_slot('panel')
-        if panel not in [ 'vitals','suit','spectrometry','warnings','cautions','tss','ai' ]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        panel = tracker.get_slot("panel")
+        if panel not in [
+            "vitals",
+            "suit",
+            "spectrometry",
+            "warnings",
+            "cautions",
+            "tss",
+            "ai",
+        ]:
             return ActionErrorMessage().run(dispatcher, tracker, domain)
 
-        switch_ = tracker.get_slot('switch_')
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'open'
-            text='Opening up the %s panel' % panel
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "open"
+            text = "Opening up the %s panel" % panel
         else:
-            action = 'close'
-            text='Closing the %s panel' % panel
+            action = "close"
+            text = "Closing the %s panel" % panel
 
-        cmd = { 'target': 'Panel', 'action': action, 'additionalInfo': [panel] }
+        cmd = {"target": "Panel", "action": action, "additionalInfo": [panel]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -97,20 +134,25 @@ class ActionShowPanel(Action):
 class ActionNavigation(Action):
 
     def name(self) -> Text:
-        return 'action_show_navigation'
+        return "action_show_navigation"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch_ = tracker.get_slot('switch_')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'open'
-            text='Opening up the long range navigation menu for you'
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "open"
+            text = "Opening up the long range navigation menu for you"
         else:
-            action = 'close'
-            text='Closing the long range navigation menu for you'
+            action = "close"
+            text = "Closing the long range navigation menu for you"
 
-        cmd = { 'target': 'LongRangeNavigation', 'action': action, 'additionalInfo': [] }
+        cmd = {"target": "LongRangeNavigation", "action": action, "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -119,20 +161,25 @@ class ActionNavigation(Action):
 class ActionShortRangeNavigation(Action):
 
     def name(self) -> Text:
-        return 'action_short_range_navigation'
+        return "action_short_range_navigation"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch_ = tracker.get_slot('switch_')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'enable'
-            text='Showing short range navigation markers'
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "enable"
+            text = "Showing short range navigation markers"
         else:
-            action = 'disable'
-            text='Hiding short range navigation markers'
+            action = "disable"
+            text = "Hiding short range navigation markers"
 
-        cmd = { 'target': 'ShortRangeNavigation', 'action': action, 'additionalInfo': [] }
+        cmd = {"target": "ShortRangeNavigation", "action": action, "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -141,157 +188,221 @@ class ActionShortRangeNavigation(Action):
 class ActionShortRangeNavSettings(Action):
 
     def name(self) -> Text:
-        return 'action_short_nav_settings'
+        return "action_short_nav_settings"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch_ = tracker.get_slot('switch_')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'open'
-            text='Opening up the short range navigation settings'
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "open"
+            text = "Opening up the short range navigation settings"
         else:
-            action = 'close'
-            text='Closing the short range navigation settings'
+            action = "close"
+            text = "Closing the short range navigation settings"
 
-        cmd = { 'target': 'ShortRangeNavigation', 'action': action, 'additionalInfo': [] }
+        cmd = {"target": "ShortRangeNavigation", "action": action, "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionNavigate(Action):
 
     def name(self) -> Text:
-        return 'action_navigate'
+        return "action_navigate"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        point = tracker.get_slot('nav_target')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        point = tracker.get_slot("nav_target")
 
-        if point is None or point == 'home':
-            point = 'home'
-            text = 'Calculating path back home'
-        elif point == 'closest':
-            text = 'Calculating path to the closest point'
+        if point is None or point == "home":
+            point = "home"
+            text = "Calculating path back home"
+        elif point == "closest":
+            text = "Calculating path to the closest point"
         else:
-            if point in [ 'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india', 'juliet' ]:
+            if point in [
+                "alpha",
+                "bravo",
+                "charlie",
+                "delta",
+                "echo",
+                "foxtrot",
+                "golf",
+                "hotel",
+                "india",
+                "juliet",
+            ]:
                 point = point[0]
-            text = 'Calculating path to point %s' % point
+            text = "Calculating path to point %s" % point
 
-        cmd = { 'target': 'Breadcrumb', 'action': 'navigate', 'additionalInfo': [point] }
+        cmd = {"target": "Breadcrumb", "action": "navigate", "additionalInfo": [point]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionShowBreadcrumbs(Action):
 
     def name(self) -> Text:
-        return 'action_show_breadcrumbs'
+        return "action_show_breadcrumbs"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch_ = tracker.get_slot('switch_')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'show'
-            text='Displaying the breadcrumb trail'
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "show"
+            text = "Displaying the breadcrumb trail"
         else:
-            action = 'hide'
-            text='Hiding the breadcrumb trail'
+            action = "hide"
+            text = "Hiding the breadcrumb trail"
 
-        cmd = { 'target': 'Breadcrumb', 'action': action, 'additionalInfo': [] }
+        cmd = {"target": "Breadcrumb", "action": action, "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionNextSpectrometryGraph(Action):
 
     def name(self) -> Text:
-        return 'action_next_spectrometry_graph'
+        return "action_next_spectrometry_graph"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        
-        text = 'Switching to next spectrometry sample'
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
-        cmd = { 'target': 'Spectrometry', 'action': 'next_graph', 'additionalInfo': [] }
+        text = "Switching to next spectrometry sample"
+
+        cmd = {"target": "Spectrometry", "action": "next_graph", "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionAddWaypoint(Action):
 
     def name(self) -> Text:
-        return 'action_add_waypoint'
+        return "action_add_waypoint"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        waypoint_type = tracker.get_slot('waypoint_type')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        waypoint_type = tracker.get_slot("waypoint_type")
 
-        if waypoint_type is None or waypoint_type == 'poi' or waypoint_type != 'hazard':
-            waypoint_type = 'poi'
-            text='Adding a point of interest waypoint'
+        if waypoint_type is None or waypoint_type == "poi" or waypoint_type != "hazard":
+            waypoint_type = "poi"
+            text = "Adding a point of interest waypoint"
         else:
-            text='Adding a warning waypoint'
+            text = "Adding a warning waypoint"
 
-        cmd = { 'target': 'Waypoint', 'action': 'add', 'additionalInfo': [waypoint_type] }
+        cmd = {"target": "Waypoint", "action": "add", "additionalInfo": [waypoint_type]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionRemoveWaypoint(Action):
 
     def name(self) -> Text:
-        return 'action_remove_waypoint'
+        return "action_remove_waypoint"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        text='Deleting the waypoint'
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        text = "Deleting the waypoint"
 
-        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['eye'] }
+        cmd = {"target": "Waypoint", "action": "remove", "additionalInfo": ["eye"]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionUndoWaypoint(Action):
 
     def name(self) -> Text:
-        return 'action_undo_waypoint'
+        return "action_undo_waypoint"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        text='Undoing last waypoint'
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        text = "Undoing last waypoint"
 
-        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['last'] }
+        cmd = {"target": "Waypoint", "action": "remove", "additionalInfo": ["last"]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
+
 
 class ActionClearAllWaypoints(Action):
 
     def name(self) -> Text:
-        return 'action_clear_all_waypoints'
+        return "action_clear_all_waypoints"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        text='Clearing all waypoints'
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        text = "Clearing all waypoints"
 
-        cmd = { 'target': 'Waypoint', 'action': 'remove', 'additionalInfo': ['all'] }
+        cmd = {"target": "Waypoint", "action": "remove", "additionalInfo": ["all"]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
 
+
 class ActionShowWaypoints(Action):
-    
+
     def name(self) -> Text:
-        return 'action_show_waypoints'
+        return "action_show_waypoints"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        switch_ = tracker.get_slot('switch_')
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
+        switch_ = tracker.get_slot("switch_")
 
-        if switch_ is None or switch_ == 'on' or switch_ != 'off':
-            switch_ = 'on'
-            action = 'show'
-            text='Displaying waypoints'
+        if switch_ is None or switch_ == "on" or switch_ != "off":
+            switch_ = "on"
+            action = "show"
+            text = "Displaying waypoints"
         else:
-            action = 'hide'
-            text='Hiding waypoints'
+            action = "hide"
+            text = "Hiding waypoints"
 
-        cmd = { 'target': 'Waypoint', 'action': action, 'additionalInfo': [] }
+        cmd = {"target": "Waypoint", "action": action, "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -300,23 +411,39 @@ class ActionShowWaypoints(Action):
 class ActionRoverNavigate(Action):
 
     def name(self) -> Text:
-        return 'action_rover_navigate'
+        return "action_rover_navigate"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
         intent_type = tracker.get_intent_of_latest_message()[6:]
 
-        if intent_type == 'come_back':
-            text = 'Bringing rover back to you'
-            target_dest = 'home'
-        elif intent_type == 'go_to':
-            target_dest = tracker.get_slot('nav_target')
-            if target_dest not in [ 'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel', 'india', 'juliet' ]:
+        if intent_type == "come_back":
+            text = "Bringing rover back to you"
+            target_dest = "home"
+        elif intent_type == "go_to":
+            target_dest = tracker.get_slot("nav_target")
+            if target_dest not in [
+                "alpha",
+                "bravo",
+                "charlie",
+                "delta",
+                "echo",
+                "foxtrot",
+                "golf",
+                "hotel",
+                "india",
+                "juliet",
+            ]:
                 return ActionErrorMessage().run(dispatcher, tracker, domain)
             target_dest = target_dest[0]
-            text = 'Taking rover to location %s' % target_dest
+            text = "Taking rover to location %s" % target_dest
 
-        cmd = { 'target': 'Rover', 'action': 'navigate', 'additionalInfo': [target_dest] }
+        cmd = {"target": "Rover", "action": "navigate", "additionalInfo": [target_dest]}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -325,13 +452,18 @@ class ActionRoverNavigate(Action):
 class ActionReadVitals(Action):
 
     def name(self) -> Text:
-        return 'action_read_vitals'
+        return "action_read_vitals"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
         vitals_type = tracker.get_intent_of_latest_message()[5:]
 
-        cmd = { 'target': 'Vitals', 'action': 'read', 'additionalInfo': [vitals_type] }
+        cmd = {"target": "Vitals", "action": "read", "additionalInfo": [vitals_type]}
 
         dispatcher.utter_message(custom=cmd)
         return [Restarted()]
@@ -340,13 +472,22 @@ class ActionReadVitals(Action):
 class ActionCalibrateCompass(Action):
 
     def name(self) -> Text:
-        return 'action_calibrate_compass'
+        return "action_calibrate_compass"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
-        text = 'Calibrating compass using GPS'
+        text = "Calibrating compass using GPS"
 
-        cmd = { 'target': 'LongRangeNavigation', 'action': 'compass', 'additionalInfo': [] }
+        cmd = {
+            "target": "LongRangeNavigation",
+            "action": "compass",
+            "additionalInfo": [],
+        }
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]
@@ -355,13 +496,18 @@ class ActionCalibrateCompass(Action):
 class ActionSetNorth(Action):
 
     def name(self) -> Text:
-        return 'action_set_north'
+        return "action_set_north"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any],
+    ) -> List[Dict[Text, Any]]:
 
-        text = 'Manually setting true North'
+        text = "Manually setting true North"
 
-        cmd = { 'target': 'LongRangeNavigation', 'action': 'north', 'additionalInfo': [] }
+        cmd = {"target": "LongRangeNavigation", "action": "north", "additionalInfo": []}
 
         dispatcher.utter_message(text=text, custom=cmd)
         return [Restarted()]

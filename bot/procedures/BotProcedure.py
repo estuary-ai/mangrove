@@ -1,10 +1,15 @@
 from collections import namedtuple
 from typing import Any
 
+
 class BotProcedure:
 
-    Step = namedtuple('BotProcedureStep', ['stepId', 'target', 'text', 'prereqs', 'substeps'])
-    Prereq = namedtuple('BotProcedurePrereq', ['target', 'operation', 'value', 'unit', 'text'])
+    Step = namedtuple(
+        "BotProcedureStep", ["stepId", "target", "text", "prereqs", "substeps"]
+    )
+    Prereq = namedtuple(
+        "BotProcedurePrereq", ["target", "operation", "value", "unit", "text"]
+    )
 
     def __init__(self):
         self.restart()
@@ -25,7 +30,9 @@ class BotProcedure:
             else:
                 self.cur_step += 1
                 self.cur_substep = -1
-                if self.cur_step < len(self.steps) and self.cur_substep + 1 < len(self.steps[self.cur_step].substeps):
+                if self.cur_step < len(self.steps) and self.cur_substep + 1 < len(
+                    self.steps[self.cur_step].substeps
+                ):
                     self.cur_substep += 1
             return True
         else:
@@ -37,7 +44,7 @@ class BotProcedure:
     def get_next_step_number(self):
         self.advance()
         return self.get_current_step_number()
-    
+
     def get_step(self, step_number, substep_number) -> Step:
         if step_number == -1 or step_number >= len(self.steps):
             return None
@@ -60,8 +67,9 @@ class BotProcedure:
         out = [todict(step) for step in self.steps]
         return out
 
+
 def todict(step: BotProcedure.Step) -> dict[str, Any]:
     d = step._asdict()
-    d['prereqs'] = [prereq._asdict() for prereq in step.prereqs]
-    d['substeps'] = [todict(substep) for substep in step.substeps]
+    d["prereqs"] = [prereq._asdict() for prereq in step.prereqs]
+    d["substeps"] = [todict(substep) for substep in step.substeps]
     return d

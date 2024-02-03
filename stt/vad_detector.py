@@ -10,7 +10,9 @@ from .audio_packet import AudioPacket
 
 class VoiceActivityDetector(ABC):
 
-    def __init__(self, silence_threshold: int=200, frame_size: int=320*3, verbose=False):
+    def __init__(
+        self, silence_threshold: int = 200, frame_size: int = 320 * 3, verbose=False
+    ):
         self.silence_threshold = silence_threshold
         self.frame_size = frame_size
         self.buffer = DataBuffer(self.frame_size)
@@ -62,13 +64,15 @@ class VoiceActivityDetector(ABC):
             if len(self.buffered_silences) > 0:
                 # if there were silence buffers append them
                 # DEBUG START
-                silence_len = reduce(lambda x, y: len(x) + len(y), self.buffered_silences)
+                silence_len = reduce(
+                    lambda x, y: len(x) + len(y), self.buffered_silences
+                )
                 if isinstance(silence_len, AudioPacket):
                     silence_len = len(silence_len)
 
                 # DEBUG END
                 self.buffered_silences.append(frame)
-                complete_frame = reduce(lambda x, y: x+y, self.buffered_silences)
+                complete_frame = reduce(lambda x, y: x + y, self.buffered_silences)
                 self._reset_silence_buffer()
             else:
                 complete_frame = frame
@@ -76,9 +80,9 @@ class VoiceActivityDetector(ABC):
 
         self.silence_frame_start_timestamp = None
         if self.num_recorded_chunks == 0:
-            self._log('\n[start]', force=True) # recording started
+            self._log("\n[start]", force=True)  # recording started
         else:
-            self._log('=') # still recording
+            self._log("=")  # still recording
         self.num_recorded_chunks += 1
         frame_inc_silence = _concat_buffered_silence(frame)
 
@@ -109,7 +113,7 @@ class VoiceActivityDetector(ABC):
         return False
 
     def _log(self, msg, end="", force=False):
-        """ Log message to console if verbose is True or force is True with flush
+        """Log message to console if verbose is True or force is True with flush
 
         Args:
             msg (str): Message to log
@@ -120,11 +124,18 @@ class VoiceActivityDetector(ABC):
         if self.verbose or force:
             print(msg, end=end, flush=True)
 
+
 class WebRTCVoiceActivityDetector(VoiceActivityDetector):
 
-    def __init__(self, aggressiveness: int=3, silence_threshold: int=200, frame_size: int=320*3, verbose=False):
+    def __init__(
+        self,
+        aggressiveness: int = 3,
+        silence_threshold: int = 200,
+        frame_size: int = 320 * 3,
+        verbose=False,
+    ):
         if frame_size not in [320, 640, 960]:
-            raise ValueError('Frame size must be 320, 640 or 960 with WebRTC VAD')
+            raise ValueError("Frame size must be 320, 640 or 960 with WebRTC VAD")
         self.aggressiveness = aggressiveness
         self.model = webrtcvad.Vad(aggressiveness)
         super().__init__(silence_threshold, frame_size, verbose)
@@ -154,7 +165,8 @@ class WebRTCVoiceActivityDetector(VoiceActivityDetector):
         # if any([not is_speech for is_speech in is_speeches]):
         #     self.model = webrtcvad.Vad(self.aggressiveness)
 
-        if one_item: return is_speeches[0]
+        if one_item:
+            return is_speeches[0]
         return is_speeches
 
     def reset(self):
@@ -163,17 +175,26 @@ class WebRTCVoiceActivityDetector(VoiceActivityDetector):
 
 
 class SileroVAD(VoiceActivityDetector):
-    def __init__(self, device=None, threshold=0.5, silence_threshold: int=200, frame_size: int=512*4, verbose=False):
-        if frame_size < 512*4:
-            raise ValueError('Frame size must be at least 512*4 with Silero VAD')
+    def __init__(
+        self,
+        device=None,
+        threshold=0.5,
+        silence_threshold: int = 200,
+        frame_size: int = 512 * 4,
+        verbose=False,
+    ):
+        if frame_size < 512 * 4:
+            raise ValueError("Frame size must be at least 512*4 with Silero VAD")
         if device is None:
             device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.threshold = threshold
         self.device = device
-        self.model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
-                            model='silero_vad',
-                            force_reload=False,
-                            onnx=False)
+        self.model, utils = torch.hub.load(
+            repo_or_dir="snakers4/silero-vad",
+            model="silero_vad",
+            force_reload=False,
+            onnx=False,
+        )
         self.model.to(device)
 
         # (get_speech_timestamps,
@@ -211,7 +232,8 @@ class SileroVAD(VoiceActivityDetector):
         # if any([not is_speech for is_speech in is_speeches]):
         #     self.model.reset_states()
 
-        if one_item: return is_speeches[0]
+        if one_item:
+            return is_speeches[0]
         return is_speeches
 
     def reset(self):

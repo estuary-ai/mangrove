@@ -6,37 +6,41 @@ from rasa.utils.endpoints import EndpointConfig
 
 from .procedures import EgressProcedure
 
+
 class BotController:
     """Bot Controller class that handles the RASA agent and supports the following functions:
-        - Send user message to RASA agent
-        - Process procedures such as UIA Egress Procedure
+    - Send user message to RASA agent
+    - Process procedures such as UIA Egress Procedure
     """
-    
-    def __init__(self,
-                 model_path='models/rasa-model/20230521-172806.tar.gz',
-                 endpoint_config_address='http://localhost:5055/webhook'):
-        """ Constructor
-        
+
+    def __init__(
+        self,
+        model_path="models/rasa-model/20230521-172806.tar.gz",
+        endpoint_config_address="http://localhost:5055/webhook",
+    ):
+        """Constructor
+
         Args:
             model_path (str): Path to RASA model
             endpoint_config_address (str): Address of RASA action server
-        
+
         """
-        
+
         self.egress_procedure = EgressProcedure()
         print("Loading RASA Agent...")
-        self.agent =\
-            Agent.load(model_path, action_endpoint=EndpointConfig(endpoint_config_address))
+        self.agent = Agent.load(
+            model_path, action_endpoint=EndpointConfig(endpoint_config_address)
+        )
         print("Initialized RASA Agent")
         if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     def send_user_message(self, request):
-        """ Send user message to RASA agent and return response
-        
+        """Send user message to RASA agent and return response
+
         Args:
             request (str): User message
-        
+
         Returns:
             response (dict): Response from RASA agent
         """
@@ -46,76 +50,90 @@ class BotController:
         conversation_id = 1
         user_message = request
 
-        #Sending message to RASA
+        # Sending message to RASA
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        messages = loop.run_until_complete(self.agent.handle_text(user_message, sender_id=conversation_id))
+        messages = loop.run_until_complete(
+            self.agent.handle_text(user_message, sender_id=conversation_id)
+        )
         loop.close()
 
         print(messages)
 
-        #Deciphering RASA's response
+        # Deciphering RASA's response
         texts = []
         commands = []
 
         for message in messages:
-            if 'text' in message:
-                text = message['text']
+            if "text" in message:
+                text = message["text"]
                 texts.append(text)
-            elif 'custom' in message:
-                command = message['custom']
-                if command['target'] == 'UIA':
-                    if command['action'] == 'start':
+            elif "custom" in message:
+                command = message["custom"]
+                if command["target"] == "UIA":
+                    if command["action"] == "start":
                         # reset the egress procedure
                         self.egress_procedure.restart()
                         # start video stream
                         # open egress checklist
-                        commands.append({ 'target': 'UIA', 'action': 'open', 'additionalInfo': [] })
+                        commands.append(
+                            {"target": "UIA", "action": "open", "additionalInfo": []}
+                        )
                         # set world state to egress in progress
-                    elif command['action'] == 'current_step_number':
+                    elif command["action"] == "current_step_number":
                         cur_step = self.egress_procedure.get_current_step()
-                        command['additionalInfo'] = [cur_step.stepId]
-                        texts.append('You\'re on step number %s' % cur_step.stepId)
+                        command["additionalInfo"] = [cur_step.stepId]
+                        texts.append("You're on step number %s" % cur_step.stepId)
                         commands.append(command)
-                    elif command['action'] == 'current_step':
+                    elif command["action"] == "current_step":
                         cur_step = self.egress_procedure.get_current_step()
                         if cur_step is None:
-                            command['additionalInfo'] = ['-1', 'null']
-                            texts.append('Completed all steps in procedure')
+                            command["additionalInfo"] = ["-1", "null"]
+                            texts.append("Completed all steps in procedure")
                         else:
-                            command['additionalInfo'] = [cur_step.stepId, cur_step.target]
+                            command["additionalInfo"] = [
+                                cur_step.stepId,
+                                cur_step.target,
+                            ]
                             texts.append(cur_step.text)
-                        commands.append(command)    
-                    elif command['action'] == 'next_step':
+                        commands.append(command)
+                    elif command["action"] == "next_step":
                         next_step = self.egress_procedure.get_next_step()
                         if next_step is None:
-                            command['additionalInfo'] = ['-1', 'null']
-                            texts.append('Completed all steps in procedure')
+                            command["additionalInfo"] = ["-1", "null"]
+                            texts.append("Completed all steps in procedure")
                         else:
-                            command['additionalInfo'] = [next_step.stepId, next_step.target]
+                            command["additionalInfo"] = [
+                                next_step.stepId,
+                                next_step.target,
+                            ]
                             texts.append(next_step.text)
                         commands.append(command)
-                    elif command['action'] == 'exit':
+                    elif command["action"] == "exit":
                         # stop video stream
                         # close egress checklist
-                        commands.append({ 'target': 'UIA', 'action': 'close', 'additionalInfo': [] })
+                        commands.append(
+                            {"target": "UIA", "action": "close", "additionalInfo": []}
+                        )
                         # set world state to egress exited
-                    elif command['action'] == 'confirm_completion':
+                    elif command["action"] == "confirm_completion":
                         if self.egress_procedure.is_finished():
-                            command['additionalInfo'] = ['true']
-                            texts.append('All steps of the egress procedure have been completed')
+                            command["additionalInfo"] = ["true"]
+                            texts.append(
+                                "All steps of the egress procedure have been completed"
+                            )
                         else:
-                            command['additionalInfo'] = ['false']
-                            texts.append('The egress procedure has not been completed')
+                            command["additionalInfo"] = ["false"]
+                            texts.append("The egress procedure has not been completed")
                     texts = []
                 else:
                     commands.append(command)
-        
-        #Compiling responses
+
+        # Compiling responses
         response = {}
-        response['text'] = texts
-        response['commands'] = commands
- 
+        response["text"] = texts
+        response["commands"] = commands
+
         print(commands)
 
         # Flatten commands

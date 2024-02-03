@@ -16,11 +16,17 @@ from memory import WorldState
 #     # # TODO reset anything
 
 socketio: SocketIO
+
+
 class DigitalAssistant(Namespace):
     """Digital Assistant SocketIO Namespace"""
 
     def __init__(
-        self, namespace="/", assistant_name="Traveller", shutdown_bot=False, verbose=False
+        self,
+        namespace="/",
+        assistant_name="Traveller",
+        shutdown_bot=False,
+        verbose=False,
     ):
         super().__init__(namespace)
         self.namespace = namespace

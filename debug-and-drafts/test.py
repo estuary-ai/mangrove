@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.insert(1, '../')
+
+sys.path.insert(1, "../")
 import numpy as np
 import sounddevice as sd
 
@@ -9,13 +10,17 @@ from bot import BotController
 from tts import TTSController
 
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
+
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 print("Initializing STT Controller")
-stt = STTController(model_path='../models/ds-model/deepspeech-0.9.3-models', verbose=True)
+stt = STTController(
+    model_path="../models/ds-model/deepspeech-0.9.3-models", verbose=True
+)
 stt.set_regular_focus()
 
 # print("Initializing Bot Controller")
@@ -23,27 +28,28 @@ stt.set_regular_focus()
 #                 model_path='../models/rasa-model/20220523-140335.tar.gz'
 #                 )
 # print("Initializing TTS Controller")
-# tts = TTSController()    
+# tts = TTSController()
 # print("Server is about to be Up and Running..")
 
 from os import walk
-samples_path = '../sample-audio-binary'
+
+samples_path = "../sample-audio-binary"
 
 
-while(True):
+while True:
     filenames = next(walk(samples_path), (None, None, []))[2]  # [] if no file
     for i, filename in enumerate(filenames):
-        print(f'{i+1}. {filename}')
+        print(f"{i+1}. {filename}")
     filenumber = input("Enter 0 for exit or file-number:")
     if int(filenumber) == 0:
         print("Terminating")
-        break 
-    filename = filenames[int(filenumber)-1]
+        break
+    filename = filenames[int(filenumber) - 1]
     print("filename:", filename)
-    f = open(f'{samples_path}/{filename}', mode='rb')
+    f = open(f"{samples_path}/{filename}", mode="rb")
     audio = f.read()
     # audio = audio[len(audio)//4:]
-    
+
     print("total length in bytes:", len(audio))
     print("playing audio..")
     sd.play(np.frombuffer(audio, dtype=np.int16), 16000)
@@ -54,17 +60,17 @@ while(True):
     # stt_res = stt._finish_stream()
     stt_res = stt.process_audio_stream(audio)
 
-    print('audiobuffer: ', len(stt.buffered_data))
-    print('audiofeed debug', stt.debug_feed)
-    print('total debug', stt.debug_total)
-    print('voice debug', stt.debug_voice)
-    print('silence debug', stt.debug_silence)
-    print('debug_silence_state', stt.debug_silence_state)
+    print("audiobuffer: ", len(stt.buffered_data))
+    print("audiofeed debug", stt.debug_feed)
+    print("total debug", stt.debug_total)
+    print("voice debug", stt.debug_voice)
+    print("silence debug", stt.debug_silence)
+    print("debug_silence_state", stt.debug_silence_state)
 
-    print('User: ' + str(stt_res))
+    print("User: " + str(stt_res))
     # print('silence_start', stt.debug_silence_state)
     # bot_res = bot.send_user_message(stt_res['text'])
-    # print('SENVA: ' + str(bot_res))    
+    # print('SENVA: ' + str(bot_res))
     # if bot_res.get('text'):
     #     bot_text = ' '.join(bot_res['text'])
     #     voice_bytes = tts.get_audio_bytes_stream(bot_text)

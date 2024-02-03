@@ -5,6 +5,7 @@ from stt import STTController, WakeUpVoiceDetector, AudioPacket
 from tts import TTSController
 from storage_manager import StorageManager, write_output
 
+
 class AssistantController:
     """Main controller for the assistant."""
 
@@ -27,6 +28,7 @@ class AssistantController:
         self.bot = None
         if not shutdown_bot:
             from bot import BotController
+
             self.bot = BotController()
             write_output("Initialized Bot Controller")
 
@@ -107,7 +109,9 @@ class AssistantController:
 
             self.stt_res_buffer = None
             self.command_audio_buffer += audio_packet
-            self.session_audio_buffer += audio_packet  # TODO note that this includes is_awake only
+            self.session_audio_buffer += (
+                audio_packet  # TODO note that this includes is_awake only
+            )
 
             self.stt.feed(audio_packet)
         else:

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from transformers import pipeline
 from loguru import logger
 
+
 class AudioClassificationEndpoint(ABC):
     @abstractmethod
     def detect(self, preprocessed_mic: Generator) -> Generator:
@@ -13,12 +14,15 @@ class AudioClassificationEndpoint(ABC):
     def sample_rate(self):
         raise NotImplementedError
 
+
 class HFAudioClassificationEndpoint:
-    def __init__(self,
-                model_name: str='MIT/ast-finetuned-speech-commands-v2',
-                wake_word: str='marvin',
-                prediction_prob_threshold: float=0.7,
-                device: str='cuda'):
+    def __init__(
+        self,
+        model_name: str = "MIT/ast-finetuned-speech-commands-v2",
+        wake_word: str = "marvin",
+        prediction_prob_threshold: float = 0.7,
+        device: str = "cuda",
+    ):
         self._classifier = pipeline(
             "audio-classification", model=model_name, device=device
         )
@@ -36,11 +40,10 @@ class HFAudioClassificationEndpoint:
             f"Wakeword set is {self.wake_word} out of {self._classifier.model.config.label2id.keys()}"
         )
 
-
     def detect(self, preprocessed_mic: Generator) -> Generator:
         is_detected = False
         for prediction in self._classifier(preprocessed_mic):
-            print('<', end="", flush=True)
+            print("<", end="", flush=True)
             prediction = prediction[0]
             if prediction["label"] == self.wake_word:
                 if prediction["score"] > self.prediction_prob_threshold:
