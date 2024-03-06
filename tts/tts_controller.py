@@ -65,7 +65,7 @@ class TTSController:
         # breakpoint()
         audio_files_bytes = b""
         for audio_file in self._create_audio_files(texts):
-            @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=5)
+            @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=10)
             def get_audio_bytes(audio_file):
                 return open(audio_file, "rb").read()
             audio_files_bytes += get_audio_bytes(audio_file)

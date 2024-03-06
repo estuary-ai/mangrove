@@ -12,7 +12,8 @@ if __name__ == "__main__":
     # TODO use a yml config file with internal configurations
     parser = argparse.ArgumentParser(description="Digital Assistant Endpoint")
     parser.add_argument(
-        "--cpu", dest="cpu", type=bool, default=False, help="Use CPU instead of GPU"
+        "--cpu", dest="cpu", default=False, action="store_true",
+        help="Use CPU instead of GPU"
     )
     parser.add_argument(
         "--port", dest="port", type=int, default=4000, help="Port number"
@@ -84,7 +85,7 @@ if __name__ == "__main__":
             self.assistant_controller = AssistantController(
                 name=assistant_name,
                 shutdown_bot=shutdown_bot,
-                device=device
+                device=device,
                 verbose=verbose
             )
             self.lock = Lock()
