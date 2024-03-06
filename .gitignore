@@ -7,6 +7,7 @@ env/
 .rasa/
 .vs/
 .venv/
+.idea/
 
 #rasa bloat
 credentials.yml
