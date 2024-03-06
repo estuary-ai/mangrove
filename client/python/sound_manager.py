@@ -74,6 +74,7 @@ class SoundManager:
         """This is called (from a separate thread) for each audio block."""
 
         audio_float32 = np.fromstring(audio_bytes, np.float32).astype(float)
+        # audio_int16 = np.fromstring(audio_bytes, np.int16).astype(float)
 
         self.stream_callback(
             {
@@ -81,6 +82,7 @@ class SoundManager:
                 "numChannels": 1,
                 "sampleRate": self._sample_rate,
                 "timestamp": int(time.time() * 1000),
+                # "format": "s16le", # int16
             }
         )
         return audio_bytes, pyaudio.paContinue
@@ -111,12 +113,24 @@ class SoundManager:
         """
 
         def play_packet(audio, sample_rate):
+            def save_audio_bytes_as_wav(audio, sample_rate):
+                """Saves audio bytes as wav file"""
+                with open("audio.wav", "wb") as f:
+                    f.write(audio)
+
+
             if isinstance(audio, str):
                 # It is filepath hopefully
                 playsound(audio)
             else:
-                sd.play(np.frombuffer(audio, dtype=np.int16), sample_rate)
-                sd.wait()
+                try:
+                    sd.play(np.frombuffer(audio, dtype=np.int16), sample_rate)
+                    sd.wait()
+                except:
+                    print('Error playing audio, saving as wav file, and playing it')
+                    save_audio_bytes_as_wav(audio, sample_rate)
+                    playsound("audio.wav")
+
 
         if block:
             play_packet(audio)

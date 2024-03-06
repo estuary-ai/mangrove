@@ -1,6 +1,6 @@
-import time
 import json
-import typing
+from typing import Tuple, Dict, Generator
+from loguru import logger
 from stt import STTController, WakeUpVoiceDetector, AudioPacket
 from tts import TTSController
 from storage_manager import StorageManager, write_output
@@ -9,7 +9,7 @@ from storage_manager import StorageManager, write_output
 class AssistantController:
     """Main controller for the assistant."""
 
-    def __init__(self, verbose=True, shutdown_bot=False, name="Traveller"):
+    def __init__(self, verbose=True, shutdown_bot=False, device=None, name="Traveller"):
         """Initialize the assistant controller.
 
         Args:
@@ -20,9 +20,9 @@ class AssistantController:
         self.name = name
         self.verbose = verbose
 
-        self.wake_up_word_detector = WakeUpVoiceDetector()
+        self.wake_up_word_detector = WakeUpVoiceDetector(device=device)
         write_output("Initialized WakeUpWordDetector")
-        self.stt = STTController()
+        self.stt = STTController(device=device)
         write_output("Initialized STT Controller")
 
         self.bot = None
@@ -32,7 +32,8 @@ class AssistantController:
             self.bot = BotController()
             write_output("Initialized Bot Controller")
 
-        self.tts = TTSController()
+        self.tts = TTSController('pyttsx3')
+        # self.tts = TTSController('elevenlabs')
         write_output("Initialized TTS Controller")
 
         # Debuggers and Auxilarly variables
@@ -41,6 +42,14 @@ class AssistantController:
         self.writing_command_audio_threads_list = []
         # self.data_buffer = DataBuffer(frame_size=320)
         self._is_awake = False
+
+    def is_bot_shutdown(self):
+        """Check if bot is shutdown
+
+        Returns:
+            bool: Whether bot is shutdown
+        """
+        return self.bot is None
 
     def is_awake(self):
         """Check if assistant is awake
@@ -60,7 +69,7 @@ class AssistantController:
         self._initiate_audio_stream()
         bot_voice_bytes = self.read_text(
             "Hello, AI server connection is succesful. "
-            f"This is Your assistant, {self.name}."
+            # f"This is Your assistant, {self.name}."
         )
 
         return bot_voice_bytes
@@ -158,7 +167,7 @@ class AssistantController:
         StorageManager.write_audio_file(session_audio_buffer)
         StorageManager.ensure_completion()
 
-    def respond(self, text: str) -> typing.Tuple[dict, bytes]:
+    def respond(self, text: str) -> Generator[Tuple[Dict, bytes], None, None]:
         """Respond to user message and return bot response and voice bytes
         # TODO consider adding timeout to this function and remove deprecated logic
 
@@ -169,17 +178,30 @@ class AssistantController:
             typing.Tuple[dict, bytes]: Bot response and voice bytes
         """
         if self.bot is None:
-            return None, None
-        bot_res = self.bot.send_user_message(text)
-        write_output("SENVA: " + str(bot_res))
-        bot_texts = bot_res.get("text")
-        voice_bytes = None
-        if bot_texts:
-            voice_bytes = self.tts.get_plain_text_read_bytes(" ".join(bot_texts))
+            return None
 
-        self.check_bot_commands(bot_res)
+        logger.debug("responding to user message")
+        for bot_res in self.bot.respond(text):
+            write_output("SENVA: " + str(bot_res))
+            bot_texts = bot_res.get("text")
 
-        return bot_res, voice_bytes
+            # TODO it is this way only now for debug
+            if bot_res.get('partial'):
+                continue
+
+            voice_bytes = None
+            if bot_texts:
+                logger.trace("creating voice bytes")
+                voice_bytes = self.tts.get_plain_text_read_bytes(" ".join(bot_texts))
+                logger.trace("voice bytes created")
+
+            # self.check_bot_commands(bot_res)
+            # logger.trace("checked bot commands")
+
+            yield bot_res, voice_bytes
+
+        write_output("bot response finished successfully")
+
 
     # TODO migrate logic to if procedural step
     def check_bot_commands(self, bot_res):

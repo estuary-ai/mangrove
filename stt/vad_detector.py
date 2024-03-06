@@ -186,9 +186,13 @@ class SileroVAD(VoiceActivityDetector):
         if frame_size < 512 * 4:
             raise ValueError("Frame size must be at least 512*4 with Silero VAD")
         if device is None:
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
+            self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        elif device.startswith('cuda'):
+            self.device = "cuda:0"
+        else:
+            self.device = "cpu"
+
         self.threshold = threshold
-        self.device = device
         self.model, utils = torch.hub.load(
             repo_or_dir="snakers4/silero-vad",
             model="silero_vad",

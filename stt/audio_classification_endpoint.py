@@ -14,6 +14,11 @@ class AudioClassificationEndpoint(ABC):
     def sample_rate(self):
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def frame_size(self):
+        raise NotImplementedError
+
 
 class HFAudioClassificationEndpoint:
     def __init__(
@@ -24,7 +29,7 @@ class HFAudioClassificationEndpoint:
         device: str = "cuda",
     ):
         self._classifier = pipeline(
-            "audio-classification", model=model_name, device=device
+            "audio-classification", model=model_name, device=device,
         )
         self.prediction_prob_threshold = prediction_prob_threshold
 
@@ -56,3 +61,7 @@ class HFAudioClassificationEndpoint:
     @property
     def sample_rate(self):
         return self._classifier.feature_extractor.sampling_rate
+
+    @property
+    def frame_size(self):
+        return 320

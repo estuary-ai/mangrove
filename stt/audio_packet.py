@@ -30,7 +30,9 @@ class AudioPacket(object):
 
         if not is_processed:
             self._bytes = self._preprocess_audio_buffer(
-                data_json.get("bytes", data_json.get("audio")), resample=resample
+                data_json.get("bytes", data_json.get("audio")),
+                resample=resample,
+                format=data_json.get("format", "float32")
             )
         else:
             self._bytes = data_json["bytes"]
@@ -85,7 +87,7 @@ class AudioPacket(object):
         """
         return self._sample_rate
 
-    def _preprocess_audio_buffer(self, buffer, resample=True):
+    def _preprocess_audio_buffer(self, buffer, resample=True, format="float32"):
         """Preprocess audio buffer to 16k 1ch int16 bytes format
 
         Args:
@@ -102,9 +104,19 @@ class AudioPacket(object):
             if buffer == b"":
                 # DUMMY AUX PACKET
                 return buffer
-            buffer_float = np.frombuffer(buffer, dtype=np.float32)
+            if format == "int16":
+                buffer_float = np.frombuffer(buffer, dtype=np.int16).astype(np.float32)
+            elif format == "float32":
+                buffer_float = np.frombuffer(buffer, dtype=np.float32)
+            else:
+                raise ValueError(f"Unhandled format `{format}`. Please use `int16` or `float32`")
         else:
-            buffer_float = np.array(buffer).astype(np.float32)
+            if format == "int16":
+                buffer_float = np.fromstring(np.array(buffer, dtype=np.int16).tobytes(), dtype=np.float32)
+            elif format == "float32":
+                buffer_float = np.array(buffer).astype(np.float32)
+            else:
+                raise ValueError(f"Unhandled format `{format}`. Please use `int16` or `float32`")
 
         # buffer_float = buffer_float.copy()*2.0 # Gain
 
@@ -127,7 +139,7 @@ class AudioPacket(object):
         else:
             one_channel_buffer = buffer_float
 
-        # Downsample if necesssary: buffer_16k_1ch
+
         src_sample_rate = self._sample_rate
         if TARGET_SAMPLERATE != src_sample_rate and resample:
             self._bytes = one_channel_buffer.tobytes()

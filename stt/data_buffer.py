@@ -23,7 +23,7 @@ class DataBuffer:
 
         pass
 
-    def __init__(self, frame_size=320, max_queue_size=100):
+    def __init__(self, frame_size=320, max_queue_size=10000):
         """Initialize data buffer
 
         Args:

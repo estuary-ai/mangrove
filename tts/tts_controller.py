@@ -1,38 +1,35 @@
 import os
-import pyttsx3
 import inflect
 import backoff
 from decimal import Decimal
 from storage_manager import StorageManager, write_output
-
+from tts.tts_endpoint import TTSEndpoint, Pyttsx3TTSEndpoint, TTSLibraryEndpoint, ElevenLabsTTSEndpoint
 
 class TTSController:
     """Text to speech controller"""
 
-    def __init__(self, engine="pyttsx3", voice_rate=140, voice_id=10):
-        # ENGINE INIT START
-        # TODO reinitialize engine
-        self.engine_type = engine
-        if engine == "pyttsx3":
-            self.engine = pyttsx3.init()
-            self.engine.setProperty("rate", voice_rate)
-            voices = self.engine.getProperty("voices")
-            # voice_str = "\n".join(voices)
-            # write_output(f'Available Voices:\n {voice_str}')
-            # write_output(f'Chosen: {voices[voice_id].id}')
-            self.engine.setProperty("voice", voices[voice_id].id)
-        elif engine == "tts":
-            from TTS.api import TTS
-
-            # self.engine = TTS("voice_conversion_models/multilingual/vctk/freevc24")
-            self.engine = TTS(TTS.list_models()[0])
+    def __init__(
+        self,
+        endpoint="pyttsx3",
+        endpoint_kwargs={
+            "voice_rate": 140,
+            "voice_id": 10,
+        }
+    ):
+        self.endpoint: TTSEndpoint
+        if endpoint == "pyttsx3":
+            self.endpoint = Pyttsx3TTSEndpoint(**endpoint_kwargs)
+        elif endpoint == "tts":
+            self.endpoint = TTSLibraryEndpoint()
+        elif endpoint == "elevenlabs":
+            self.endpoint = ElevenLabsTTSEndpoint()
         else:
-            raise Exception(f"Unknown engine {engine}")
+            raise Exception(f"Unknown Endpoint {endpoint}, available endpoints: pyttsx3, tts")
 
-        # ENGINE INIT END
-        self.number_to_word_converter = inflect.engine()
         self.storage_manager = StorageManager()
+        self.number_to_word_converter = inflect.engine()
         self.created_audio_files = []
+
 
     def _create_audio_files(self, texts):
         """Create audio files from texts and return list of filepaths
@@ -45,16 +42,7 @@ class TTSController:
         recent_created_audio_files = []
         for text in texts:
             filepath = self.storage_manager.get_generated_audio_path(text)
-            if self.engine_type == "pyttsx3":
-                self.engine.save_to_file(text, filepath)
-                self.engine.runAndWait()
-            else:  # self.engine_type == "tts":
-                self.engine.tts_to_file(
-                    text=text,
-                    speaker=self.engine.speakers[0],
-                    language=self.engine.languages[0],
-                    file_path=filepath,
-                )
+            self.endpoint.text_to_audio_file(text, filepath)
             recent_created_audio_files.append(filepath)
 
         self.created_audio_files += recent_created_audio_files
@@ -74,13 +62,12 @@ class TTSController:
         if not isinstance(texts, list):
             texts = [texts]
 
+        # breakpoint()
         audio_files_bytes = b""
         for audio_file in self._create_audio_files(texts):
-
-            @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=10)
+            @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=5)
             def get_audio_bytes(audio_file):
                 return open(audio_file, "rb").read()
-
             audio_files_bytes += get_audio_bytes(audio_file)
 
         return audio_files_bytes

@@ -17,6 +17,7 @@ class STTController:
         # vad_aggressiveness=1,
         # frame_size=320*3,
         frame_size=512 * 4,
+        device=None,
         verbose=False,
     ):
         """Initialize STT Controller
@@ -32,6 +33,9 @@ class STTController:
             ValueError: If custom scorer is defined but not found
         """
 
+        import torch
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.verbose = verbose
         self.frame_size = frame_size
         self._input_buffer = DataBuffer(self.frame_size)
@@ -41,9 +45,13 @@ class STTController:
             threshold=0.6,
             silence_threshold=silence_threshold,
             frame_size=frame_size,
+            device=device,
             verbose=verbose,
         )
-        self.model = WhisperEndpoint()
+        self.model = WhisperEndpoint(
+            model_name="guillaumekln/faster-whisper-tiny",
+            device=device
+        )
 
         self.debug_total_size = 0
         self.debug_silence_size = 0
@@ -157,8 +165,8 @@ class STTController:
                 audio_packets.append(audio_packet)
             except DataBuffer.Empty:
                 if len(audio_packets) == 0:
-                    # print('No audio packets found in buffer', flush=True)
-                    raise DataBuffer.Empty
+                    logger.warning('No audio packets found in buffer', flush=True)
+                    return
                 break
 
         # NOTE: all packets that were able to get are combined in one here!

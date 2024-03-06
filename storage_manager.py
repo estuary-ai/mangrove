@@ -1,17 +1,13 @@
 import os
 import re
 import time
-import wave
-import numpy as np
 import sounddevice as sd
 from threading import Thread
-
-# from stt import AudioPacket
-
+from stt.audio_packet import AudioPacket, TARGET_SAMPLERATE
 
 BLACK_BOX_DIR = "blackbox"
 IMAGES_DIR = os.path.join(BLACK_BOX_DIR, "sample-images")
-COMMANDS_CACHE_DIR = os.path.join(BLACK_BOX_DIR, "sample-audio-binary")
+COMMANDS_CACHE_DIR = os.path.join(BLACK_BOX_DIR, "commands-audio-cache")
 LOG_DIR = os.path.join(BLACK_BOX_DIR, "logs")
 WORLD_STATE_DIR = os.path.join(BLACK_BOX_DIR, "world-state")
 GENERATED_AUDIO_DIR = os.path.join(BLACK_BOX_DIR, "generated-audio")
@@ -85,7 +81,7 @@ class StorageManager:
     def play_audio_packet(cls, audio_packet, transcription=None, block=False):
         def play_save_packet(audio_packet, transcription=None):
             write_output("Here is response frames played out.. pay attention")
-            sd.play(audio_packet.float, 16000)
+            sd.play(audio_packet.float, audio_packet.sample_rate)
             sd.wait()
             # if transcription is not None:
             #     session_id = f'session_{int(time.time()*1000)}_'
@@ -101,15 +97,11 @@ class StorageManager:
 
     def _write_bin(self, audio_buffer, text, prefix):
         # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
-        with open(
-            os.path.join(
-                COMMANDS_CACHE_DIR, f'{prefix}{text.replace(" ", "_")}_binary.txt'
-            ),
-            mode="wb",
-        ) as f:
+        audio_filepath = self.get_recorded_audio_filepath(text, "bin", prefix=prefix)
+        with open(audio_filepath, mode="wb") as f:
             f.write(audio_buffer.bytes)
 
-    def _write_wav(self, audio_buffer, text, prefix):
+    def _write_wav(self, audio_buffer: AudioPacket, text, prefix):
         """Write audio file to disk as wav
 
         Args:
@@ -118,18 +110,13 @@ class StorageManager:
             prefix (str): Prefix of file name
 
         """
-        # sd.play(np.frombuffer(session_audio_buffer, dtype=np.int16), 16000)
-        with wave.open(
-            os.path.join(COMMANDS_CACHE_DIR, f'{prefix}{text.replace(" ", "_")}.wav'),
-            mode="w",
-        ) as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(16000)
-            wf.writeframes(np.frombuffer(audio_buffer.bytes, dtype=np.int16))
+        import soundfile as sf
+        audio_filepath = self.get_recorded_audio_filepath(text, "wav", prefix=prefix)
+        # save as WAV file
+        sf.write(audio_filepath, audio_buffer.float, TARGET_SAMPLERATE)
 
     @classmethod
-    def write_audio_file(self, audio_buffer, text="", format="wav"):
+    def write_audio_file(self, audio_buffer: AudioPacket, text="", format="wav"):
         """Write audio file to disk"""
         self = StorageManager()
 
@@ -154,19 +141,28 @@ class StorageManager:
     def log_state(self, state):
         """Log state to file"""
         self = StorageManager()
-
         def _write_state(state):
             self.log_file.write(str(state))
             self.log_file.flush()
-
         self._enqueue_task(_write_state, state)
+
+    def get_blackbox_audio_filepath(self, text, extension='wav', prefix="recorded_audio_", directory=COMMANDS_CACHE_DIR):
+        """Get recorded audio path from text"""
+        recording_id = f"{prefix}{int(time.time()*1000)}"
+        audio_filepath = os.path.join(directory, f"{recording_id}.{extension}")
+        text_filepath = os.path.join(directory, f"{recording_id}.txt")
+        with open(text_filepath, mode="w") as f:
+            clean_text = re.sub(r"[^a-zA-Z0-9]+", "_", text)
+            f.write(clean_text)
+        return audio_filepath
+
+    def get_recorded_audio_filepath(self, text, extension='wav', prefix=""):
+        """Get recorded audio path from text"""
+        return self.get_blackbox_audio_filepath(text, extension, f"{prefix}_", directory=COMMANDS_CACHE_DIR)
 
     def get_generated_audio_path(self, text):
         """Get generated audio path from text"""
-        generation_id = f"generation_{int(time.time()*1000)}_"
-        text_substring = re.sub(r"[^\w_. -]", "_", text.replace(" ", "_"))
-        return os.path.join(GENERATED_AUDIO_DIR, f"{generation_id}{text_substring}.wav")
-
+        return self.get_blackbox_audio_filepath(text, "wav", "generated_audio_", directory=GENERATED_AUDIO_DIR)
 
 def write_output(msg, end="\n"):
     """Write output to console with flush"""

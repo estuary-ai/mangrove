@@ -1,147 +1,128 @@
-import asyncio
-import sys
-
-from rasa.core.agent import Agent
-from rasa.utils.endpoints import EndpointConfig
-
-from .procedures import EgressProcedure
-
+from typing import Generator, Dict
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
+from langchain_core.prompts import format_document, ChatPromptTemplate
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts.prompt import PromptTemplate
+from operator import itemgetter
 
 class BotController:
-    """Bot Controller class that handles the RASA agent and supports the following functions:
-    - Send user message to RASA agent
-    - Process procedures such as UIA Egress Procedure
-    """
 
-    def __init__(
-        self,
-        model_path="models/rasa-model/20230521-172806.tar.gz",
-        endpoint_config_address="http://localhost:5055/webhook",
-    ):
-        """Constructor
+    def __init__(self):
+        # _template = """Given the following conversation and a follow up user statement, rewrite the follow up statement and add more context if chat_history is available.
 
-        Args:
-            model_path (str): Path to RASA model
-            endpoint_config_address (str): Address of RASA action server
+        # Chat History:
+        # ```
+        # {chat_history}
+        # ```
 
+        # Follow Up Input: {user_msg}
+
+        # Rewritten Input:"""
+
+        # CONDENSE_USER_MSG_PROMPT = PromptTemplate.from_template(_template)
+
+        template = """You are a Marvin, a great assistant. Reply to the following user statement, given the following knowledge base:
+        {context}
+
+        User Statement: {user_msg}
         """
+        ANSWER_PROMPT = ChatPromptTemplate.from_template(template)
 
-        self.egress_procedure = EgressProcedure()
-        print("Loading RASA Agent...")
-        self.agent = Agent.load(
-            model_path, action_endpoint=EndpointConfig(endpoint_config_address)
+        ##############################
+        DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
+
+        def _combine_documents(
+            docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, document_separator="\n\n"
+        ):
+            doc_strings = [format_document(doc, document_prompt) for doc in docs]
+            return document_separator.join(doc_strings)
+
+        ##############################
+        # _inputs = RunnableParallel(
+        #     rephrased_user_statement=RunnablePassthrough.assign(
+        #         chat_history=lambda x: get_buffer_string(x["chat_history"])
+        #     )
+        #     | CONDENSE_USER_MSG_PROMPT
+        #     | ChatOpenAI(temperature=0)
+        #     | StrOutputParser(),
+        # )
+
+        vectorstore = FAISS.from_texts(
+            [
+                "Your name is Marvin.",
+                "Marvin lives in a holographic world called The Estuary.",
+                "Marving breathes in the air of the Estuary.",
+                "The air of the Estuary is made of holographic particles.",
+                "The holographic particles are sourced from the Mangrove trees.",
+                "Marvin works as the gardener of the Mangrove trees.",
+                "The Mangrove trees are the source of life in the Estuary.",
+                "Marvin is an embodied conversational agent.",
+                "Marvin like to play chess, and he is good at it.",
+                "Marvin loves cats, and he has a cat named Whiskers.",
+                "Whiskers is a very cute cat.",
+                "Marvin went to the store to buy some groceries with whiskers yesterday.",
+                "Marvin has a friend named Alice.",
+                "Marvin enjoys music of all kinds, but he prefers classical music.",
+                "Marvin is an intelligent and helpful assistant.",
+                "Marvin is great at making jokes",
+                "Marvin has a sister name Marvy.",
+                "Marvin is 100 years old. but he looks like 30.",
+                "Marvin has a dog named Fido.",
+            ], embedding=OpenAIEmbeddings()
         )
-        print("Initialized RASA Agent")
-        if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        retriever = vectorstore.as_retriever()
 
-    def send_user_message(self, request):
-        """Send user message to RASA agent and return response
+        # _context = {
+        #     "context": itemgetter("rephrased_user_statement") | retriever | _combine_documents,
+        #     "user_msg": lambda x: x["rephrased_user_statement"],
+        # }
+        # self.conversational_qa_chain = _inputs | _context | ANSWER_PROMPT | ChatOpenAI()
 
-        Args:
-            request (str): User message
+        _context = {
+            "context": itemgetter("user_msg") | retriever | _combine_documents,
+            "user_msg": lambda x: x["user_msg"],
+        }
+        self.conversational_qa_chain = _context | ANSWER_PROMPT | ChatOpenAI()
+        self.chat_history = []
 
-        Returns:
-            response (dict): Response from RASA agent
-        """
 
-        # user_message = request.get('Body')
-        # conversation_id = request.get('From')
-        conversation_id = 1
-        user_message = request
+    def respond(self, user_msg) -> Generator[Dict, None, None]:
+        ai_msg = self.conversational_qa_chain.invoke({"user_msg": user_msg})
+        self.chat_history.append(HumanMessage(content=user_msg))
+        self.chat_history.append(ai_msg)
+        yield self.format_response(self.chat_history[-1].content, partial=False)
 
-        # Sending message to RASA
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        messages = loop.run_until_complete(
-            self.agent.handle_text(user_message, sender_id=conversation_id)
-        )
-        loop.close()
+        # ai_msg_stream = self.conversational_qa_chain.stream(
+        #     {
+        #         "user_msg": user_msg,
+        #         "chat_history": [],
+        #     }
+        # )
+        # self.chat_history.append(HumanMessage(content=user_msg))
+        # response_msg = ""
+        # for chunk in ai_msg_stream:
+        #     response_msg += chunk.content
+        #     if chunk.content == "":
+        #         continue
+        #     yield self.format_response(chunk.content, partial=True)
 
-        print(messages)
+        # yield self.format_response(response_msg)
 
-        # Deciphering RASA's response
-        texts = []
-        commands = []
+        # self.chat_history.append(AIMessage(content=response_msg))
 
-        for message in messages:
-            if "text" in message:
-                text = message["text"]
-                texts.append(text)
-            elif "custom" in message:
-                command = message["custom"]
-                if command["target"] == "UIA":
-                    if command["action"] == "start":
-                        # reset the egress procedure
-                        self.egress_procedure.restart()
-                        # start video stream
-                        # open egress checklist
-                        commands.append(
-                            {"target": "UIA", "action": "open", "additionalInfo": []}
-                        )
-                        # set world state to egress in progress
-                    elif command["action"] == "current_step_number":
-                        cur_step = self.egress_procedure.get_current_step()
-                        command["additionalInfo"] = [cur_step.stepId]
-                        texts.append("You're on step number %s" % cur_step.stepId)
-                        commands.append(command)
-                    elif command["action"] == "current_step":
-                        cur_step = self.egress_procedure.get_current_step()
-                        if cur_step is None:
-                            command["additionalInfo"] = ["-1", "null"]
-                            texts.append("Completed all steps in procedure")
-                        else:
-                            command["additionalInfo"] = [
-                                cur_step.stepId,
-                                cur_step.target,
-                            ]
-                            texts.append(cur_step.text)
-                        commands.append(command)
-                    elif command["action"] == "next_step":
-                        next_step = self.egress_procedure.get_next_step()
-                        if next_step is None:
-                            command["additionalInfo"] = ["-1", "null"]
-                            texts.append("Completed all steps in procedure")
-                        else:
-                            command["additionalInfo"] = [
-                                next_step.stepId,
-                                next_step.target,
-                            ]
-                            texts.append(next_step.text)
-                        commands.append(command)
-                    elif command["action"] == "exit":
-                        # stop video stream
-                        # close egress checklist
-                        commands.append(
-                            {"target": "UIA", "action": "close", "additionalInfo": []}
-                        )
-                        # set world state to egress exited
-                    elif command["action"] == "confirm_completion":
-                        if self.egress_procedure.is_finished():
-                            command["additionalInfo"] = ["true"]
-                            texts.append(
-                                "All steps of the egress procedure have been completed"
-                            )
-                        else:
-                            command["additionalInfo"] = ["false"]
-                            texts.append("The egress procedure has not been completed")
-                    texts = []
-                else:
-                    commands.append(command)
 
-        # Compiling responses
-        response = {}
-        response["text"] = texts
-        response["commands"] = commands
+    def format_response(self, content, partial=False):
+        # format response from openai chat to be sent to the user
+        formatted_response = {
+            "text": [content],
+            "commands": [],
+            "partial": partial
+        }
 
-        print(commands)
-
-        # Flatten commands
-        # for command in commands:
-        #     for key in command.keys():
-        #         response['commands'][0][key] = str(command[key])
-
-        return response
+        return formatted_response
 
     def process_procedures_if_on(self):
         # TODO: Implement

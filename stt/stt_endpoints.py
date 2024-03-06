@@ -1,35 +1,19 @@
 import time
 import torch
 from loguru import logger
-from transformers import pipeline
-from transformers import WhisperForConditionalGeneration, WhisperProcessor
 from faster_whisper import WhisperModel
-from .data_buffer import DataBuffer
+from queue import Queue, Empty
 from .audio_packet import AudioPacket
 
 
 class WhisperEndpoint:
-    def __init__(self, model="openai/whisper-tiny.en", device=None):
-        self.device = "cuda:0" if torch.cuda.is_available() else "cpu" or device
-        # processor = WhisperProcessor.from_pretrained(model)
-        # model = WhisperForConditionalGeneration.from_pretrained(f"openai/whisper-{model}").to(self.device)
-        # model.to_bettertransformer()
-        # self.model = pipeline(
-        #     "automatic-speech-recognition",
-        #     model=model,
-        #     feature_extractor=processor.feature_extractor,
-        #     tokenizer=processor.tokenizer,
-        #     # chunk_length_s=30,
-        #     device=self.device,
-        # )
-
-        model = "guillaumekln/faster-whisper-tiny"
-        self.model = WhisperModel(model)
-
-        from queue import Queue
-
+    def __init__(self, model_name="guillaumekln/faster-whisper-tiny", device=None):
+        if device is None:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self.device = device
+        self.model = WhisperModel(model_name, device=self.device)
         self.input_queue = Queue()
-        # self.output_queue = Queue()
 
     def buffer_audio_packet(self, audio_packet: AudioPacket):
         self.input_queue.put(audio_packet)
@@ -43,10 +27,15 @@ class WhisperEndpoint:
             return None
 
         # unpack as many as possible from queue
-        with self.input_queue.mutex:
-            audio_packets = list(self.input_queue.queue)
-            # clear queue
-            self.input_queue.queue.clear()
+        while self.input_queue.qsize() > 0:
+            audio_packets = []
+            while True:
+                try:
+                    audio_packet = self.input_queue.get_nowait()
+                    audio_packets.append(audio_packet)
+                except Empty:
+                    break
+
         # print('Transcribing ... ', f'{len(audio_packets)} packets')
         audio_packet = sum(audio_packets, AudioPacket.get_null_packet())
         print(
@@ -78,9 +67,14 @@ class WhisperEndpoint:
 
         _out = " ".join([segment.text for segment in _out])
 
-        logger.success(f"Took {time.time() - start} seconds")
+        logger.success(f"Took {time.time() - start: < .3f} seconds")
         return _out
 
     def reset(self):
-        self.input_queue.queue.clear()
+        while True:
+            try:
+                self.input_queue.get_nowait()
+            except Empty:
+                break
+        logger.debug("Resetting ...")
         # self.output_queue.queue.clear()
