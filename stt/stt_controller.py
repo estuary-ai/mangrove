@@ -250,6 +250,7 @@ class STTController:
         self._log("[reset]", end="\n")
         self.create_stream()
         self._input_buffer.reset()
+        self.model.reset()
         self.vad.reset()
 
     # TODO use after some detection
