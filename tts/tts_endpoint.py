@@ -13,7 +13,7 @@ class TTSEndpoint(ABC):
         raise NotImplementedError()
 
 class Pyttsx3TTSEndpoint(TTSEndpoint):
-    def __init__(self, voice_rate=120, voice_id=12, **kwargs):
+    def __init__(self, voice_rate=100, voice_id=12, **kwargs):
         import pyttsx3
         self.engine = pyttsx3.init(debug=True)
         self.engine.setProperty("rate", voice_rate)
@@ -37,7 +37,11 @@ class Pyttsx3TTSEndpoint(TTSEndpoint):
         import backoff
         @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=10)
         def get_audio_bytes():
-            return open('__temp__.mp3', 'rb').read()
+            import os
+            audio_bytes = open('__temp__.mp3', 'rb').read()
+            # delete the file
+            os.remove('__temp__.mp3')
+            return audio_bytes
         return get_audio_bytes()
 
 
