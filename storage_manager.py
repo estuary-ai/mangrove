@@ -151,6 +151,7 @@ class StorageManager:
         recording_id = f"{prefix}{int(time.time()*1000)}"
         audio_filepath = os.path.join(directory, f"{recording_id}.{extension}")
         text_filepath = os.path.join(directory, f"{recording_id}.txt")
+        os.makedirs(directory, exist_ok=True)
         with open(text_filepath, mode="w") as f:
             clean_text = re.sub(r"[^a-zA-Z0-9]+", "_", text)
             f.write(clean_text)

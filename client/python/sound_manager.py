@@ -123,13 +123,13 @@ class SoundManager:
                 # It is filepath hopefully
                 playsound(audio)
             else:
-                try:
-                    sd.play(np.frombuffer(audio, dtype=np.int16), sample_rate)
-                    sd.wait()
-                except:
-                    print('Error playing audio, saving as wav file, and playing it')
-                    save_audio_bytes_as_wav(audio, sample_rate)
-                    playsound("audio.wav")
+                # try:
+                #     sd.play(np.frombuffer(audio, dtype=np.int16), sample_rate)
+                #     sd.wait()
+                # except:
+                print('Error playing audio, saving as wav file, and playing it')
+                save_audio_bytes_as_wav(audio, sample_rate)
+                playsound("audio.wav")
 
 
         if block:

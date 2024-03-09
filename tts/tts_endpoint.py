@@ -13,7 +13,7 @@ class TTSEndpoint(ABC):
         raise NotImplementedError()
 
 class Pyttsx3TTSEndpoint(TTSEndpoint):
-    def __init__(self, voice_rate=120, voice_id=12, **kwargs):
+    def __init__(self, voice_rate=100, voice_id=12, **kwargs):
         import pyttsx3
         self.engine = pyttsx3.init(debug=True)
         self.engine.setProperty("rate", voice_rate)
@@ -23,7 +23,6 @@ class Pyttsx3TTSEndpoint(TTSEndpoint):
         # write_output(f'Chosen: {voices[voice_id].id}')
         self.engine.setProperty("voice", voices[voice_id].id)
 
-
     def text_to_audio_file(self, text, filepath):
         self.engine.save_to_file(text, filepath)
         try:
@@ -31,11 +30,21 @@ class Pyttsx3TTSEndpoint(TTSEndpoint):
         except:
             pass
         self.engine.iterate()
+        # self.engine.runAndWait()
 
     def text_to_bytes(self, text):
         self.text_to_audio_file(text, '__temp__.mp3')
-        with open('__temp__.mp3', 'rb') as f:
-            return f.read()
+        import backoff
+        @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=10)
+        def get_audio_bytes():
+            import os
+            audio_bytes = open('__temp__.mp3', 'rb').read()
+            # delete the file
+            os.remove('__temp__.mp3')
+            return audio_bytes
+        return get_audio_bytes()
+
+
 
 class TTSLibraryEndpoint(TTSEndpoint):
     def __init__(self,  device=None, **kwargs):
@@ -48,6 +57,7 @@ class TTSLibraryEndpoint(TTSEndpoint):
 
     def text_to_audio_file(self, text, filepath):
         self.engine.tts_to_file(text=text, file_path=filepath)
+
 
 class ElevenLabsTTSEndpoint(TTSEndpoint):
     def __init__(self, model='eleven_multilingual_v2', **kwargs):
@@ -66,3 +76,29 @@ class ElevenLabsTTSEndpoint(TTSEndpoint):
     def text_to_bytes(self, text):
         from elevenlabs import generate
         return generate(text=text, voice=self.voice, model=self.model)
+
+    def stream_bytes(self, text):
+        from elevenlabs import generate
+        return generate(text=text, voice=self.voice, model=self.model, stream=True)
+
+class GTTSEndpoint(TTSEndpoint):
+    def __init__(self, **kwargs):
+        from gtts import gTTS
+        self.engine = gTTS
+
+    def text_to_audio_file(self, text, filepath):
+        tts = self.engine(text)
+        tts.save(filepath)
+
+    def text_to_bytes(self, text):
+        import backoff
+        from gtts import gTTSError
+        @backoff.on_exception(backoff.expo, gTTSError, max_tries=5)
+        def get_audio_bytes():
+            return b''.join(self.engine(text, timeout=0.1).stream())
+        return get_audio_bytes()
+
+    def stream_bytes(self, text):
+        tts = self.engine(text)
+        for _bytes_chunk in tts.stream():
+            yield _bytes_chunk
