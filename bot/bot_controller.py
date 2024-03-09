@@ -85,7 +85,9 @@ class BotController:
             "context": itemgetter("user_msg") | retriever | _combine_documents,
             "user_msg": lambda x: x["user_msg"],
         }
-        self.conversational_qa_chain = _context | ANSWER_PROMPT | ChatOpenAI()
+        self.conversational_qa_chain = _context | ANSWER_PROMPT | ChatOpenAI(
+            model="gpt-3.5-turbo",
+        )
         self.chat_history = []
 
 
