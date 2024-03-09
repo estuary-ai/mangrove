@@ -1,7 +1,7 @@
+import os
 import time
 import pyaudio
 import numpy as np
-import sounddevice as sd
 from playsound import playsound
 from threading import Thread
 
@@ -113,23 +113,14 @@ class SoundManager:
         """
 
         def play_packet(audio, sample_rate):
-            def save_audio_bytes_as_wav(audio, sample_rate):
-                """Saves audio bytes as wav file"""
-                with open("audio.wav", "wb") as f:
-                    f.write(audio)
-
-
             if isinstance(audio, str):
                 # It is filepath hopefully
                 playsound(audio)
             else:
-                # try:
-                #     sd.play(np.frombuffer(audio, dtype=np.int16), sample_rate)
-                #     sd.wait()
-                # except:
-                print('Error playing audio, saving as wav file, and playing it')
-                save_audio_bytes_as_wav(audio, sample_rate)
+                with open("audio.wav", "wb") as f:
+                    f.write(audio)
                 playsound("audio.wav")
+                os.remove("audio.wav")
 
 
         if block:

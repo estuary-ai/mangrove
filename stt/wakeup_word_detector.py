@@ -12,7 +12,7 @@ class WakeUpVoiceDetector:
         self,
         audio_classification_endpoint_kwargs: dict = {
             "model_name": "MIT/ast-finetuned-speech-commands-v2",
-            "prediction_prob_threshold": 0.7,
+            "prediction_prob_threshold": 0.85,
         },
         device="cuda",
         verbose=False,
@@ -25,7 +25,9 @@ class WakeUpVoiceDetector:
         if self.frame_size is None:
             raise ValueError(f'Check implementation of {self._audio_classifier} for frame_size')
         self._input_buffer = DataBuffer(frame_size=self._audio_classifier.frame_size)
-        self._setup_params(stream_chunk_s=0.1)
+
+        stream_chunk_s = self._audio_classifier.frame_size / self._audio_classifier.sample_rate
+        self._setup_params(stream_chunk_s=stream_chunk_s, chunk_length_s=2.0)
 
     def reset_data_buffer(self):
         """Reset data buffer"""
@@ -92,18 +94,17 @@ class WakeUpVoiceDetector:
         #         item["partial"] = False
         #     yield item
 
-    def _setup_params(self, stream_chunk_s):
+    def _setup_params(self, stream_chunk_s, chunk_length_s=0.5):
         # TODO add option to change format_for_conversion dynamically by audio_packet given format
         self.chunk_s = stream_chunk_s
         self.sampling_rate = self._audio_classifier.sample_rate
         self.dtype = np.float32
         self.size_of_sample = 4 # 32 bits because of float32
 
-        stride_length_s = self.chunk_s / 6
+        stride_length_s = chunk_length_s/ 6
 
-        self.chunk_len = (
-            int(round(self.sampling_rate * self.chunk_s)) * self.size_of_sample
-        )
+        self.chunk_len = int(round(self.sampling_rate * chunk_length_s)) * self.size_of_sample
+
         if isinstance(stride_length_s, (int, float)):
             stride_length_s = [stride_length_s, stride_length_s]
 
