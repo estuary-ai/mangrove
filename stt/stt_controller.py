@@ -35,7 +35,7 @@ class STTController:
 
         import torch
         if device is None:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = "cuda" if torch.cuda.is_available() else "cpu"
         self.verbose = verbose
         self.frame_size = frame_size
         self._input_buffer = DataBuffer(self.frame_size)
