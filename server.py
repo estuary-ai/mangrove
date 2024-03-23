@@ -108,7 +108,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--tts_endpoint", dest="tts_endpoint", type=str, default="pyttsx3",
-        choices=["pyttsx3", "gtts", "elevenlabs"],
+        choices=["pyttsx3", "gtts", "elevenlabs", "tts"],
         help="TTS Endpoint"
     )
     parser.add_argument(

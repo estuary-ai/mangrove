@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from loguru import logger
 
 class TTSEndpoint(ABC):
     def __init__(self, **kwargs):
@@ -48,17 +49,43 @@ class Pyttsx3TTSEndpoint(TTSEndpoint):
 
 
 
-# class TTSLibraryEndpoint(TTSEndpoint):
-#     def __init__(self,  device=None, **kwargs):
-#         import torch
-#         from TTS.api import TTS
-#         if device is None:
-#             device = "cuda" if torch.cuda.is_available() else "cpu"
+class TTSLibraryEndpoint(TTSEndpoint):
+    def __init__(self,  device=None, **kwargs):
+        import torch
+        from TTS.api import TTS
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
 
-#         self.engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+        self.engine = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
+        self._ensure_speaker_wav()
 
-#     def text_to_audio_file(self, text, filepath):
-#         self.engine.tts_to_file(text=text, file_path=filepath)
+    def _ensure_speaker_wav(self):
+        import os
+        if not os.path.exists('speaker.wav'):
+            # generate speaker.wav using ElevenLabsTTSEndpoint
+            logger.warning("Generating speaker.wav using ElevenLabsTTSEndpoint as it is not available.")
+            ElevenLabsTTSEndpoint().text_to_audio_file(
+                "Hello, I am your assistant. I am here to help you with your tasks."
+                "I am a digital assistant created by the Estuary team. I am here to help you with your tasks.",
+                'speaker.wav'
+            )
+
+    def text_to_audio_file(self, text, filepath):
+        self.engine.tts_to_file(text=text, file_path=filepath, speaker_wav="speaker.wav", language="en")
+
+
+    def text_to_bytes(self, text):
+        # return self.engine.tts(text)
+        self.text_to_audio_file(text, '__temp__.wav')
+        import backoff
+        @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=10)
+        def get_audio_bytes():
+            import os
+            audio_bytes = open('__temp__.wav', 'rb').read()
+            # delete the file
+            os.remove('__temp__.wav')
+            return audio_bytes
+        return get_audio_bytes()
 
 
 class ElevenLabsTTSEndpoint(TTSEndpoint):
