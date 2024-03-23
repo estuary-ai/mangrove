@@ -104,7 +104,7 @@ class SoundManager:
         thread.start()
         self.threads_pool.append(thread)
 
-    def play_audio_packet(self, audio, sample_rate=20000, block=False):
+    def play_audio_packet(self, audio, block=False):
         """Plays audio bytes
 
         Args:
@@ -112,7 +112,7 @@ class SoundManager:
             block (bool, optional): if True, blocks until audio is played. Defaults to False.
         """
 
-        def play_packet(audio, sample_rate):
+        def play_packet(audio):
             if isinstance(audio, str):
                 # It is filepath hopefully
                 playsound(audio)
@@ -126,7 +126,7 @@ class SoundManager:
         if block:
             play_packet(audio)
         else:
-            self._enqueue_task(play_packet, audio, sample_rate)
+            self._enqueue_task(play_packet, audio)
 
     def play_activation_sound(self):
         """Plays activation sound"""
