@@ -3,7 +3,7 @@ import inflect
 import backoff
 from decimal import Decimal
 from storage_manager import StorageManager, write_output
-from tts.tts_endpoint import TTSEndpoint, Pyttsx3TTSEndpoint, TTSLibraryEndpoint, ElevenLabsTTSEndpoint, GTTSEndpoint
+from tts.tts_endpoint import TTSEndpoint, Pyttsx3TTSEndpoint, ElevenLabsTTSEndpoint, GTTSEndpoint
 from loguru import logger
 
 class TTSController:
@@ -21,8 +21,8 @@ class TTSController:
         if endpoint == "pyttsx3":
             logger.info("Using Pyttsx3 TTS Endpoint")
             self.endpoint = Pyttsx3TTSEndpoint(**endpoint_kwargs)
-        elif endpoint == "tts":
-            self.endpoint = TTSLibraryEndpoint()
+        # elif endpoint == "tts":
+        #     self.endpoint = TTSLibraryEndpoint()
         elif endpoint == "elevenlabs":
             logger.info("Using ElevenLabs TTS Endpoint")
             self.endpoint = ElevenLabsTTSEndpoint()
@@ -50,7 +50,7 @@ class TTSController:
         if not isinstance(texts, list):
             texts = [texts]
 
-        logger.warning('audio files bytes..')
+        logger.warning(f'Converting audio bytes stream by {self} from {len(texts)} texts')
         audio_files_bytes = b''.join([self.endpoint.text_to_bytes(text) for text in texts])
         return audio_files_bytes
 
