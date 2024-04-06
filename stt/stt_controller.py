@@ -48,10 +48,7 @@ class STTController:
             device=device,
             verbose=verbose,
         )
-        self.model = WhisperEndpoint(
-            model_name="guillaumekln/faster-whisper-tiny",
-            device=device
-        )
+        self.model = WhisperEndpoint(device=device)
 
         self.debug_total_size = 0
         self.debug_silence_size = 0

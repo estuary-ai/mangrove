@@ -7,12 +7,16 @@ from .audio_packet import AudioPacket
 
 
 class WhisperEndpoint:
-    def __init__(self, model_name="guillaumekln/faster-whisper-tiny", device=None):
+    def __init__(self, model_name="base.en", device=None):
         if device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:
             self.device = device
-        self.model = WhisperModel(model_name, device=self.device)
+        try:
+            self.model = WhisperModel(model_name, device=self.device)
+        except:
+            logger.warning(f'Device {device} is not supported, defaulting to CPU!')
+            self.model = WhisperModel(model_name, device='cpu')
         self.input_queue = Queue()
 
     def buffer_audio_packet(self, audio_packet: AudioPacket):

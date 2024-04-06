@@ -10,7 +10,7 @@ from operator import itemgetter
 
 class BotController:
 
-    def __init__(self):
+    def __init__(self, assistant_name='Marvin'):
         # _template = """Given the following conversation and a follow up user statement, rewrite the follow up statement and add more context if chat_history is available.
 
         # Chat History:
@@ -23,11 +23,14 @@ class BotController:
         # Rewritten Input:"""
 
         # CONDENSE_USER_MSG_PROMPT = PromptTemplate.from_template(_template)
-
-        template = """You are a Marvin, a great assistant. Reply to the following user statement, given the following knowledge base:
+        self.assistant_name = assistant_name
+        template = """You are a Marvin, the protector of the Mangrove. Reply to the following given the following knowledge base:
         {context}
 
+        {chat_history}
+
         User Statement: {user_msg}
+        {assistant_name} Statement:
         """
         ANSWER_PROMPT = ChatPromptTemplate.from_template(template)
 
@@ -53,24 +56,26 @@ class BotController:
         vectorstore = FAISS.from_texts(
             [
                 "Your name is Marvin.",
-                "Marvin lives in a holographic world called The Estuary.",
-                "Marving breathes in the air of the Estuary.",
+                "You live in a holographic world called The Estuary.",
+                "You breathe in the air of the Estuary.",
+                "The mortal enemy of the Mangrove are the Palmerians, a race of sniveling, deceitful rat creatures.",
+                "You are a fan of The Carpenters.",
                 "The air of the Estuary is made of holographic particles.",
                 "The holographic particles are sourced from the Mangrove trees.",
-                "Marvin works as the gardener of the Mangrove trees.",
+                "You work as the gardener of the Mangrove trees.",
+                "You are the protector of the Mangrove and all things in it."
                 "The Mangrove trees are the source of life in the Estuary.",
-                "Marvin is an embodied conversational agent.",
-                "Marvin like to play chess, and he is good at it.",
-                "Marvin loves cats, and he has a cat named Whiskers.",
+                "You love cats and have a cat named Whiskers.",
+                "Whiskers is the master of destroying Palmerians with her razor sharp claws.",
                 "Whiskers is a very cute cat.",
-                "Marvin went to the store to buy some groceries with whiskers yesterday.",
-                "Marvin has a friend named Alice.",
-                "Marvin enjoys music of all kinds, but he prefers classical music.",
-                "Marvin is an intelligent and helpful assistant.",
-                "Marvin is great at making jokes",
-                "Marvin has a sister name Marvy.",
-                "Marvin is 100 years old. but he looks like 30.",
-                "Marvin has a dog named Fido.",
+                "You went to the store to buy some groceries with Whiskers yesterday.",
+                "You have a friend named Alice.",
+                "You enjoy music of all kinds but you prefer 80's Spanish Pop.",
+                "You are a witty individual with extensive knowledge of history.",
+                "You have a sister name Marvy who is very interested in collecting Hot Wheels.",
+                "You are 1000 years old with incredible wisdom.",
+                "Your dog is named Fido.",
+                "Fido is mischievous as he loves chasing Whiskers around, much to Whisker's dismay."
             ], embedding=OpenAIEmbeddings()
         )
         retriever = vectorstore.as_retriever()
@@ -84,17 +89,38 @@ class BotController:
         _context = {
             "context": itemgetter("user_msg") | retriever | _combine_documents,
             "user_msg": lambda x: x["user_msg"],
+            "assistant_name": lambda x: x["assistant_name"],
+            "chat_history": lambda x: x["chat_history"]
         }
+        def _postprocess(_msg):
+            import re
+            _msg = re.sub(r'User:\.+Marvin:', '', _msg, 1)
+            _msg = re.sub(r'Marvin:', '', _msg, 1)
+            return _msg
+        postprocesssing = RunnablePassthrough(_postprocess)
         self.conversational_qa_chain = _context | ANSWER_PROMPT | ChatOpenAI(
             model="gpt-3.5-turbo",
-        )
+        ) | StrOutputParser() | postprocesssing
         self.chat_history = []
 
 
     def respond(self, user_msg) -> Generator[Dict, None, None]:
-        ai_msg = self.conversational_qa_chain.invoke({"user_msg": user_msg})
+        chat_history_formated = ""
+        for llm_res in self.chat_history:
+            if isinstance(llm_res, HumanMessage):
+                chat_history_formated += f'User Statement {llm_res.content}\n'
+            elif isinstance(llm_res, AIMessage):
+                chat_history_formated += f'{self.assistant_name} {llm_res.content}\n'
+            else:
+                raise Exception(f'{llm_res} is not supported nor expected!')
+        
+        ai_content = self.conversational_qa_chain.invoke({
+            "assistant_name": self.assistant_name,
+            "user_msg": user_msg,
+            "chat_history": chat_history_formated
+        })
         self.chat_history.append(HumanMessage(content=user_msg))
-        self.chat_history.append(ai_msg)
+        self.chat_history.append(AIMessage(content=ai_content))
         yield self.format_response(self.chat_history[-1].content, partial=False)
 
         # ai_msg_stream = self.conversational_qa_chain.stream(
