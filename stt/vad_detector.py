@@ -185,11 +185,14 @@ class SileroVAD(VoiceActivityDetector):
     ):
         if frame_size < 512 * 4:
             raise ValueError("Frame size must be at least 512*4 with Silero VAD")
-        if device is None:
+        
+        self.device = device
+        if self.device is None:
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         elif device.startswith('cuda'):
             self.device = "cuda:0"
         else:
+            # because others are not guaranteed to work
             self.device = "cpu"
 
         self.threshold = threshold
@@ -199,7 +202,7 @@ class SileroVAD(VoiceActivityDetector):
             force_reload=False,
             onnx=False,
         )
-        self.model.to(device)
+        self.model.to(self.device)
 
         # (get_speech_timestamps,
         # save_audio,
@@ -229,9 +232,12 @@ class SileroVAD(VoiceActivityDetector):
                 # partial TODO maybe add to buffer
                 break
             _audio_tensor = torch.from_numpy(packet.float).to(self.device)
-            is_speeches.append(
-                self.model(_audio_tensor, packet.sample_rate) > self.threshold
-            )
+            try:
+                is_speeches.append(
+                    self.model(_audio_tensor, packet.sample_rate) > self.threshold
+                )
+            except:
+                breakpoint()
 
         # if any([not is_speech for is_speech in is_speeches]):
         #     self.model.reset_states()
