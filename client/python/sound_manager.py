@@ -3,7 +3,7 @@ import time
 import pyaudio
 import numpy as np
 from playsound import playsound
-from threading import Thread
+from threading import Thread, Lock
 
 
 class SoundManager:
@@ -42,6 +42,8 @@ class SoundManager:
         self.stream_callback = stream_callback
         self.threads_pool = []
         self.audio = pyaudio.PyAudio()
+
+        self._lock = Lock()
 
     def open_mic(self):
         """Opens the microphone stream"""
@@ -113,14 +115,15 @@ class SoundManager:
         """
 
         def play_packet(audio):
-            if isinstance(audio, str):
-                # It is filepath hopefully
-                playsound(audio)
-            else:
-                with open("audio.wav", "wb") as f:
-                    f.write(audio)
-                playsound("audio.wav")
-                os.remove("audio.wav")
+            with self._lock:
+                if isinstance(audio, str):
+                    # It is filepath hopefully
+                    playsound(audio)
+                else:
+                    with open("audio.wav", "wb") as f:
+                        f.write(audio)
+                        playsound("audio.wav")
+                        os.remove("audio.wav")
 
 
         if block:
@@ -130,8 +133,8 @@ class SoundManager:
 
     def play_activation_sound(self):
         """Plays activation sound"""
-        self.play_audio_packet("assistant_activate.wav", sample_rate=16000)
+        self.play_audio_packet("assistant_activate.wav")
 
     def play_termination_sound(self):
         """Plays termination sound"""
-        self.play_audio_packet("assistant_terminate.mp3", sample_rate=16000)
+        self.play_audio_packet("assistant_terminate.mp3")
