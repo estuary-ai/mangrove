@@ -178,8 +178,8 @@ class SileroVAD(VoiceActivityDetector):
     def __init__(
         self,
         device=None,
-        threshold=0.5,
-        silence_threshold: int = 200,
+        threshold=0.3,
+        silence_threshold: int = 300,
         frame_size: int = 512 * 4,
         verbose=False,
     ):
