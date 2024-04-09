@@ -2,7 +2,8 @@ import os
 import time
 import pyaudio
 import numpy as np
-from playsound import playsound
+from pydub import AudioSegment
+from pydub.playback import play
 from threading import Thread, Lock
 
 
@@ -113,25 +114,31 @@ class SoundManager:
             audio (bytes or str): audio bytes or filepath to audio bytes
             block (bool, optional): if True, blocks until audio is played. Defaults to False.
         """
+        
+        def _play_packet(audio):
+            def _play_file(audio_filepath):
+                try:
+                    play(AudioSegment.from_mp3(audio_filepath))
+                except:
+                    play(AudioSegment.from_wav(audio_filepath))
 
-        def play_packet(audio):
             with self._lock:
                 if isinstance(audio, str):
                     # It is filepath hopefully
-                    playsound(audio)
+                    _play_file(audio)
                 else:
-                    with open("audio.wav", "wb") as f:
+                    TMP_AUDIO_FILENAME = "audio.mp3"
+                    with open(TMP_AUDIO_FILENAME, "wb") as f:
                         f.write(audio)
-                        playsound("audio.wav")
-                        os.remove("audio.wav")
-
+                    _play_file(TMP_AUDIO_FILENAME)
+                    os.remove(TMP_AUDIO_FILENAME)
 
         if block:
-            play_packet(audio)
+            _play_packet(audio) 
         else:
-            self._enqueue_task(play_packet, audio)
+            self._enqueue_task(_play_packet, audio)
 
-    def play_activation_sound(self):
+    def play_activation_sound(self): 
         """Plays activation sound"""
         self.play_audio_packet("assistant_activate.wav")
 
