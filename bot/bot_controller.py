@@ -101,8 +101,9 @@ class BotController:
         }
         def _postprocess(_msg):
             import re
-            _msg = re.sub(r'User:\.+Marvin:', '', _msg, 1)
-            _msg = re.sub(r'Marvin:', '', _msg, 1)
+            _msg = _msg.replace('\n', '')
+            _msg = re.sub(r'User:.*Marvin:', '', _msg, 1)
+            _msg = re.sub(r'.*Marvin:', '', _msg, 1)
             return _msg
         postprocesssing = RunnablePassthrough(_postprocess)
         self.conversational_qa_chain = _context | ANSWER_PROMPT | ChatOpenAI(
@@ -120,7 +121,7 @@ class BotController:
                 chat_history_formated += f'{self.assistant_name} {llm_res.content}\n'
             else:
                 raise Exception(f'{llm_res} is not supported nor expected!')
-        
+
         ai_content = self.conversational_qa_chain.invoke({
             "assistant_name": self.assistant_name,
             "user_msg": user_msg,
