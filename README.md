@@ -38,6 +38,20 @@ This repository hosts a server implementation hosting the **Senva Project** Digi
     pip install -r requirements.txt
     ```
 
+3.3 If running in WSL and looking to communicate over LAN network, call the following command as an administrator in `cmd`/`powershell`:
+    ```
+    netsh interface portproxy add v4tov4 listenport=4000 listenaddress=0.0.0.0 connectport=4000 connectaddress=127.0.0.1
+    # if it does not work, it might help to reset proxy with the following command:
+    netsh interface portproxy reset all
+    ```
+    # Ensure that the following would show up when calling the following:
+    netstat -ano | find '"4000"'
+    ```
+    TCP    0.0.0.0:4000           0.0.0.0:0              LISTENING       
+    TCP    127.0.0.1:4000         0.0.0.0:0              LISTENING       
+    ```
+
+
 ## Running Eva:
 1. In one terminal tab, execute `python main.py` to run the Digital Assistant System. It is currently configured to run at localhost on port 4000.
 2. Execute `rasa run actions` on another terminal/CMD tab to run RASA's action server which RASA running at `server.py` communicates with.
