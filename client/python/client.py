@@ -18,6 +18,7 @@ class AssistantClient(socketio.ClientNamespace):
         super().__init__(namespace)
         self.sound_manager = SoundManager(self._emit_audio_packet)
         self.is_connected = False
+        self._status = None
 
     def _emit_audio_packet(self, audio_packet):
         """Emits an audio packet to the server
@@ -25,25 +26,45 @@ class AssistantClient(socketio.ClientNamespace):
         Args:
             audio_packet (bytes): audio packet to be sent to the server
         """
-        if self.is_connected:
+        if self.is_connected and self._status is not None:
             print(".", end="", flush=True)
-            self.emit("stream_audio", audio_packet)
+            self.emit("stream_audio", (audio_packet, self._status))
 
     def on_connect(self):
         sio.emit("trial", "test")
         self.is_connected = True
         self.sound_manager.open_mic()
-        logger.info("I'm connected!")
+        logger.success("I'm connected!")
 
     def on_disconnect(self):
-        logger.info("I'm disconnected!")
+        logger.success("I'm disconnected!")
         self.is_connected = False
         self.sound_manager.close_mic()
 
     def on_connect_error(self, data):
         logger.warning(f"The connection failed!: {data}")
 
-    def on_wake_up(self):
+    # def trigger_event(self, event, *args):
+    #     return super().trigger_event(event, *args)
+
+    def trigger_event(self, event, *args):
+        """Handles all events not handled by the defined handlers"""
+        if len(args) == 0:
+            logger.warning(f"receiving non handled event: {event}")
+
+        elif len(args) == 1:
+            data = args[0]
+            if isinstance(data, dict):
+                self._status = data.pop("status", None)
+                args = (data.get("data", None),)
+                if self._status is None:
+                    raise ValueError("status is required")
+            else:
+                args = (data,)
+
+        super().trigger_event(event, *args)
+
+    def on_wake_up(self, _):
         logger.info("Wake Up!")
         self.sound_manager.play_activation_sound()
 
@@ -73,10 +94,6 @@ class AssistantClient(socketio.ClientNamespace):
         """
         # Handle response here
         logger.debug(f"SENVA: {data}")
-
-    def catch_all(self, event, data):
-        """Handles all events not handled by the defined handlers"""
-        logger.warning(f"receiving non handled event: {event}:: {data}")
 
 
 def close_callback():

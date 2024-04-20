@@ -4,6 +4,13 @@ from stt import STTController, WakeUpVoiceDetector, AudioPacket
 from tts import TTSController
 from storage_manager import StorageManager, write_output
 from bot import BotController
+from enum import IntEnum
+
+class ClientStatus(IntEnum):
+    NOT_CONNECTED = 0
+    WAITING_FOR_WAKEUP = 1
+    WAITING_FOR_COMMAND = 2
+    WAITING_FOR_RESPONSE = 3
 
 class AssistantController:
     """Main controller for the assistant."""
@@ -80,7 +87,7 @@ class AssistantController:
             raise Exception("Only dict/json and str are supported types")
         return audio_bytes
 
-    def feed_audio_stream(self, audio_data):
+    def feed_audio_stream(self, audio_data, status: ClientStatus):
         """Feed audio stream to STT if awake or WakeUpWordDetector if not awake
 
         Args:
@@ -91,7 +98,10 @@ class AssistantController:
 
         """
         audio_packet = AudioPacket(audio_data)
-        if self._is_awake:
+        if not self._is_awake and status == ClientStatus.WAITING_FOR_WAKEUP:
+            self.wake_up_word_detector.feed_audio(audio_packet)
+
+        elif status == ClientStatus.WAITING_FOR_COMMAND:
             if self.is_command_buffer_empty():
                 self._initiate_audio_stream()
                 write_output("recieving first stream of audio command")
@@ -99,12 +109,13 @@ class AssistantController:
             self.stt_res_buffer = None
             self.command_audio_buffer += audio_packet
             self.session_audio_buffer += (
-                audio_packet  # TODO note that this includes is_awake only
+                audio_packet  # TODO note that this includes ClientStatus.WAITING_FOR_COMMAND only stream
             )
 
             self.stt.feed(audio_packet)
+
         else:
-            self.wake_up_word_detector.feed_audio(audio_packet)
+            write_output("x", end="")
 
     def is_wake_word_detected(self):
         """Check if wake word is detected and set is_awake accordingly"""
@@ -141,7 +152,7 @@ class AssistantController:
             )
             self.command_audio_buffer = AudioPacket.get_null_packet()
             self._is_awake = False
-            print("i am not awake anymore", flush=True)  # TODO remove
+            logger.debug('Assistant fells asleep.')
         return stt_res
 
     def respond(self, text: str) -> Generator[Tuple[Dict, bytes], None, None]:

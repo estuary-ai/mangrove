@@ -26,7 +26,7 @@ class WhisperEndpoint:
         self.reset()
 
     def get_transcription(self):
-        print("Waiting for transcription ... ")
+        logger.trace("Waiting for transcription ... ")
         if self.input_queue.qsize() == 0:
             return None
 
@@ -42,7 +42,7 @@ class WhisperEndpoint:
 
         # print('Transcribing ... ', f'{len(audio_packets)} packets')
         audio_packet = sum(audio_packets, AudioPacket.get_null_packet())
-        print(
+        logger.debug(
             "Transcribing ... ",
             f"{len(audio_packet)} bytes at {audio_packet.sample_rate} Hz",
         )

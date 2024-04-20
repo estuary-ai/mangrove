@@ -3,10 +3,12 @@ import os, argparse
 from flask import Flask
 from loguru import logger
 from flask_socketio import SocketIO, Namespace
-from assistant_controller import AssistantController
+from assistant_controller import AssistantController, ClientStatus
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from memory import WorldState
+
+
 
 class DigitalAssistant(Namespace):
     """Digital Assistant SocketIO Namespace"""
@@ -30,13 +32,21 @@ class DigitalAssistant(Namespace):
             raise RuntimeError("Server is not initialized yet")
         self.responding_task = self.server.start_background_task(self.bg_responding_task)
 
+    def emit(self, event, data, status=None):
+        if status is None:
+            raise ValueError("status is required")
+        # pack data with status
+        data = {"status": status, "data": data}
+        logger.info(f"emitting {event}")
+        self.server.emit(event, data)
+
     def on_connect(self):
         logger.info("client connected")
         StorageManager.establish_session()
         bot_voice_bytes = self.assistant_controller.startup()
         if bot_voice_bytes:
             logger.info("emmiting bot_voice")
-            self.server.emit("bot_voice", bot_voice_bytes)
+            self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_WAKEUP)
 
     def on_disconnect(self):
         logger.info("client disconnected\n")
@@ -44,11 +54,11 @@ class DigitalAssistant(Namespace):
             self.assistant_controller.clean_up()
         StorageManager.clean_up()
 
-    def on_stream_audio(self, audio_data):
+    def on_stream_audio(self, audio_data, status):
         with self.lock:
             # Feeding in audio stream
-            print("-", end="", flush=True)
-            self.assistant_controller.feed_audio_stream(audio_data)
+            write_output("-", end="")
+            self.assistant_controller.feed_audio_stream(audio_data, status)
 
     def on_trial(self, data):
         write_output(f"received trial: {data}")
@@ -65,11 +75,11 @@ class DigitalAssistant(Namespace):
                     self.apply_communication_logic()
                     # TODO introduce timeout
                 else:
-                    wakeUpWordDetected = (
-                        self.assistant_controller.is_wake_word_detected()
-                    )
-                    if wakeUpWordDetected:
-                        self.server.emit("wake_up")
+                    # wakeUpWordDetected = (
+                    #     self.assistant_controller.is_wake_word_detected()
+                    # )
+                    if self.assistant_controller.is_wake_word_detected():
+                        self.emit("wake_up", None, status=ClientStatus.WAITING_FOR_COMMAND)
 
     def apply_communication_logic(self):
         stt_res = self.assistant_controller.process_audio_buffer()
@@ -78,7 +88,7 @@ class DigitalAssistant(Namespace):
 
         # Now assisant is not awake
         logger.success(f"User: {stt_res}")
-        self.server.emit("stt_response", stt_res)
+        self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
 
         try:
             bot_res, bot_voice_bytes = self.assistant_controller.respond(stt_res["text"])
@@ -87,16 +97,19 @@ class DigitalAssistant(Namespace):
             # TODO Include timestamps
             if bot_voice_bytes:
                 logger.info("emmiting bot_voice")
-                self.server.emit("bot_voice", bot_voice_bytes)
+                self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
 
             logger.info("emitting bot_response")
-            self.server.emit("bot_response", bot_res)
+            self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
             logger.success(f"Bot: {bot_res}")
 
         except Exception as e:
             logger.error(f"Error: {e}")
-            self.server.emit("bot_repsonse", {"msg": "bot is not available"})
+            self.emit("bot_repsonse", {"msg": "bot is not available"}, status=ClientStatus.WAITING_FOR_WAKEUP)
 
+    # def on_error(self, e):
+    #     logger.error(f"Error: {e}")
+    #     self.emit("error", {"msg": str(e)}, status=ClientStatus.NOT_CONNECTED)
 
 
 if __name__ == "__main__":

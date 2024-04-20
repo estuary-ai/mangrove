@@ -1,6 +1,7 @@
 from typing import Generator
 from abc import ABC, abstractmethod
 from transformers import pipeline
+from storage_manager import write_output
 from loguru import logger
 
 
@@ -48,7 +49,7 @@ class HFAudioClassificationEndpoint:
     def detect(self, preprocessed_mic: Generator) -> Generator:
         is_detected = False
         for prediction in self._classifier(preprocessed_mic):
-            print("<", end="", flush=True)
+            write_output("<", end="")
             prediction = prediction[0]
             if prediction["label"] == self.wake_word:
                 if prediction["score"] > self.prediction_prob_threshold:

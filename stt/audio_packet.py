@@ -170,7 +170,7 @@ class AudioPacket(object):
             or AudioPacket.resampler.new_freq != target_sample_rate
         ):
             AudioPacket.resampler = Resample(self._sample_rate, target_sample_rate)
-            print(f"Resampling {self._sample_rate} -> {target_sample_rate}")
+            logger.trace(f"Resampling {self._sample_rate} -> {target_sample_rate}")
 
         audio_resampled = AudioPacket.resampler(waveform)
         audio_resampled = audio_resampled.numpy().tobytes()

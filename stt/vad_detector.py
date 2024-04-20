@@ -4,6 +4,7 @@ import collections
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Union, List
+from storage_manager import write_output
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
 
@@ -122,7 +123,7 @@ class VoiceActivityDetector(ABC):
 
         """
         if self.verbose or force:
-            print(msg, end=end, flush=True)
+            write_output(msg, end=end)
 
 
 class WebRTCVoiceActivityDetector(VoiceActivityDetector):
@@ -185,7 +186,7 @@ class SileroVAD(VoiceActivityDetector):
     ):
         if frame_size < 512 * 4:
             raise ValueError("Frame size must be at least 512*4 with Silero VAD")
-        
+
         self.device = device
         if self.device is None:
             self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
