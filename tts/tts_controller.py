@@ -51,8 +51,14 @@ class TTSController:
             texts = [texts]
 
         logger.warning(f'Converting audio bytes stream by {self} from {len(texts)} texts')
-        audio_files_bytes = b''.join([self.endpoint.text_to_bytes(text) for text in texts])
-        return audio_files_bytes
+        audio_packets_dicts = [self.endpoint.text_to_bytes(text) for text in texts]
+        audio_packet_dict = {
+            'audio_bytes': b''.join([audio_packet_dict['audio_bytes'] for audio_packet_dict in audio_packets_dicts]),
+            'frame_rate': audio_packets_dicts[0]['frame_rate'],
+            'sample_width': audio_packets_dicts[0]['sample_width'],
+            'channels': audio_packets_dicts[0]['channels'],
+        }
+        return audio_packet_dict
 
     def get_plain_text_read_bytes(self, text):
         """Get audio bytes stream for plain text

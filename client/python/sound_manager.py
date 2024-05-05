@@ -42,19 +42,39 @@ class SoundManager:
         self.stream = None
         self.stream_callback = stream_callback
         self.threads_pool = []
-        self.audio = pyaudio.PyAudio()
-
+        self._audio = pyaudio.PyAudio()
         self._lock = Lock()
 
     def open_mic(self):
         """Opens the microphone stream"""
-        self.mic_stream = self.audio.open(
+        self._mic_stream = self._audio.open(
             format=self._format,
             channels=self._channels,
             rate=self._sample_rate,
             input=True,
+            input_device_index=1,
             stream_callback=self.callback_pyaudio,
             frames_per_buffer=self._frames_per_buffer,
+        )
+
+    def open_speaker(self, frame_rate, sample_width, channels):
+        """Opens the speaker stream"""
+        _format = pyaudio.get_format_from_width(sample_width)
+        if hasattr(self, "_speaker_stream") and self._speaker_stream is not None:
+            # is setup the same parameters
+            if (
+                self._speaker_stream._format == _format
+                and self._speaker_stream._channels == channels
+                and self._speaker_stream._rate == frame_rate
+            ):
+                return
+            self._speaker_stream.stop_stream()
+            self._speaker_stream.close()
+        self._speaker_stream = self._audio.open(
+            format=_format,
+            channels=channels,
+            rate=frame_rate,
+            output=True,
         )
 
     # def callback(self, indata, frames, time, status):
@@ -92,9 +112,9 @@ class SoundManager:
 
     def close_mic(self):
         """Closes the microphone stream"""
-        if self.mic_stream and self.mic_stream.is_active:
-            self.mic_stream.stop_stream()
-            self.mic_stream.close()
+        if self._mic_stream and self._mic_stream.is_active:
+            self._mic_stream.stop_stream()
+            self._mic_stream.close()
 
     def _enqueue_task(self, func, *args):
         """Enqueues a task to be executed in a thread
@@ -114,7 +134,7 @@ class SoundManager:
             audio (bytes or str): audio bytes or filepath to audio bytes
             block (bool, optional): if True, blocks until audio is played. Defaults to False.
         """
-        
+
         def _play_packet(audio):
             def _play_file(audio_filepath):
                 try:
@@ -126,19 +146,27 @@ class SoundManager:
                 if isinstance(audio, str):
                     # It is filepath hopefully
                     _play_file(audio)
+
                 else:
-                    TMP_AUDIO_FILENAME = "audio.mp3"
-                    with open(TMP_AUDIO_FILENAME, "wb") as f:
-                        f.write(audio)
-                    _play_file(TMP_AUDIO_FILENAME)
-                    os.remove(TMP_AUDIO_FILENAME)
+                    # divide audio into chunks
+                    for i in range(0, len(audio['audio_bytes']), self._frames_per_buffer):
+                        print('x', end='')
+                        audio_bytes = audio['audio_bytes'][i : i + self._frames_per_buffer]
+                    # audio_bytes = audio['audio_bytes']
+                        frame_rate = audio['frame_rate']
+                        sample_width = audio['sample_width']
+                        channels = audio['channels']
+                        # play audio
+                        self.open_speaker(frame_rate, sample_width, channels)
+                        self._speaker_stream.write(audio_bytes)
+
 
         if block:
-            _play_packet(audio) 
+            _play_packet(audio)
         else:
             self._enqueue_task(_play_packet, audio)
 
-    def play_activation_sound(self): 
+    def play_activation_sound(self):
         """Plays activation sound"""
         self.play_audio_packet("assistant_activate.wav")
 
