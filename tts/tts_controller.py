@@ -1,8 +1,8 @@
 import inflect
 from typing import Generator, Dict
 from storage_manager import StorageManager, write_output
-from tts.tts_endpoint import TTSEndpoint, Pyttsx3TTSEndpoint, ElevenLabsTTSEndpoint, GTTSEndpoint, TTSLibraryEndpoint
 from loguru import logger
+from tts.endpoints.base import TTSEndpoint
 
 class TTSController:
     """Text to speech controller"""
@@ -18,13 +18,17 @@ class TTSController:
         self.endpoint: TTSEndpoint
         if endpoint == "pyttsx3":
             logger.info("Using Pyttsx3 TTS Endpoint")
+            from tts.endpoints.pyttsx3 import Pyttsx3TTSEndpoint
             self.endpoint = Pyttsx3TTSEndpoint(**endpoint_kwargs)
         elif endpoint == "tts":
+            from tts.endpoints.xtts import TTSLibraryEndpoint
             self.endpoint = TTSLibraryEndpoint()
         elif endpoint == "elevenlabs":
+            from tts.endpoints.elevenlabs import ElevenLabsTTSEndpoint
             logger.info("Using ElevenLabs TTS Endpoint")
             self.endpoint = ElevenLabsTTSEndpoint()
         elif endpoint == "gtts":
+            from tts.endpoints.gtts import GTTSEndpoint
             logger.info("Using GTTS TTS Endpoint")
             self.endpoint = GTTSEndpoint()
         else:
