@@ -1,23 +1,30 @@
 import backoff
+from typing import Dict, Generator
 from pydub import AudioSegment
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from loguru import logger
 
 
-@backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=3)
-def get_mp3_audio_bytes(filepath='__temp__.mp3'):
+def get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024) -> Generator[Dict, None, None]:
     import os
     import pydub
     # load mp3 file
-    audio = pydub.AudioSegment.from_mp3(filepath)
+    logger.debug(f"Loading mp3 file: {filepath}")
+    @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=10)
+    def load_mp3():
+        return pydub.AudioSegment.from_mp3(filepath)
+    audio = load_mp3()
     # delete the file
     os.remove(filepath)
-    return {
-        'audio_bytes': audio._data,
-        'frame_rate': audio.frame_rate,
-        'sample_width': audio.sample_width,
-        'channels': audio.channels
-    }
+
+    # chunk the audio
+    for i in range(0, len(audio), chunk_size):
+        yield {
+            'audio_bytes': audio[i:i + chunk_size]._data,
+            'frame_rate': audio.frame_rate,
+            'sample_width': audio.sample_width,
+            'channels': audio.channels
+        }
 
 def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
     return {
@@ -27,7 +34,7 @@ def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
         'channels': audio_segment.channels
     }
 
-class TTSEndpoint(ABC):
+class TTSEndpoint(metaclass=ABCMeta):
     def __init__(self, **kwargs):
         pass
 
@@ -36,7 +43,7 @@ class TTSEndpoint(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def text_to_bytes(self, text):
+    def text_to_bytes(self, text) -> Generator[Dict, None, None]:
         raise NotImplementedError()
 
 class Pyttsx3TTSEndpoint(TTSEndpoint):
@@ -63,9 +70,10 @@ class Pyttsx3TTSEndpoint(TTSEndpoint):
         self.engine.iterate()
         # self.engine.runAndWait()
 
-    def text_to_bytes(self, text):
+    def text_to_bytes(self, text) -> Generator[Dict, None, None]:
         self.text_to_audio_file(text, '__temp__.mp3')
-        return get_mp3_audio_bytes(filepath='__temp__.mp3')
+        for audio_bytes_dict in get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024):
+            yield audio_bytes_dict
 
 
 class TTSLibraryEndpoint(TTSEndpoint):
@@ -156,10 +164,11 @@ class GTTSEndpoint(TTSEndpoint):
         def get_audio_segment():
             import io
             from pydub import AudioSegment
-            raw_audio_bytes = b''.join(self.engine(text, lang='en', timeout=3).stream())
-            return AudioSegment.from_file(io.BytesIO(raw_audio_bytes), format="mp3")
+            for raw_audio_bytes in self.engine(text, lang='en', timeout=3).stream():
+                yield AudioSegment.from_file(io.BytesIO(raw_audio_bytes), format="mp3")
 
-        return audio_segment_to_audio_bytes_dict(get_audio_segment())
+        for audio_segment in get_audio_segment():
+            yield audio_segment_to_audio_bytes_dict(audio_segment)
 
     # def stream_bytes(self, text):
     #     tts = self.engine(text)

@@ -24,7 +24,6 @@ class DigitalAssistant(Namespace):
         self.namespace = namespace
         self.assistant_controller = AssistantController(**assistant_kwargs)
         self.lock = Lock()
-        self.verbose = verbose  # TODO use it
         logger.info("Server is about to be Up and Running..")
 
     def setup(self):
@@ -38,7 +37,14 @@ class DigitalAssistant(Namespace):
         # pack data with status
         # data = {"status": status, "data": data}
         logger.info(f"emitting {event}")
-        self.server.emit(event, data)
+        # if data is generator
+        if hasattr(data, "__next__"):
+            write_output(f"emitting generator {event}")
+            for d in data:
+                write_output(".", end="")
+                self.server.emit(event, d)
+        else:
+            self.server.emit(event, data)
         self.server.emit("update_status", status)
 
     def on_connect(self):

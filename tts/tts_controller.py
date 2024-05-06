@@ -1,7 +1,5 @@
-import os
 import inflect
-import backoff
-from decimal import Decimal
+from typing import Generator, Dict
 from storage_manager import StorageManager, write_output
 from tts.tts_endpoint import TTSEndpoint, Pyttsx3TTSEndpoint, ElevenLabsTTSEndpoint, GTTSEndpoint, TTSLibraryEndpoint
 from loguru import logger
@@ -36,31 +34,30 @@ class TTSController:
         self.number_to_word_converter = inflect.engine()
         self.created_audio_files = []
 
-    def _get_audio_bytes_stream(self, texts):
+    def _get_audio_bytes_stream(self, text) -> Generator[Dict, None, None]:
         """Get audio bytes stream from texts
 
         Args:
-            texts (list or str): Texts to convert to audio bytes stream
+            text (list or str): Texts to convert to audio bytes stream
         Returns:
             bytes: Audio bytes stream
         """
-        if texts is None:
+        if text is None:
             raise Exception("Texts cannot be None")
 
-        if not isinstance(texts, list):
-            texts = [texts]
+        if isinstance(text, list):
+            text = " ".join(text)
 
-        logger.warning(f'Converting audio bytes stream by {self} from {len(texts)} texts')
-        audio_packets_dicts = [self.endpoint.text_to_bytes(text) for text in texts]
-        audio_packet_dict = {
-            'audio_bytes': b''.join([audio_packet_dict['audio_bytes'] for audio_packet_dict in audio_packets_dicts]),
-            'frame_rate': audio_packets_dicts[0]['frame_rate'],
-            'sample_width': audio_packets_dicts[0]['sample_width'],
-            'channels': audio_packets_dicts[0]['channels'],
-        }
-        return audio_packet_dict
+        audio_packets_dicts_generator = self.endpoint.text_to_bytes(text)
+        for audio_packet_dict in audio_packets_dicts_generator:
+            yield {
+                'audio_bytes': audio_packet_dict['audio_bytes'],
+                'frame_rate': audio_packet_dict['frame_rate'],
+                'sample_width': audio_packet_dict['sample_width'],
+                'channels': audio_packet_dict['channels'],
+            }
 
-    def get_plain_text_read_bytes(self, text):
+    def get_plain_text_read_bytes(self, text) -> Generator[Dict, None, None]:
         """Get audio bytes stream for plain text
 
         Args:
