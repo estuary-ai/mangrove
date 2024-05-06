@@ -36,9 +36,10 @@ class DigitalAssistant(Namespace):
         if status is None:
             raise ValueError("status is required")
         # pack data with status
-        data = {"status": status, "data": data}
+        # data = {"status": status, "data": data}
         logger.info(f"emitting {event}")
         self.server.emit(event, data)
+        self.server.emit("update_status", status)
 
     def on_connect(self):
         logger.info("client connected")
@@ -60,7 +61,7 @@ class DigitalAssistant(Namespace):
             write_output("-", end="")
             self.assistant_controller.feed_audio_stream(audio_data, status)
 
-    def on_trial(self, data):
+    def on_trial(self, data, status=None):
         write_output(f"received trial: {data}")
 
     def on_update_world_state(self, state):
