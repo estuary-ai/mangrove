@@ -47,12 +47,14 @@ datasets==2.14.6
 dateparser==1.1.8
 debugpy==1.6.7
 decorator==5.1.1
+deepspeed==0.14.2
 dill==0.3.7
 Distance==0.1.3
 distro==1.9.0
 docopt==0.6.2
 einops==0.7.0
 elevenlabs==0.2.27
+en-core-web-sm==3.7.1
 encodec==0.1.1
 entrypoints==0.4
 exceptiongroup==1.1.3
@@ -84,8 +86,10 @@ gruut-lang-de==2.0.0
 gruut-lang-en==2.0.0
 gruut-lang-es==2.0.0
 gruut-lang-fr==2.0.2
+gTTS==2.5.1
 h11==0.14.0
 hangul-romanize==0.1.0
+hjson==3.1.0
 httpcore==1.0.2
 httpx==0.26.0
 huggingface-hub==0.17.3
@@ -135,6 +139,7 @@ murmurhash==1.0.10
 mypy-extensions==1.0.0
 nest-asyncio==1.5.8
 networkx==2.8.8
+ninja==1.11.1.1
 nltk==3.8.1
 num2words==0.5.13
 numba==0.58.0
@@ -188,6 +193,7 @@ protobuf==4.23.4
 psutil==5.9.0
 ptyprocess==0.7.0
 pure-eval==0.2.2
+py-cpuinfo==9.0.0
 pyarrow==13.0.0
 pyasn1==0.5.1
 pyasn1-modules==0.3.0
@@ -201,6 +207,7 @@ pyee==11.0.1
 Pygments==2.16.1
 PyGObject==3.46.0
 pynndescent==0.5.11
+pynvml==11.5.0
 pyparsing==3.1.1
 pypinyin==0.50.0
 pysbd==0.3.4
@@ -224,6 +231,7 @@ scikit-learn==1.3.2
 scipy==1.11.3
 sentencepiece==0.1.99
 setuptools==68.0.0
+sgnlp==0.4.0
 simple-websocket==1.0.0
 six==1.16.0
 smart-open==6.4.0
@@ -253,6 +261,7 @@ tokenizers==0.14.1
 tomli==2.0.1
 torch==2.1.0
 torchaudio==2.1.0
+torchtext==0.14.1
 tornado==6.1
 tqdm==4.66.1
 trainer==0.0.36
