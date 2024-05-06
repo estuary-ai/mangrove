@@ -134,42 +134,43 @@ class SoundManager:
             audio (bytes or str): audio bytes or filepath to audio bytes
             block (bool, optional): if True, blocks until audio is played. Defaults to False.
         """
-
         def _play_packet(audio):
-            def _play_file(audio_filepath):
-                try:
-                    play(AudioSegment.from_mp3(audio_filepath))
-                except:
-                    play(AudioSegment.from_wav(audio_filepath))
-
             with self._lock:
-                if isinstance(audio, str):
-                    # It is filepath hopefully
-                    _play_file(audio)
-
-                else:
-                    # divide audio into chunks
-                    for i in range(0, len(audio['audio_bytes']), self._frames_per_buffer):
-                        print('x', end='')
-                        audio_bytes = audio['audio_bytes'][i : i + self._frames_per_buffer]
-                    # audio_bytes = audio['audio_bytes']
-                        frame_rate = audio['frame_rate']
-                        sample_width = audio['sample_width']
-                        channels = audio['channels']
-                        # play audio
-                        self.open_speaker(frame_rate, sample_width, channels)
-                        self._speaker_stream.write(audio_bytes)
-
+                # divide audio into chunks
+                for i in range(0, len(audio['audio_bytes']), self._frames_per_buffer):
+                    print('x', end='')
+                    audio_bytes = audio['audio_bytes'][i : i + self._frames_per_buffer]
+                # audio_bytes = audio['audio_bytes']
+                    frame_rate = audio['frame_rate']
+                    sample_width = audio['sample_width']
+                    channels = audio['channels']
+                    # play audio
+                    self.open_speaker(frame_rate, sample_width, channels)
+                    self._speaker_stream.write(audio_bytes)
 
         if block:
             _play_packet(audio)
         else:
             self._enqueue_task(_play_packet, audio)
 
+    def play_audio_file(self, filepath, format, block=False):
+        audio = AudioSegment.from_file(filepath, format=format)
+        self.play_audio_packet(
+            {
+                "audio_bytes": audio.raw_data,
+                "frame_rate": audio.frame_rate,
+                "sample_width": audio.sample_width,
+                "channels": audio.channels,
+            },
+            block=True,
+        )
+
+
     def play_activation_sound(self):
         """Plays activation sound"""
-        self.play_audio_packet("assistant_activate.wav")
+        self.play_audio_file("assistant_activate.wav", format="wav", block=True)
+
 
     def play_termination_sound(self):
         """Plays termination sound"""
-        self.play_audio_packet("assistant_terminate.mp3")
+        self.play_audio_file("assistant_terminate.mp3", format="mp3", block=True)
