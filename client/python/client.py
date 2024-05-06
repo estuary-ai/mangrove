@@ -18,7 +18,7 @@ class AssistantClient(socketio.ClientNamespace):
         super().__init__(namespace)
         self.sound_manager = SoundManager(self._emit_audio_packet)
         self.is_connected = False
-        self._status = None
+        self._status = -1
 
     def _emit_audio_packet(self, audio_packet):
         """Emits an audio packet to the server
@@ -44,27 +44,7 @@ class AssistantClient(socketio.ClientNamespace):
     def on_connect_error(self, data):
         logger.warning(f"The connection failed!: {data}")
 
-    # def trigger_event(self, event, *args):
-    #     return super().trigger_event(event, *args)
-
-    def trigger_event(self, event, *args):
-        """Handles all events not handled by the defined handlers"""
-        if len(args) == 0:
-            logger.warning(f"receiving non handled event: {event}")
-
-        elif len(args) == 1:
-            data = args[0]
-            if isinstance(data, dict):
-                self._status = data.pop("status", None)
-                args = (data.get("data", None),)
-                if self._status is None:
-                    raise ValueError("status is required")
-            else:
-                args = (data,)
-
-        super().trigger_event(event, *args)
-
-    def on_wake_up(self, _):
+    def on_wake_up(self):
         logger.info("Wake Up!")
         self.sound_manager.play_activation_sound()
 
@@ -94,6 +74,15 @@ class AssistantClient(socketio.ClientNamespace):
         """
         # Handle response here
         logger.debug(f"SENVA: {data}")
+
+    def on_update_status(self, status):
+        """Handles the status update received from the server
+
+        Args:
+            status (int): status received from the server
+        """
+        self._status = status
+        logger.debug(f"Status update: {status}")
 
 
 def close_callback():
