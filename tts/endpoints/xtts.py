@@ -68,9 +68,11 @@ class TTSLibraryEndpoint(TTSEndpoint):
             t0 = time.time()
             chunks = self.model.inference_stream(
                 text,
-                "en",
-                self.gpt_cond_latent,
-                self.speaker_embedding
+                language="en",
+                gpt_cond_latent=self.gpt_cond_latent,
+                speaker_embedding=self.speaker_embedding,
+                stream_chunk_size=500,
+                enable_text_splitting=True,
             )
 
             for i, chunk in enumerate(chunks):
