@@ -43,14 +43,6 @@ class AssistantController:
         # Debuggers and Auxilarly variables
         self._is_awake = False
 
-    def is_bot_shutdown(self):
-        """Check if bot is shutdown
-
-        Returns:
-            bool: Whether bot is shutdown
-        """
-        return self.bot is None
-
     def is_awake(self):
         """Check if assistant is awake
 
@@ -165,9 +157,6 @@ class AssistantController:
         Returns:
             typing.Tuple[dict, bytes]: Bot response and voice bytes
         """
-        if self.bot is None:
-            return None
-
         logger.debug("responding to user message")
         bot_res = list(self.bot.respond(text))[-1]
         write_output("SENVA: " + str(bot_res))
@@ -181,9 +170,7 @@ class AssistantController:
 
         # self.check_bot_commands(bot_res)
         # logger.trace("checked bot commands")
-
         return bot_res, voice_bytes
-        # write_output("bot response finished successfully")
 
 
     # # TODO migrate logic to if procedural step

@@ -16,7 +16,6 @@ class DigitalAssistant(Namespace):
     def __init__(
         self,
         namespace="/",
-        verbose=False,
         **assistant_kwargs,
     ):
         super().__init__(namespace)
@@ -32,20 +31,19 @@ class DigitalAssistant(Namespace):
         self.responding_task = self.server.start_background_task(self.bg_responding_task)
 
     def emit(self, event, data, status=None):
-        if status is None:
-            raise ValueError("status is required")
-        # pack data with status
-        # data = {"status": status, "data": data}
-        logger.info(f"emitting {event}")
+        logger.debug(f"Emitting {event}")
         # if data is generator
         if hasattr(data, "__next__"):
-            write_output(f"emitting generator {event}")
+            logger.debug(f"Emitting generator {event}")
             for d in data:
-                write_output(".", end="")
+                write_output(">", end="")
                 self.server.emit(event, d)
         else:
             self.server.emit(event, data)
-        self.server.emit("update_status", status)
+
+        if status is not None:
+            logger.debug(f'emitting status {status}')
+            self.server.emit("update_status", status)
 
     def on_connect(self):
         logger.info("client connected")
@@ -79,40 +77,32 @@ class DigitalAssistant(Namespace):
             socketio.sleep(0.2)
             with self.lock:
                 if self.assistant_controller.is_awake():
-                    self.apply_communication_logic()
+                    stt_res = self.assistant_controller.process_audio_buffer()
+                    if stt_res is None:
+                        continue
+
+                    # Now assisant is not awake
+                    logger.success(f"User: {stt_res}")
+                    self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
+
+                    try:
+                        bot_res, bot_voice_bytes = self.assistant_controller.respond(stt_res["text"])
+                        assert not bot_res.get("partial")
+
+                        # TODO Include timestamps
+                        if bot_voice_bytes:
+                            self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
+                        logger.success(f"Bot: {bot_res}")
+                        self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
+
+                    except Exception as e:
+                        logger.error(f"Error: {e}")
+                        self.emit("bot_repsonse", {"msg": "bot is not available"}, status=ClientStatus.WAITING_FOR_WAKEUP)
+
                     # TODO introduce timeout
                 else:
-                    # wakeUpWordDetected = (
-                    #     self.assistant_controller.is_wake_word_detected()
-                    # )
                     if self.assistant_controller.is_wake_word_detected():
                         self.emit("wake_up", None, status=ClientStatus.WAITING_FOR_COMMAND)
-
-    def apply_communication_logic(self):
-        stt_res = self.assistant_controller.process_audio_buffer()
-        if stt_res is None:
-            return
-
-        # Now assisant is not awake
-        logger.success(f"User: {stt_res}")
-        self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
-
-        try:
-            bot_res, bot_voice_bytes = self.assistant_controller.respond(stt_res["text"])
-            assert not bot_res.get("partial")
-
-            # TODO Include timestamps
-            if bot_voice_bytes:
-                logger.info("emmiting bot_voice")
-                self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
-
-            logger.info("emitting bot_response")
-            self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
-            logger.success(f"Bot: {bot_res}")
-
-        except Exception as e:
-            logger.error(f"Error: {e}")
-            self.emit("bot_repsonse", {"msg": "bot is not available"}, status=ClientStatus.WAITING_FOR_WAKEUP)
 
     # def on_error(self, e):
     #     logger.error(f"Error: {e}")
@@ -135,17 +125,7 @@ if __name__ == "__main__":
         "--port", dest="port", type=int, default=4000, help="Port number"
     )
     parser.add_argument(
-        "--name",
-        dest="name",
-        type=str,
-        default="Marvin",
-        help="Digital Assistant Name (NOT CHANGEABLE YET)",
-    )
-    parser.add_argument(
         "--debug", dest="debug", type=bool, default=False, help="Debug mode"
-    )
-    parser.add_argument(
-        "--verbose", dest="verbose", type=bool, default=False, help="Verbose mode"
     )
     parser.add_argument("--log", dest="log", type=bool, default=False, help="Log mode")
     parser.add_argument(
@@ -165,6 +145,7 @@ if __name__ == "__main__":
         cors_credentials=True,
         logger=args.log,
         engineio_logger=args.log,
+        async_handlers=False
     )
 
     # @socketio.on_error_default  # handles all namespaces without an explicit error handler
@@ -173,12 +154,9 @@ if __name__ == "__main__":
     #     # stt.reset_audio_stream()
     #     # # TODO reset anything
 
-    digital_assistant_name = args.name
     device = "cuda" if not args.cpu else "cpu"
     digital_assistant = DigitalAssistant(
         namespace="/",
-        assistant_name=digital_assistant_name,
-        verbose=args.verbose,
         tts_endpoint=args.tts_endpoint,
         device=device,
     )
@@ -193,7 +171,7 @@ if __name__ == "__main__":
 
     # host_ip_address = socket.gethostbyname(socket.gethostname())
     _msg = (
-        f"\nYour Digital Assistant {digital_assistant_name} running on port {args.port}. \n# Hints:"
+        f"\nYour Digital Assistant is running on port {args.port}. \n# Hints:"
         + '1. Run "ipconfig" in your terminal and use Wireless LAN adapter Wi-Fi IPv4 Address.\n'
         + "2. Ensure your client is connected to the same WIFI connection.\n"
         + "3. Ensure firewall shields are down in this particular network type with python.\n"
