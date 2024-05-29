@@ -8,10 +8,7 @@ from .audio_packet import AudioPacket
 
 class WhisperEndpoint:
     def __init__(self, model_name="base.en", device=None):
-        if device is None:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        else:
-            self.device = device
+        self.device = "auto" if device is None else device
         try:
             self.model = WhisperModel(model_name, device=self.device)
         except:
@@ -40,37 +37,16 @@ class WhisperEndpoint:
                 except Empty:
                     break
 
-        # print('Transcribing ... ', f'{len(audio_packets)} packets')
         audio_packet = sum(audio_packets, AudioPacket.get_null_packet())
         logger.debug(
-            "Transcribing ... ",
-            f"{len(audio_packet)} bytes at {audio_packet.sample_rate} Hz",
+            f"Transcribing ... {len(audio_packet)} bytes at {audio_packet.sample_rate} Hz"
         )
-
-        # save this data as audio file
-        # import scipy.io.wavfile as wav
-        # wav.write('debug_audio.wav', audio_packet.sample_rate, audio_packet.float)
-
-        # data = {
-        #     'raw': audio_packet.float,
-        #     'sampling_rate': audio_packet.sample_rate,
-        # }
-        # print('Transcribing ... ', f' at {data["sampling_rate"]} Hz')
-        data = audio_packet.float
-
         start = time.time()
-        # _out = self.model(data, generate_kwargs={"max_new_tokens": 128})
-        segments, _ = self.model.transcribe(
-            data,
-            vad_filter=True,
-        )
+        segments, _ = self.model.transcribe(audio_packet.float, vad_filter=True, without_timestamps=True)
         _out = list(segments)
-        if len(_out) > 1:
+        if len(_out) >= 1:
             logger.debug("detected {} segments".format(len(_out)))
-        # print(_out)
-
-        _out = " ".join([segment.text for segment in _out])
-
+            _out = " ".join([segment.text for segment in _out])
         logger.success(f"Took {time.time() - start: < .3f} seconds")
         return _out
 

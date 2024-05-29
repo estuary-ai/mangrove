@@ -74,7 +74,7 @@ class DigitalAssistant(Namespace):
     def bg_responding_task(self):
         # READ BUFFER AND EMIT AS NEEDED
         while True:
-            socketio.sleep(0.2)
+            socketio.sleep(0.15)
             with self.lock:
                 if self.assistant_controller.is_awake():
                     stt_res = self.assistant_controller.process_audio_buffer()
@@ -86,13 +86,17 @@ class DigitalAssistant(Namespace):
                     self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
 
                     try:
-                        bot_res, bot_voice_bytes = self.assistant_controller.respond(stt_res["text"])
-                        assert not bot_res.get("partial")
+                        for bot_res, bot_voice_bytes in self.assistant_controller.respond(stt_res["text"]):
+                            if bot_res.get('partial'):
+                                # TODO Include timestamps
+                                if bot_voice_bytes:
+                                    self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
+                                logger.success(f"Bot: {bot_res}")
+                                self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_RESPONSE)
 
-                        # TODO Include timestamps
-                        if bot_voice_bytes:
-                            self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
-                        logger.success(f"Bot: {bot_res}")
+                        if bot_res.get('partial'):
+                            raise Exception("Bot response should not be partial at this stage")
+
                         self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
 
                     except Exception as e:

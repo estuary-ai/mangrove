@@ -149,7 +149,6 @@ class AssistantController:
 
     def respond(self, text: str) -> Generator[Tuple[Dict, bytes], None, None]:
         """Respond to user message and return bot response and voice bytes
-        # TODO consider adding timeout to this function and remove deprecated logic
 
         Args:
             text (str): User message
@@ -157,20 +156,39 @@ class AssistantController:
         Returns:
             typing.Tuple[dict, bytes]: Bot response and voice bytes
         """
-        logger.debug("responding to user message")
-        bot_res = list(self.bot.respond(text))[-1]
-        write_output("SENVA: " + str(bot_res))
-        bot_texts = bot_res.get("text")
-
-        voice_bytes = None
-        if bot_texts:
-            logger.trace("creating voice bytes")
-            voice_bytes = self.tts.get_plain_text_read_bytes(" ".join(bot_texts))
+        def process_segment(chunked_bot_res):
+            partial_voice_bytes = None
+            text = chunked_bot_res.get('text')
+            logger.debug(f"creating voice bytes for {text}")
+            partial_voice_bytes = self.tts.get_plain_text_read_bytes(text)
             logger.trace("voice bytes created")
+            # self.check_bot_commands(bot_res)
+            # logger.trace("checked bot commands")
+            return partial_voice_bytes
 
-        # self.check_bot_commands(bot_res)
-        # logger.trace("checked bot commands")
-        return bot_res, voice_bytes
+        logger.debug("responding to user message")
+        complete_segment = { 'text': '', 'commands': []}
+        write_output("SENVA: ", end='')
+        for partial_bot_res in self.bot.respond(text):
+            if not partial_bot_res.get("partial"):
+                # if not partial, then it is a final complete response
+                break
+            bot_text = partial_bot_res.get("text")
+            write_output(f"{bot_text}", end='')
+            complete_segment['commands'] += partial_bot_res['commands']
+            complete_segment['text'] += partial_bot_res['text']
+            if partial_bot_res.get("text").endswith("."):
+                complete_segment['partial'] = True
+                yield complete_segment, process_segment(complete_segment)
+                complete_segment = {'text': '', 'commands': []}
+
+        if len(complete_segment) > 0:
+            complete_segment['partial'] = True
+            yield complete_segment, process_segment(complete_segment)
+
+        # a complete response is yielded at the end
+        yield partial_bot_res, None
+        write_output("", end='\n')
 
 
     # # TODO migrate logic to if procedural step
