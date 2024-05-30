@@ -172,7 +172,7 @@ class AssistantController:
         for partial_bot_res in self.bot.respond(text):
             if not partial_bot_res.get("partial"):
                 # if not partial, then it is a final complete response
-                break
+                continue
             bot_text = partial_bot_res.get("text")
             write_output(f"{bot_text}", end='')
             complete_segment['commands'] += partial_bot_res['commands']
