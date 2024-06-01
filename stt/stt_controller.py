@@ -2,6 +2,8 @@ import time
 from threading import Lock
 from loguru import logger
 from storage_manager import StorageManager
+from multiprocessing import JoinableQueue
+from queue import Empty, Full
 from .data_buffer import DataBuffer
 from .audio_packet import AudioPacket
 from .vad_detector import SileroVAD
@@ -39,10 +41,10 @@ class STTController:
         self.verbose = verbose
         self.frame_size = frame_size
         self._input_buffer = DataBuffer(self.frame_size)
+        self._output_buffer = JoinableQueue()
 
         # self.vad = WebRTCVoiceActivityDetector(vad_aggressiveness, silence_threshold, frame_size, verbose)
         self.vad = SileroVAD(
-            threshold=0.6,
             silence_threshold=silence_threshold,
             frame_size=frame_size,
             device=device,
@@ -56,6 +58,31 @@ class STTController:
         self.caught_voice = False
 
         self._lock = Lock()
+
+    def start(self, server):
+        """Start STT Controller Thread"""
+        def _start_thread():
+            while True:
+                stt_res = self.process_audio_buffer()
+                if stt_res is None:
+                    server.sleep(0.1)
+                    # print('<stt>', end='', flush=True)
+                else:
+                    self._output_buffer.put(stt_res)
+
+        self._process = server.start_background_task(_start_thread)
+
+    def receive(self):
+        """Get transcription from STT Controller"""
+        outputs = []
+        try:
+            while True:
+                outputs.append(self._output_buffer.get_nowait())
+        except Empty:
+            pass
+        if len(outputs) > 0:
+            return self._combine_outcomes(outputs)
+        return None
 
     def create_stream(self):
         """Create a new stream context"""
@@ -88,6 +115,7 @@ class STTController:
                 "recog_time": recog_time,
                 "recorded_audio_length": self.recorded_audio_length,
             }
+            self.refresh()
             return result
 
         # with open(f'../sample-audio-binary/null_{str(time.time())}.txt', mode="wb") as f:
@@ -162,7 +190,7 @@ class STTController:
                 audio_packets.append(audio_packet)
             except DataBuffer.Empty:
                 if len(audio_packets) == 0:
-                    logger.warning('No audio packets found in buffer', flush=True)
+                    # logger.warning('No audio packets found in buffer', flush=True)
                     return
                 break
 

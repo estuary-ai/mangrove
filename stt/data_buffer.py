@@ -73,6 +73,21 @@ class DataBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
+        with self._lock:
+            return self._get(frame_size, timeout)
+
+    def _get(self, frame_size=None, timeout=0.5):
+        """Get next frame of audio packets from queue given frame size
+
+        Args:
+            frame_size (int, optional): Number of bytes to read from queue. Defaults to self.default_frame_size.
+
+        Returns:
+            AudioPacket: Audio packet of size frame_size
+
+        Raises:
+            StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
+        """
 
         frame_size = frame_size or self.default_frame_size
         chunk_len = 0

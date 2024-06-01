@@ -179,8 +179,8 @@ class SileroVAD(VoiceActivityDetector):
     def __init__(
         self,
         device=None,
-        threshold=0.3,
-        silence_threshold: int = 300,
+        threshold=0.85,
+        silence_threshold: int = 150,
         frame_size: int = 512 * 4,
         verbose=False,
     ):
@@ -233,12 +233,10 @@ class SileroVAD(VoiceActivityDetector):
                 # partial TODO maybe add to buffer
                 break
             _audio_tensor = torch.from_numpy(packet.float).to(self.device)
-            try:
-                is_speeches.append(
-                    self.model(_audio_tensor, packet.sample_rate) > self.threshold
-                )
-            except:
-                breakpoint()
+
+            is_speeches.append(
+                self.model(_audio_tensor, packet.sample_rate) > self.threshold
+            )
 
         # if any([not is_speech for is_speech in is_speeches]):
         #     self.model.reset_states()

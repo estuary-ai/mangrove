@@ -28,6 +28,11 @@ class DigitalAssistant(Namespace):
     def setup(self):
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
+        self.startup_bot_voice_bytes = self.assistant_controller.read_text(
+            "Welcome, AI server connection is succesful.",
+            as_generator=False
+        )
+        self.assistant_controller.start(self.server)
         self.responding_task = self.server.start_background_task(self.bg_responding_task)
 
     def emit(self, event, data, status=None):
@@ -48,10 +53,14 @@ class DigitalAssistant(Namespace):
     def on_connect(self):
         logger.info("client connected")
         StorageManager.establish_session()
-        bot_voice_bytes = self.assistant_controller.startup()
-        if bot_voice_bytes:
-            logger.info("emmiting bot_voice")
-            self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_WAKEUP)
+        if self.startup_bot_voice_bytes:
+            from copy import deepcopy
+            logger.warning("emmiting bot_voice")
+            self.emit(
+                "bot_voice",
+                deepcopy(self.startup_bot_voice_bytes),
+                # status=ClientStatus.WAITING_FOR_WAKEUP
+            )
 
     def on_disconnect(self):
         logger.info("client disconnected\n")
@@ -73,40 +82,54 @@ class DigitalAssistant(Namespace):
 
     def bg_responding_task(self):
         # READ BUFFER AND EMIT AS NEEDED
+        from queue import Empty
         while True:
-            socketio.sleep(0.15)
+            is_responding = False
             with self.lock:
-                if self.assistant_controller.is_awake():
-                    stt_res = self.assistant_controller.process_audio_buffer()
-                    if stt_res is None:
-                        continue
+                try:
+                    bot_res, bot_voice_bytes = self.assistant_controller.get_response()
+                    if bot_voice_bytes is not None:
+                        self.emit("bot_voice", bot_voice_bytes)
+                    if bot_res is not None:
+                        self.emit("bot_response", bot_res)
+                    is_responding = True
+                except Empty:
+                    pass
 
-                    # Now assisant is not awake
-                    logger.success(f"User: {stt_res}")
-                    self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
+            if not is_responding:
+                print('<waiting>', end='', flush=True)
+                socketio.sleep(0.5)
 
-                    try:
-                        for bot_res, bot_voice_bytes in self.assistant_controller.respond(stt_res["text"]):
-                            if bot_res.get('partial'):
-                                # TODO Include timestamps
-                                if bot_voice_bytes:
-                                    self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
-                                logger.success(f"Bot: {bot_res}")
-                                self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_RESPONSE)
+                # stt_res = self.assistant_controller.get_transcription()
+                # if stt_res is None:
+                #     continue
+                # Now assisant is not awake
+                # logger.success(f"User: {stt_res}")
+                    # self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
 
-                        if bot_res.get('partial'):
-                            raise Exception("Bot response should not be partial at this stage")
+                #     try:
+                #         for bot_res, bot_voice_bytes in self.assistant_controller.respond(stt_res["text"]):
+                #             if bot_res.get('partial'):
+                #                 # TODO Include timestamps
+                #                 if bot_voice_bytes:
+                #                     self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
+                #                 logger.success(f"Bot: {bot_res}")
+                #                 self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_RESPONSE)
 
-                        self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
+                #         if bot_res.get('partial'):
+                #             raise Exception("Bot response should not be partial at this stage")
 
-                    except Exception as e:
-                        logger.error(f"Error: {e}")
-                        self.emit("bot_repsonse", {"msg": "bot is not available"}, status=ClientStatus.WAITING_FOR_WAKEUP)
+                #         self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
 
-                    # TODO introduce timeout
-                else:
-                    if self.assistant_controller.is_wake_word_detected():
-                        self.emit("wake_up", None, status=ClientStatus.WAITING_FOR_COMMAND)
+                #     except Exception as e:
+                #         logger.error(f"Error: {e}")
+                #         self.emit("bot_repsonse", {"msg": "bot is not available"}, status=ClientStatus.WAITING_FOR_WAKEUP)
+
+                #     # TODO introduce timeout
+                # else:
+                #     if self.assistant_controller.is_wake_word_detected():
+                #         self.emit("wake_up", None, status=ClientStatus.WAITING_FOR_COMMAND)
+
 
     # def on_error(self, e):
     #     logger.error(f"Error: {e}")
@@ -166,8 +189,6 @@ if __name__ == "__main__":
     )
     socketio.on_namespace(digital_assistant)
     digital_assistant.setup()
-
-
 
     # Show up to DEBUG logger level in console
     logger.remove()
