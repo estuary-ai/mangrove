@@ -138,7 +138,7 @@ class SoundManager:
             with self._lock:
                 # divide audio into chunks
                 for i in range(0, len(audio['audio_bytes']), self._frames_per_buffer):
-                    print('x', end='')
+                    print('>', end='')
                     audio_bytes = audio['audio_bytes'][i : i + self._frames_per_buffer]
                 # audio_bytes = audio['audio_bytes']
                     frame_rate = audio['frame_rate']

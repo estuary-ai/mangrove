@@ -33,7 +33,7 @@ class BotController:
                 text = " ".join(texts)
 
                 if not text:
-                    server.sleep(0.1)
+                    server.sleep(0.05)
                     # print('<bot>', end='', flush=True)
                 else:
                     bot_res_generator = self.respond(text)

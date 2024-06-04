@@ -97,8 +97,8 @@ class DigitalAssistant(Namespace):
                     pass
 
             if not is_responding:
-                print('<waiting>', end='', flush=True)
-                socketio.sleep(0.5)
+                # print('<waiting>', end='', flush=True)
+                socketio.sleep(0.1)
 
                 # stt_res = self.assistant_controller.get_transcription()
                 # if stt_res is None:

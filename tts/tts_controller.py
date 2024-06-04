@@ -55,7 +55,7 @@ class TTSController:
                     partial_bot_res = None
 
                 if partial_bot_res is None and voice_bytes_generator is None:
-                    server.sleep(0.1)
+                    server.sleep(0.05)
                     # print('<tts>', end='', flush=True)
                     continue
 
@@ -70,10 +70,10 @@ class TTSController:
                     if partial_bot_res["start"]:
                         complete_segment = {'text': '', 'commands': []}
                         write_output("SENVA: ", end='')
-                    else:
-                        logger.debug(
-                            f"Partial Bot Response: {partial_bot_res}"
-                        )
+                    # else:
+                    #     logger.debug(
+                    #         f"Partial Bot Response: {partial_bot_res}"
+                    #     )
 
                     if partial_bot_res["partial"]:
                         bot_text = partial_bot_res.get("text")
@@ -160,6 +160,7 @@ class TTSController:
                 'frame_rate': audio_packet_dict['frame_rate'],
                 'sample_width': audio_packet_dict['sample_width'],
                 'channels': audio_packet_dict['channels'],
+                'timestamp': audio_packet_dict['timestamp']
             }
 
     def get_plain_text_read_bytes(self, text) -> Generator[Dict, None, None]:

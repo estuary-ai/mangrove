@@ -5,6 +5,7 @@ from pydub import AudioSegment
 from loguru import logger
 from typing import Generator, Dict
 from abc import ABCMeta, abstractmethod
+import time
 
 def get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024) -> Generator[Dict, None, None]:
     # load mp3 file
@@ -30,7 +31,8 @@ def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
         'audio_bytes': audio_segment._data,
         'frame_rate': audio_segment.frame_rate,
         'sample_width': audio_segment.sample_width,
-        'channels': audio_segment.channels
+        'channels': audio_segment.channels,
+        'timestamp': time.time()
     }
 
 class TTSEndpoint(metaclass=ABCMeta):

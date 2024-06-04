@@ -57,14 +57,14 @@ class AssistantClient(socketio.ClientNamespace):
         self.sound_manager.play_termination_sound()
         logger.debug(f"Stt response: {data}")
 
-    def on_bot_voice(self, audio_bytes):
+    def on_bot_voice(self, partial_audio_dict):
         """Handles the bot voice received from the server
 
         Args:
-            audio_bytes (bytes): bot voice audio bytes received from the server
+            partial_audio_dict (dict): bot voice received from the server
         """
-        logger.debug(f"Playing bot_voice")
-        self.sound_manager.play_audio_packet(audio_bytes)
+        logger.debug(f"Playing bot_voice {partial_audio_dict['timestamp']}")
+        self.sound_manager.play_audio_packet(partial_audio_dict)
 
     def on_bot_response(self, data):
         """Handles the bot response received from the server

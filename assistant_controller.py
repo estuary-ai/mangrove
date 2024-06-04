@@ -126,8 +126,8 @@ class AssistantController:
                     #     )
 
                 if not is_update_occured:
-                    print('<agent>', end='', flush=True)
-                    server.sleep(0.5)
+                    # print('<agent>', end='', flush=True)
+                    server.sleep(0.1)
 
         self._process = server.start_background_task(_start_looping_thread)
 
@@ -171,6 +171,9 @@ class AssistantController:
             merged_audio_bytes_dict = next(audio_bytes_generator)
             for audio_bytes_dict in audio_bytes_generator:
                 merged_audio_bytes_dict['audio_bytes'] += audio_bytes_dict['audio_bytes']
+                merged_audio_bytes_dict['timestamp'] = audio_bytes_dict['timestamp']
+
+
             return merged_audio_bytes_dict
     # def feed_audio_stream(self, audio_data, status: ClientStatus):
     #     """Feed audio stream to STT if awake or WakeUpWordDetector if not awake
@@ -215,7 +218,7 @@ class AssistantController:
         audio_packet = AudioPacket(audio_data)
         if self.is_command_buffer_empty():
             self._initiate_audio_stream()
-            write_output("recieving first stream of audio command")
+            write_output("receiving first stream of audio command")
 
         self.stt_res_buffer = None
         self.command_audio_buffer += audio_packet

@@ -12,7 +12,7 @@ class WakeUpVoiceDetector:
         self,
         audio_classification_endpoint_kwargs: dict = {
             "model_name": "MIT/ast-finetuned-speech-commands-v2",
-            "prediction_prob_threshold": 0.95,
+            "prediction_prob_threshold": 0.90,
         },
         device="cuda",
         verbose=False,
