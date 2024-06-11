@@ -7,11 +7,9 @@ from loguru import logger
 
 TARGET_SAMPLERATE = 16000
 
-
 @functools.total_ordering
-class AudioPacket(object):
+class AudioPacket:
     """Represents a "Packet" of audio data."""
-
     resampling = 0
     resampler = None
 
@@ -27,6 +25,7 @@ class AudioPacket(object):
         self._sample_rate = int(data_json["sampleRate"])
         self._num_channels = int(data_json["numChannels"])
         self.timestamp = data_json["timestamp"]  # ms
+        self.sample_width = data_json.get("sampleWidth", 2) # 16 bit
 
         if not is_processed:
             self._bytes = self._preprocess_audio_buffer(
@@ -46,6 +45,22 @@ class AudioPacket(object):
             )
             self.duration *= 1000  # ms
         self._id = data_json.get("packetID")
+
+    def to_dict(self) -> dict:
+        """Convert AudioPacket to dict
+
+        Returns:
+            dict: AudioPacket as dict
+        """
+        return {
+            "bytes": self._bytes,
+            "sampleRate": self._sample_rate,
+            "sampleWidth": self.sample_width,
+            "numChannels": self._num_channels,
+            "timestamp": self.timestamp,
+            "duration": self.duration,
+            "packetID": self._id,
+        }
 
     @staticmethod
     def verify_format(data_json):
@@ -269,11 +284,11 @@ class AudioPacket(object):
             )
 
         elif isinstance(key, int):
-            raise (NotImplementedError, "value as index; only slices")
+            raise NotImplementedError("value as index; only slices")
         elif isinstance(key, tuple):
-            raise (NotImplementedError, "Tuple as index; only slices")
+            raise NotImplementedError("Tuple as index; only slices")
         else:
-            raise (TypeError, "Invalid argument type: {}".format(type(key)))
+            raise TypeError("Invalid argument type: {}".format(type(key)))
 
     def __str__(self) -> str:
         return f"{self.timestamp}, {self.duration}, {len(self._bytes)}"

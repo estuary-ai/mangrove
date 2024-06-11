@@ -1,11 +1,13 @@
 import inflect
-from typing import Generator, Dict
-from storage_manager import StorageManager, write_output
+from typing import Generator
 from loguru import logger
 from multiprocessing import JoinableQueue
 from queue import Empty
-from tts.endpoints.base import TTSEndpoint
 from itertools import chain
+
+from core import AudioPacket
+from storage_manager import StorageManager, write_output
+from .endpoints.base import TTSEndpoint
 
 class TTSController:
     """Text to speech controller"""
@@ -47,33 +49,29 @@ class TTSController:
     def start(self, server):
         """Start TTS Controller Thread"""
         def _start_thread():
-            voice_bytes_generator = None
+            audiopacket_generator: Generator[AudioPacket, None, None] = None
             while True:
                 try:
                     partial_bot_res = self._input_queue.get_nowait()
                 except Empty:
                     partial_bot_res = None
 
-                if partial_bot_res is None and voice_bytes_generator is None:
+                if partial_bot_res is None and audiopacket_generator is None:
                     server.sleep(0.05)
                     # print('<tts>', end='', flush=True)
                     continue
 
-                if voice_bytes_generator:
+                if audiopacket_generator:
                     try:
-                        partial_voice_bytes = next(voice_bytes_generator)
+                        partial_voice_bytes = next(audiopacket_generator)
                         self._output_buffer.put((None, partial_voice_bytes))
                     except StopIteration:
-                        voice_bytes_generator = None
+                        audiopacket_generator = None
 
                 if partial_bot_res:
                     if partial_bot_res["start"]:
                         complete_segment = {'text': '', 'commands': []}
                         write_output("SENVA: ", end='')
-                    # else:
-                    #     logger.debug(
-                    #         f"Partial Bot Response: {partial_bot_res}"
-                    #     )
 
                     if partial_bot_res["partial"]:
                         bot_text = partial_bot_res.get("text")
@@ -90,14 +88,14 @@ class TTSController:
                         if complete_segment['text'].endswith(('?', '!', '.')):
                             # TODO prompt engineer '.' and check other options
                             complete_segment['partial'] = True
-                            _new_voice_bytes_generator = self.get_plain_text_read_bytes(complete_segment['text'])
-                            if voice_bytes_generator is not None:
-                                voice_bytes_generator = chain(
-                                    voice_bytes_generator,
-                                    _new_voice_bytes_generator
+                            _new_audiopacket_generator = self._get_audiopackets_stream(complete_segment['text'])
+                            if audiopacket_generator is not None:
+                                audiopacket_generator = chain(
+                                    audiopacket_generator,
+                                    _new_audiopacket_generator
                                 )
                             else:
-                                voice_bytes_generator = _new_voice_bytes_generator
+                                audiopacket_generator = _new_audiopacket_generator
 
                             # NOTE: reset complete_segment
                             complete_segment = {'text': '', 'commands': []}
@@ -105,14 +103,14 @@ class TTSController:
                         if len(complete_segment['text']):
                             # NOTE: this is the last partial response
                             complete_segment['partial'] = False
-                            _new_voice_bytes_generator = self.get_plain_text_read_bytes(complete_segment['text'])
-                            if voice_bytes_generator is not None:
-                                voice_bytes_generator = chain(
-                                    voice_bytes_generator,
-                                    _new_voice_bytes_generator
+                            _new_audiopacket_generator = self._get_audiopackets_stream(complete_segment['text'])
+                            if audiopacket_generator is not None:
+                                audiopacket_generator = chain(
+                                    audiopacket_generator,
+                                    _new_audiopacket_generator
                                 )
                             else:
-                                voice_bytes_generator = _new_voice_bytes_generator
+                                audiopacket_generator = _new_audiopacket_generator
 
                             # NOTE: reset complete_segment
                             complete_segment = {'text': '', 'commands': []}
@@ -139,13 +137,14 @@ class TTSController:
         except Empty:
             return None
 
-    def _get_audio_bytes_stream(self, text) -> Generator[Dict, None, None]:
-        """Get audio bytes stream from texts
+    def _get_audiopackets_stream(self, text) -> Generator[AudioPacket, None, None]:
+        """Get generated audio packets stream for text
 
         Args:
-            text (list or str): Texts to convert to audio bytes stream
+            text (str): Text to read
+
         Returns:
-            bytes: Audio bytes stream
+            Generator[AudioPacket, None, None]: Audio packets stream reading the text
         """
         if text is None:
             raise Exception("Texts cannot be None")
@@ -153,27 +152,22 @@ class TTSController:
         if isinstance(text, list):
             text = " ".join(text)
 
-        audio_packets_dicts_generator = self.endpoint.text_to_bytes(text)
-        for audio_packet_dict in audio_packets_dicts_generator:
-            yield {
-                'audio_bytes': audio_packet_dict['audio_bytes'],
-                'frame_rate': audio_packet_dict['frame_rate'],
-                'sample_width': audio_packet_dict['sample_width'],
-                'channels': audio_packet_dict['channels'],
-                'timestamp': audio_packet_dict['timestamp']
-            }
+        yield from self.endpoint.text_to_bytes(text)
 
-    def get_plain_text_read_bytes(self, text) -> Generator[Dict, None, None]:
-        """Get audio bytes stream for plain text
+    def read(self, text, as_generator=False) -> Generator[AudioPacket, None, None]:
+        if isinstance(text, str):
+            audio_bytes_generator = self._get_audiopackets_stream(text)
+        else:
+            raise ValueError("text should be a string")
 
-        Args:
-            text (str): Text to read
-        Returns:
-            bytes: Audio bytes stream reading the text
-        """
-        return self._get_audio_bytes_stream(text)
-
-
+        if as_generator:
+            return audio_bytes_generator
+        else:
+            return sum(list(audio_bytes_generator), AudioPacket.get_null_packet())
+            # big_packet = next(audio_bytes_generator)
+            # for packet in audio_bytes_generator:
+            #     big_packet['bytes'] += packet['bytes']
+            # return big_packet
 
 
     # def _create_audio_files(self, texts):

@@ -1,6 +1,6 @@
-from typing import Tuple, Dict, Generator
-from loguru import logger
-from stt import STTController, WakeUpVoiceDetector, AudioPacket
+from stt import STTController
+from stt.wakeup_word.wakeup_word_detector import WakeUpVoiceDetector
+from core import AudioPacket
 from tts import TTSController
 from storage_manager import StorageManager, write_output
 from bot import BotController
@@ -11,11 +11,11 @@ import warnings
 # TODO check on this later
 warnings.filterwarnings("ignore", category=UserWarning)
 
-class ClientStatus(IntEnum):
-    NOT_CONNECTED = 0
-    WAITING_FOR_WAKEUP = 1
-    WAITING_FOR_COMMAND = 2
-    WAITING_FOR_RESPONSE = 3
+# class ClientStatus(IntEnum):
+#     NOT_CONNECTED = 0
+#     WAITING_FOR_WAKEUP = 1
+#     WAITING_FOR_COMMAND = 2
+#     WAITING_FOR_RESPONSE = 3
 
 class AssistantController:
     """Main controller for the assistant."""
@@ -42,14 +42,22 @@ class AssistantController:
         self.tts = TTSController(tts_endpoint)
         write_output("Initialized TTS Controller")
 
+        self.startup_audiopacket = None
+
         # Debuggers and Auxilarly variables
         # self._is_awake = True
 
-    def start(self, server) -> bytes:
-        """Start the assistant
+    def on_connect(self, host):
+        if self.startup_audiopacket:
+            from copy import deepcopy
+            host.emit_bot_voice(deepcopy(self.startup_audiopacket))
 
-        Returns:
-            bytes: audio bytes for introduction
+    def start(
+        self,
+        server,
+        welcome_msg="Welcome, AI server connection is succesful."
+    ):
+        """Start the assistant
         """
         self.reset_audio_buffers()
         self._output_buffer = JoinableQueue()
@@ -57,6 +65,10 @@ class AssistantController:
         self.stt.start(server=server)
         self.bot.start(server=server)
         self.tts.start(server=server)
+
+        if welcome_msg:
+            self.startup_audiopacket = self.tts.read(welcome_msg, as_generator=False)
+
 
         def _start_looping_thread():
             # complete_segment = {'text': '', 'commands': []}
@@ -131,16 +143,16 @@ class AssistantController:
 
         self._process = server.start_background_task(_start_looping_thread)
 
-    def get_response(self):
+    def receive(self):
         return self._output_buffer.get_nowait()
 
-    def is_awake(self):
-        """Check if assistant is awake
+    # def is_awake(self):
+    #     """Check if assistant is awake
 
-        Returns:
-            bool: Whether assistant is awake
-        """
-        return True
+    #     Returns:
+    #         bool: Whether assistant is awake
+    #     """
+    #     return True
 
     def reset_audio_buffers(self):
         """Resetting session and command audio logging buffers"""
@@ -151,30 +163,6 @@ class AssistantController:
         """Initiate audio stream for STT"""
         self.stt.create_stream()
 
-    def read_text(self, data: any, as_generator=False):
-        """Read text using TTS and return audio bytes"""
-        if isinstance(data, str):
-            audio_bytes_generator = self.tts.get_plain_text_read_bytes(data)
-        else:
-            raise Exception("Only dict/json and str are supported types")
-
-        # {
-        #         'audio_bytes': audio_packet_dict['audio_bytes'],
-        #         'frame_rate': audio_packet_dict['frame_rate'],
-        #         'sample_width': audio_packet_dict['sample_width'],
-        #         'channels': audio_packet_dict['channels'],
-        #     }
-
-        if as_generator:
-            return audio_bytes_generator
-        else:
-            merged_audio_bytes_dict = next(audio_bytes_generator)
-            for audio_bytes_dict in audio_bytes_generator:
-                merged_audio_bytes_dict['audio_bytes'] += audio_bytes_dict['audio_bytes']
-                merged_audio_bytes_dict['timestamp'] = audio_bytes_dict['timestamp']
-
-
-            return merged_audio_bytes_dict
     # def feed_audio_stream(self, audio_data, status: ClientStatus):
     #     """Feed audio stream to STT if awake or WakeUpWordDetector if not awake
 
@@ -205,7 +193,7 @@ class AssistantController:
     #     else:
     #         write_output("x", end="")
 
-    def feed_audio_stream(self, audio_data, status: ClientStatus):
+    def feed_audio_stream(self, audio_data):
         """Feed audio stream to STT if awake or WakeUpWordDetector if not awake
 
         Args:

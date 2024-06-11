@@ -137,13 +137,13 @@ class SoundManager:
         def _play_packet(audio):
             with self._lock:
                 # divide audio into chunks
-                for i in range(0, len(audio['audio_bytes']), self._frames_per_buffer):
+                for i in range(0, len(audio['bytes']), self._frames_per_buffer):
                     print('>', end='')
-                    audio_bytes = audio['audio_bytes'][i : i + self._frames_per_buffer]
+                    audio_bytes = audio['bytes'][i : i + self._frames_per_buffer]
                 # audio_bytes = audio['audio_bytes']
-                    frame_rate = audio['frame_rate']
-                    sample_width = audio['sample_width']
-                    channels = audio['channels']
+                    frame_rate = audio['sampleRate']
+                    sample_width = audio['sampleWidth']
+                    channels = audio['numChannels']
                     # play audio
                     self.open_speaker(frame_rate, sample_width, channels)
                     self._speaker_stream.write(audio_bytes)
@@ -157,10 +157,10 @@ class SoundManager:
         audio = AudioSegment.from_file(filepath, format=format)
         self.play_audio_packet(
             {
-                "audio_bytes": audio.raw_data,
-                "frame_rate": audio.frame_rate,
-                "sample_width": audio.sample_width,
-                "channels": audio.channels,
+                "bytes": audio.raw_data,
+                "sampleRate": audio.frame_rate,
+                "sampleWidth": audio.sample_width,
+                "numChannels": audio.channels,
             },
             block=True,
         )

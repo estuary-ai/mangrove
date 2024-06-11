@@ -3,7 +3,7 @@ import os, argparse
 from flask import Flask
 from loguru import logger
 from flask_socketio import SocketIO, Namespace
-from assistant_controller import AssistantController, ClientStatus
+from assistant_controller import AssistantController
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from memory import WorldState
@@ -28,39 +28,42 @@ class DigitalAssistant(Namespace):
     def setup(self):
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
-        self.startup_bot_voice_bytes = self.assistant_controller.read_text(
-            "Welcome, AI server connection is succesful.",
-            as_generator=False
-        )
         self.assistant_controller.start(self.server)
         self.responding_task = self.server.start_background_task(self.bg_responding_task)
 
-    def emit(self, event, data, status=None):
-        logger.debug(f"Emitting {event}")
-        # if data is generator
+    def __emit__(self, event, data, status=None):
         if hasattr(data, "__next__"):
+            # if data is generator
             logger.debug(f"Emitting generator {event}")
             for d in data:
                 write_output(">", end="")
+                if hasattr(d, "to_dict"):
+                    d = d.to_dict()
                 self.server.emit(event, d)
         else:
+            logger.debug(f"Emitting {event}")
+            if hasattr(data, "to_dict"):
+                data = data.to_dict()
             self.server.emit(event, data)
 
         if status is not None:
             logger.debug(f'emitting status {status}')
             self.server.emit("update_status", status)
 
+    def emit_bot_voice(self, data):
+        logger.debug("emmiting bot_voice")
+        self.__emit__("bot_voice", data)
+
+    def emit_bot_response(self, data):
+        logger.debug("emmiting bot_response")
+        self.__emit__("bot_response", data)
+
+
     def on_connect(self):
         logger.info("client connected")
         StorageManager.establish_session()
-        if self.startup_bot_voice_bytes:
-            from copy import deepcopy
-            logger.warning("emmiting bot_voice")
-            self.emit(
-                "bot_voice",
-                deepcopy(self.startup_bot_voice_bytes),
-                # status=ClientStatus.WAITING_FOR_WAKEUP
-            )
+        self.assistant_controller.on_connect(self)
+
 
     def on_disconnect(self):
         logger.info("client disconnected\n")
@@ -72,7 +75,7 @@ class DigitalAssistant(Namespace):
         with self.lock:
             # Feeding in audio stream
             write_output("-", end="")
-            self.assistant_controller.feed_audio_stream(audio_data, status)
+            self.assistant_controller.feed_audio_stream(audio_data)
 
     def on_trial(self, data, status=None):
         write_output(f"received trial: {data}")
@@ -87,11 +90,11 @@ class DigitalAssistant(Namespace):
             is_responding = False
             with self.lock:
                 try:
-                    bot_res, bot_voice_bytes = self.assistant_controller.get_response()
+                    bot_res, bot_voice_bytes = self.assistant_controller.receive()
                     if bot_voice_bytes is not None:
-                        self.emit("bot_voice", bot_voice_bytes)
+                        self.emit_bot_voice(bot_voice_bytes)
                     if bot_res is not None:
-                        self.emit("bot_response", bot_res)
+                        self.emit_bot_response(bot_res)
                     is_responding = True
                 except Empty:
                     pass

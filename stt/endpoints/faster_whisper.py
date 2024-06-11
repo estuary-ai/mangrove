@@ -1,23 +1,19 @@
 import time
-import torch
 from loguru import logger
 from faster_whisper import WhisperModel
-from queue import Queue, Empty
-from .audio_packet import AudioPacket
+from queue import Empty
+from core import AudioPacket
+from .base import STTEndpoint
 
-
-class WhisperEndpoint:
+class FasterWhisperEndpoint(STTEndpoint):
     def __init__(self, model_name="base.en", device=None):
+        super().__init__()
         self.device = "auto" if device is None else device
         try:
             self.model = WhisperModel(model_name, device=self.device)
         except:
             logger.warning(f'Device {device} is not supported, defaulting to CPU!')
             self.model = WhisperModel(model_name, device='cpu')
-        self.input_queue = Queue()
-
-    def buffer_audio_packet(self, audio_packet: AudioPacket):
-        self.input_queue.put(audio_packet)
 
     def create_stream(self):
         self.reset()

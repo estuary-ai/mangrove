@@ -15,13 +15,14 @@ class ElevenLabsTTSEndpoint(TTSEndpoint):
         return generate(text=text, voice=self.voice, model=self.model)
 
     def stream_bytes(self, text):
-        def get_audio_bytes():
-            return generate(text=text, voice=self.voice, model=self.model, stream=True)
-        breakpoint()
-        # TODO: implement stream_bytes
-        return {
-            'audio_bytes': get_audio_bytes(),
-            'frame_rate': 24000,
-            'sample_width': 2,
-            'channels': 1
-        }
+        # def get_audio_bytes():
+        #     return generate(text=text, voice=self.voice, model=self.model, stream=True)
+        # breakpoint()
+        # # TODO: implement stream_bytes
+        # return {
+        #     'audio_bytes': get_audio_bytes(),
+        #     'frame_rate': 24000,
+        #     'sample_width': 2,
+        #     'channels': 1
+        # }
+        raise NotImplementedError("stream_bytes for ElevenLabsTTSEndpoint not implemented yet")

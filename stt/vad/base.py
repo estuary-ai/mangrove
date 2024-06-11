@@ -1,15 +1,12 @@
-import webrtcvad
-import torch
 import collections
-from abc import ABC, abstractmethod
+from functools import reduce
+from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Union, List
 from storage_manager import write_output
-from .data_buffer import DataBuffer
-from .audio_packet import AudioPacket
+from core import DataBuffer, AudioPacket
 
-
-class VoiceActivityDetector(ABC):
+class VoiceActivityDetector(metaclass=ABCMeta):
 
     def __init__(
         self, silence_threshold: int = 200, frame_size: int = 320 * 3, verbose=False
@@ -124,127 +121,3 @@ class VoiceActivityDetector(ABC):
         """
         if self.verbose or force:
             write_output(msg, end=end)
-
-
-class WebRTCVoiceActivityDetector(VoiceActivityDetector):
-
-    def __init__(
-        self,
-        aggressiveness: int = 3,
-        silence_threshold: int = 200,
-        frame_size: int = 320 * 3,
-        verbose=False,
-    ):
-        if frame_size not in [320, 640, 960]:
-            raise ValueError("Frame size must be 320, 640 or 960 with WebRTC VAD")
-        self.aggressiveness = aggressiveness
-        self.model = webrtcvad.Vad(aggressiveness)
-        super().__init__(silence_threshold, frame_size, verbose)
-
-    def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]):
-        """Check if audio is speech
-
-        Args:
-            audio_packet (AudioPacket): Audio packet to check
-
-        Returns:
-            bool: True if speech, False otherwise
-        """
-        one_item = False
-        if not isinstance(audio_packets, list):
-            audio_packets = [audio_packets]
-            one_item = True
-
-        is_speeches = []
-        for packet in audio_packets:
-            if len(packet) < self.frame_size:
-                # partial TODO maybe add to buffer
-                break
-            audio_bytes, sample_rate = packet.bytes, packet.sample_rate
-            is_speeches.append(self.model.is_speech(audio_bytes, sample_rate))
-
-        # if any([not is_speech for is_speech in is_speeches]):
-        #     self.model = webrtcvad.Vad(self.aggressiveness)
-
-        if one_item:
-            return is_speeches[0]
-        return is_speeches
-
-    def reset(self):
-        super().reset()
-        self.model = webrtcvad.Vad(self.aggressiveness)
-
-
-class SileroVAD(VoiceActivityDetector):
-    def __init__(
-        self,
-        device=None,
-        threshold=0.85,
-        silence_threshold: int = 150,
-        frame_size: int = 512 * 4,
-        verbose=False,
-    ):
-        if frame_size < 512 * 4:
-            raise ValueError("Frame size must be at least 512*4 with Silero VAD")
-
-        self.device = device
-        if self.device is None:
-            self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        elif device.startswith('cuda'):
-            self.device = "cuda:0"
-        else:
-            # because others are not guaranteed to work
-            self.device = "cpu"
-
-        self.threshold = threshold
-        self.model, utils = torch.hub.load(
-            repo_or_dir="snakers4/silero-vad",
-            model="silero_vad",
-            force_reload=False,
-            onnx=False,
-        )
-        self.model.to(self.device)
-
-        # (get_speech_timestamps,
-        # save_audio,
-        # read_audio,
-        # VADIterator,
-        # collect_chunks) = utils
-        # vad_iterator = VADIterator(model)
-        super().__init__(silence_threshold, frame_size, verbose)
-
-    def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]):
-        """Check if audio is speech
-
-        Args:
-            audio_packet (AudioPacket): Audio packet to check
-
-        Returns:
-            bool: True if speech, False otherwise
-        """
-        one_item = False
-        if not isinstance(audio_packets, list):
-            audio_packets = [audio_packets]
-            one_item = True
-
-        is_speeches = []
-        for packet in audio_packets:
-            if len(packet) < self.frame_size:
-                # partial TODO maybe add to buffer
-                break
-            _audio_tensor = torch.from_numpy(packet.float).to(self.device)
-
-            is_speeches.append(
-                self.model(_audio_tensor, packet.sample_rate) > self.threshold
-            )
-
-        # if any([not is_speech for is_speech in is_speeches]):
-        #     self.model.reset_states()
-
-        if one_item:
-            return is_speeches[0]
-        return is_speeches
-
-    def reset(self):
-        super().reset()
-        self.model.reset_states()

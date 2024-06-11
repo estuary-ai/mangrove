@@ -6,8 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 from time import sleep
-from data_buffer import DataBuffer
-from audio_packet import AudioPacket
+from core import DataBuffer, AudioPacket
 
 
 print("Testing DataBuffer ...")

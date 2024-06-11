@@ -1,11 +1,12 @@
 import os
+import time
 import pydub
 import backoff
 from pydub import AudioSegment
 from loguru import logger
 from typing import Generator, Dict
 from abc import ABCMeta, abstractmethod
-import time
+from core import AudioPacket
 
 def get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024) -> Generator[Dict, None, None]:
     # load mp3 file
@@ -19,21 +20,22 @@ def get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024) -> Generator[D
 
     # chunk the audio
     for i in range(0, len(audio), chunk_size):
-        yield {
-            'audio_bytes': audio[i:i + chunk_size]._data,
-            'frame_rate': audio.frame_rate,
-            'sample_width': audio.sample_width,
-            'channels': audio.channels
-        }
+        yield AudioPacket({
+            'bytes': audio[i:i + chunk_size]._data,
+            'sampleRate': audio.frame_rate,
+            'sampleWidth': audio.sample_width,
+            'numChannels': audio.channels,
+            'timestamp': time.time()
+        }, resample=False, is_processed=True)
 
 def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
-    return {
-        'audio_bytes': audio_segment._data,
-        'frame_rate': audio_segment.frame_rate,
-        'sample_width': audio_segment.sample_width,
-        'channels': audio_segment.channels,
+    return AudioPacket({
+        'bytes': audio_segment._data,
+        'sampleRate': audio_segment.frame_rate,
+        'sampleWidth': audio_segment.sample_width,
+        'numChannels': audio_segment.channels,
         'timestamp': time.time()
-    }
+    }, resample=False, is_processed=True)
 
 class TTSEndpoint(metaclass=ABCMeta):
     def __init__(self, **kwargs):

@@ -1,13 +1,11 @@
 import time
 from threading import Lock
 from loguru import logger
-from storage_manager import StorageManager
 from multiprocessing import JoinableQueue
-from queue import Empty, Full
-from .data_buffer import DataBuffer
-from .audio_packet import AudioPacket
-from .vad_detector import SileroVAD
-from .stt_endpoints import WhisperEndpoint
+from queue import Empty
+from core import DataBuffer, AudioPacket
+from .vad.silero import SileroVAD
+from .endpoints.faster_whisper import FasterWhisperEndpoint
 
 
 class STTController:
@@ -16,8 +14,6 @@ class STTController:
     def __init__(
         self,
         silence_threshold=300,
-        # vad_aggressiveness=1,
-        # frame_size=320*3,
         frame_size=512 * 4,
         device=None,
         verbose=False,
@@ -27,8 +23,8 @@ class STTController:
         Args:
             sample_rate (int, optional): Sample rate. Defaults to 16000.
             silence_threshold (int, optional): Silence threshold. Defaults to 200 ms.
-            vad_aggressiveness (int, optional): VAD aggressiveness. Defaults to 3.
             frame_size (int, optional): Speech frame size. Defaults to 320.
+            device (str, optional): Device to use. Defaults to None.
             verbose (bool, optional): Whether to print debug messages. Defaults to False.
 
         Raises:
@@ -43,14 +39,14 @@ class STTController:
         self._input_buffer = DataBuffer(self.frame_size)
         self._output_buffer = JoinableQueue()
 
-        # self.vad = WebRTCVoiceActivityDetector(vad_aggressiveness, silence_threshold, frame_size, verbose)
+        # self.vad = WebRTCVAD(vad_aggressiveness, silence_threshold, frame_size, verbose)
         self.vad = SileroVAD(
             silence_threshold=silence_threshold,
             frame_size=frame_size,
             device=device,
             verbose=verbose,
         )
-        self.model = WhisperEndpoint(device=device)
+        self.model = FasterWhisperEndpoint(device=device)
 
         self.debug_total_size = 0
         self.debug_silence_size = 0
@@ -63,7 +59,8 @@ class STTController:
         """Start STT Controller Thread"""
         def _start_thread():
             while True:
-                stt_res = self.process_audio_buffer()
+                with self._lock:
+                    stt_res = self._process_audio_buffer()
                 if stt_res is None:
                     server.sleep(0.1)
                     # print('<stt>', end='', flush=True)
@@ -98,8 +95,9 @@ class STTController:
         time_start_recog = round(time.time() * 1000)
 
         if force_clear_buffer:
+            # TODO look into this
             # feed all remaining audio packets to stream context
-            self.process_audio_buffer()
+            self._process_audio_buffer()
 
         transcription = self.model.get_transcription()
         # transcription = self.stream_context.intermediateDecode()
@@ -172,10 +170,6 @@ class STTController:
             audio_packet (AudioPacket): Audio packet to feed
         """
         self._input_buffer.put(audio_packet)
-
-    def process_audio_buffer(self):
-        with self._lock:
-            return self._process_audio_buffer()
 
     def _process_audio_buffer(self):
         """Process audio buffer and return transcription if any found"""

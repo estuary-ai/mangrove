@@ -29,7 +29,7 @@ class TTSLibraryEndpoint(TTSEndpoint):
 
         config = XttsConfig()
         config.load_json(config_path)
-        model = Xtts.init_from_config(config)
+        model: Xtts = Xtts.init_from_config(config)
         model.load_checkpoint(config, checkpoint_dir=ckpt_dir, use_deepspeed=True)
         if device == "cuda":
             model.cuda()

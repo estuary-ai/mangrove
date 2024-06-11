@@ -2,8 +2,7 @@ import numpy as np
 
 from typing import Tuple, Generator
 from datetime import datetime, timedelta
-from .data_buffer import DataBuffer
-from .audio_packet import AudioPacket
+from core import DataBuffer, AudioPacket
 from .audio_classification_endpoint import HFAudioClassificationEndpoint
 
 
