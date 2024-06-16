@@ -1,8 +1,0 @@
-version: "3.1"
-
-stories:
-
-- story: empty path
-  steps:
-  - intent: greet
-  - action: utter_greet

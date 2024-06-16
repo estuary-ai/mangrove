@@ -1,15 +1,18 @@
 import inflect
 from typing import Generator
 from loguru import logger
-from multiprocessing import JoinableQueue
 from queue import Empty
 from itertools import chain
 
 from core import AudioPacket
+from core import TextPacket
+
+from core.stage import PipelineStage
 from storage_manager import StorageManager, write_output
 from .endpoints.base import TTSEndpoint
 
-class TTSController:
+
+class TTSController(PipelineStage):
     """Text to speech controller"""
 
     def __init__(
@@ -18,8 +21,10 @@ class TTSController:
         endpoint_kwargs={
             "voice_rate": 140,
             "voice_id": 10,
-        }
+        },
+        verbose=False,
     ):
+        super().__init__(verbose=verbose)
         self.endpoint: TTSEndpoint
         if endpoint == "pyttsx3":
             logger.info("Using Pyttsx3 TTS Endpoint")
@@ -43,92 +48,94 @@ class TTSController:
         self.number_to_word_converter = inflect.engine()
         self.created_audio_files = []
 
-        self._input_queue = JoinableQueue()
-        self._output_buffer = JoinableQueue()
+        self.sentence_text_packet = None
+        self.audiopacket_generator: Generator[AudioPacket, None, None] = None
 
-    def start(self, server):
-        """Start TTS Controller Thread"""
-        def _start_thread():
-            audiopacket_generator: Generator[AudioPacket, None, None] = None
-            while True:
-                try:
-                    partial_bot_res = self._input_queue.get_nowait()
-                except Empty:
-                    partial_bot_res = None
 
-                if partial_bot_res is None and audiopacket_generator is None:
-                    server.sleep(0.05)
-                    # print('<tts>', end='', flush=True)
-                    continue
+    def _unpack(self):
+        try:
+            partial_bot_res = self._input_buffer.get_nowait()
+        except Empty:
+            partial_bot_res = None
 
-                if audiopacket_generator:
-                    try:
-                        partial_voice_bytes = next(audiopacket_generator)
-                        self._output_buffer.put((None, partial_voice_bytes))
-                    except StopIteration:
-                        audiopacket_generator = None
+        return partial_bot_res
 
-                if partial_bot_res:
-                    if partial_bot_res["start"]:
-                        complete_segment = {'text': '', 'commands': []}
+    def _process(self, in_text_packet: TextPacket):
+        # accepts a stream of text packets
+        # upon completion of a sentence (detection component), a stream is yielded
+        # sends a stream of audio packets
+        if in_text_packet is None and self.audiopacket_generator is None:
+            return None
+
+        if self.audiopacket_generator:
+            try:
+                partial_voice_bytes = next(self.audiopacket_generator)
+                return (None, partial_voice_bytes)
+
+            except StopIteration:
+                self.audiopacket_generator = None
+
+        if in_text_packet:
+            if in_text_packet.partial:
+                write_output(f"{in_text_packet.text}", end='')
+
+                if self.sentence_text_packet is None:
+                    if in_text_packet.start:
                         write_output("SENVA: ", end='')
+                    # implement SentenceTextDataBuffer
+                    self.sentence_text_packet: TextPacket = in_text_packet
+                else:
+                    self.sentence_text_packet += in_text_packet
 
-                    if partial_bot_res["partial"]:
-                        bot_text = partial_bot_res.get("text")
-                        write_output(f"{bot_text}", end='')
-
-                        try:
-                            assert complete_segment is not None, "complete_segment should not be None"
-                        except Exception:
-                            logger.error("complete_segment is None")
-                            breakpoint()
-
-                        complete_segment['commands'] += partial_bot_res['commands']
-                        complete_segment['text'] += partial_bot_res['text']
-                        if complete_segment['text'].endswith(('?', '!', '.')):
-                            # TODO prompt engineer '.' and check other options
-                            complete_segment['partial'] = True
-                            _new_audiopacket_generator = self._get_audiopackets_stream(complete_segment['text'])
-                            if audiopacket_generator is not None:
-                                audiopacket_generator = chain(
-                                    audiopacket_generator,
-                                    _new_audiopacket_generator
-                                )
-                            else:
-                                audiopacket_generator = _new_audiopacket_generator
-
-                            # NOTE: reset complete_segment
-                            complete_segment = {'text': '', 'commands': []}
+                if self.sentence_text_packet.text.endswith(('?', '!', '.')):
+                    # TODO prompt engineer '.' and check other options
+                    _new_audiopacket_generator = self._get_audiopackets_stream(
+                        self.sentence_text_packet.text
+                    )
+                    if self.audiopacket_generator is not None:
+                        self.audiopacket_generator = chain(
+                            self.audiopacket_generator,
+                            _new_audiopacket_generator
+                        )
                     else:
-                        if len(complete_segment['text']):
-                            # NOTE: this is the last partial response
-                            complete_segment['partial'] = False
-                            _new_audiopacket_generator = self._get_audiopackets_stream(complete_segment['text'])
-                            if audiopacket_generator is not None:
-                                audiopacket_generator = chain(
-                                    audiopacket_generator,
-                                    _new_audiopacket_generator
-                                )
-                            else:
-                                audiopacket_generator = _new_audiopacket_generator
+                        self.audiopacket_generator = _new_audiopacket_generator
 
-                            # NOTE: reset complete_segment
-                            complete_segment = {'text': '', 'commands': []}
+                    # NOTE: reset complete_segment because you got a complete response
+                    self.sentence_text_packet = None
 
-                            # if not partial, then it is a final complete response
-                            assert partial_bot_res['start'] is False, "start should be False at this full response stage"
-                            # a complete response is yielded at the end
-                            # NOTE: next partial_bot_res.get('start') is gonna be True
-                            write_output("", end='\n')
-                            self._output_buffer.put(
-                                (partial_bot_res, None)
-                            )
+            else:
+                if len(self.sentence_text_packet.text):
+                    # NOTE: this is the last partial response
+                    # self.sentence_text_packet['partial'] = False # TODO verify this
+                    _new_audiopacket_generator = self._get_audiopackets_stream(
+                        self.sentence_text_packet.text
+                    )
+                    if self.audiopacket_generator is not None:
+                        self.audiopacket_generator = chain(
+                            self.audiopacket_generator,
+                            _new_audiopacket_generator
+                        )
+                    else:
+                        self.audiopacket_generator = _new_audiopacket_generator
 
-        self._process = server.start_background_task(_start_thread)
+                    # NOTE: reset complete_segment
+                    self.sentence_text_packet = None
 
-    def feed(self, text):
-        """Feed text to TTS Controller"""
-        self._input_queue.put(text)
+                    # if not partial, then it is a final complete response
+                    if not in_text_packet.start:
+                        logger.error(f"in_text_packet.start should be True at this full response stage: {in_text_packet}")
+                        raise Exception("start should be True at this full response stage")
+
+                    # a complete response is yielded at the end
+                    # NOTE: next partial_bot_res.get('start') is gonna be True
+                    write_output("", end='\n')
+
+                    return (in_text_packet, None)
+
+            return True # Meaning that the dispatching is still ongoing
+
+    def on_sleep(self):
+        self.log('<tts>')
 
     def receive(self):
         """Receive TTS Controller response"""
@@ -163,64 +170,5 @@ class TTSController:
         if as_generator:
             return audio_bytes_generator
         else:
-            return sum(list(audio_bytes_generator), AudioPacket.get_null_packet())
-            # big_packet = next(audio_bytes_generator)
-            # for packet in audio_bytes_generator:
-            #     big_packet['bytes'] += packet['bytes']
-            # return big_packet
-
-
-    # def _create_audio_files(self, texts):
-    #     """Create audio files from texts and return list of filepaths
-
-    #     Args:
-    #         texts (list): List of texts to convert to audio files
-    #     Returns:
-    #         list: List of filepaths of created audio files
-    #     """
-    #     recent_created_audio_files = []
-    #     for text in texts:
-    #         filepath = self.storage_manager.get_generated_audio_path(text)
-    #         self.endpoint.text_to_audio_file(text, filepath)
-    #         recent_created_audio_files.append(filepath)
-
-    #     self.created_audio_files += recent_created_audio_files
-    #     return recent_created_audio_files
-
-
-    # def delete_audio_files(self):
-    #     """Delete audio files created by this instance"""
-    #     # TODO use and offload work to storage_manager
-    #     for audio_file in self.created_audio_files:
-    #         os.remove(audio_file)
-    #     self.created_audio_files = []
-
-
-    # def get_feature_read_bytes(self, feature, values, units=None):
-    #     """Get audio bytes stream for feature read
-
-    #     Args:
-    #         feature (str): Feature to read
-    #         values (list): List of values to read
-    #         units (list): List of units of values
-    #     Returns:
-    #         bytes: Audio bytes stream reading the feature with its value and ending with unit
-    #     """
-    #     text = feature.replace("_", " ") + " is equal to "
-    #     if not units:
-    #         units = ["" for _ in values]
-
-    #     for value, unit in zip(values, units):
-    #         write_output(value)
-    #         text += self._textify_number(round(Decimal(value), 2)) + " " + unit
-    #     write_output(text)
-    #     return self._get_audio_bytes_stream(text)
-
-    # def _textify_number(self, num):
-    #     """Convert number to text
-    #     Args:
-    #         num (int or float): Number to convert
-    #     Returns:
-    #         str: Textified number
-    #     """
-    #     return self.number_to_word_converter.number_to_words(num)
+            from functools import reduce
+            return reduce(lambda x, y: x + y, audio_bytes_generator)

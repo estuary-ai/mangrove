@@ -2,7 +2,7 @@ import numpy as np
 
 from typing import Tuple, Generator
 from datetime import datetime, timedelta
-from core import DataBuffer, AudioPacket
+from core import AudioBuffer, AudioPacket
 from .audio_classification_endpoint import HFAudioClassificationEndpoint
 
 
@@ -23,7 +23,7 @@ class WakeUpVoiceDetector:
         self.frame_size = self._audio_classifier.frame_size
         if self.frame_size is None:
             raise ValueError(f'Check implementation of {self._audio_classifier} for frame_size')
-        self._input_buffer = DataBuffer(frame_size=self._audio_classifier.frame_size)
+        self._input_buffer = AudioBuffer(frame_size=self._audio_classifier.frame_size)
 
         stream_chunk_s = self._audio_classifier.frame_size / self._audio_classifier.sample_rate
         self._setup_params(stream_chunk_s=stream_chunk_s, chunk_length_s=2.0)
@@ -42,7 +42,7 @@ class WakeUpVoiceDetector:
 
     @staticmethod
     def chunk_bytes_iter(
-        iterator: DataBuffer,
+        iterator: AudioBuffer,
         chunk_len: int,
         stride: Tuple[int, int],
         stream: bool = False,
@@ -65,7 +65,7 @@ class WakeUpVoiceDetector:
                     frame_size=chunk_len + stride_left + stride_right, timeout=-1
                 )
                 # print(f"audio_packet {len(audio_packet)}: {audio_packet}")
-            except DataBuffer.Empty:
+            except AudioBuffer.Empty:
                 # logger.warning('no packets in buffer')
                 break
 

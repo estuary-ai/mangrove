@@ -4,7 +4,7 @@ import time
 import sounddevice as sd
 from threading import Thread
 from core import AudioPacket
-from core.audio_packet import TARGET_SAMPLERATE
+from core.data.audio_packet import TARGET_SAMPLERATE
 
 BLACK_BOX_DIR = "blackbox"
 IMAGES_DIR = os.path.join(BLACK_BOX_DIR, "sample-images")

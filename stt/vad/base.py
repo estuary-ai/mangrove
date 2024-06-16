@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Union, List
 from storage_manager import write_output
-from core import DataBuffer, AudioPacket
+from core import AudioBuffer, AudioPacket
 
 class VoiceActivityDetector(metaclass=ABCMeta):
 
@@ -13,7 +13,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
     ):
         self.silence_threshold = silence_threshold
         self.frame_size = frame_size
-        self.buffer = DataBuffer(self.frame_size)
+        self.buffer = AudioBuffer(self.frame_size)
 
         self.buffered_silences = collections.deque(maxlen=2)
         self.verbose = verbose
@@ -78,9 +78,9 @@ class VoiceActivityDetector(metaclass=ABCMeta):
 
         self.silence_frame_start_timestamp = None
         if self.num_recorded_chunks == 0:
-            self._log("\n[start]", force=True)  # recording started
+            self.log("\n[start]", force=True)  # recording started
         else:
-            self._log("=")  # still recording
+            self.log("=")  # still recording
         self.num_recorded_chunks += 1
         frame_inc_silence = _concat_buffered_silence(frame)
 
@@ -105,12 +105,12 @@ class VoiceActivityDetector(metaclass=ABCMeta):
             if silence_duration >= self.silence_threshold:
                 # logger.info(f'Got Silence duration: {silence_duration}, threshold: {self.silence_threshold}')
                 self.silence_frame_start_timestamp = None
-                self._log("\n[end]", force=True)
+                self.log("\n[end]", force=True)
                 return True
 
         return False
 
-    def _log(self, msg, end="", force=False):
+    def log(self, msg, end="", force=False):
         """Log message to console if verbose is True or force is True with flush
 
         Args:

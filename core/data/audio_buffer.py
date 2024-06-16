@@ -10,7 +10,7 @@ from threading import RLock
 from .audio_packet import AudioPacket
 
 
-class DataBuffer:
+class AudioBuffer:
     """Data buffer for audio packets"""
 
     class Empty(Exception):
@@ -23,7 +23,7 @@ class DataBuffer:
 
         pass
 
-    def __init__(self, frame_size=320, max_queue_size=10000):
+    def __init__(self, frame_size=320, max_queue_size=0):
         """Initialize data buffer
 
         Args:
@@ -59,9 +59,9 @@ class DataBuffer:
                 self._len += len(audio_packet)
                 self.queue.put(audio_packet, timeout=timeout)
             except QueueFull:
-                raise DataBuffer.Full
+                raise AudioBuffer.Full
 
-    def get(self, frame_size=None, timeout=0.5):
+    def get(self, frame_size=None, timeout=0.5) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
         Args:
@@ -109,8 +109,8 @@ class DataBuffer:
                 # if len(data_packets) == 0:
                 if data_packets.qsize() == 0:
                     if timeout != -1:
-                        logger.warning("DataBuffer Queue is empty")
-                    raise DataBuffer.Empty
+                        logger.warning("AudioBuffer Queue is empty")
+                    raise AudioBuffer.Empty
                 else:
                     break
             data_packets.put_nowait(new_packet)
@@ -118,7 +118,7 @@ class DataBuffer:
             self._len -= len(new_packet)
 
         data_packets = [data_packets.get_nowait() for _ in range(data_packets.qsize())]
-        data = sum(data_packets, AudioPacket.get_null_packet())
+        data = reduce(lambda x, y: x + y, data_packets)
         frame, leftover = data[:frame_size], data[frame_size:]
 
         if len(leftover) > 0:
@@ -178,6 +178,20 @@ class DataBuffer:
             packet = reduce(lambda x, y: x + y, self.queue.queue)
             sd.play(np.frombuffer(packet.bytes, dtype=np.int16), 16000)
 
-    def empty(self):
+    def is_empty(self):
         """Check if queue is empty"""
         return self.queue.qsize() == 0 and self.leftover is None
+
+
+    def dump_to_packet(self):
+        """Dump audio buffer to audio packet"""
+        with self._lock:
+            data_packets = Queue()
+            while not self.is_empty():
+                try:
+                    data_packets.put_nowait(self.get(frame_size=-1))
+                except AudioBuffer.Empty:
+                    break
+            data_packets = [data_packets.get_nowait() for _ in range(data_packets.qsize())]
+            data = reduce(lambda x, y: x + y, data_packets)
+            return AudioPacket(data)

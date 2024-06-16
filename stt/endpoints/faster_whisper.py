@@ -33,7 +33,8 @@ class FasterWhisperEndpoint(STTEndpoint):
                 except Empty:
                     break
 
-        audio_packet = sum(audio_packets, AudioPacket.get_null_packet())
+        from functools import reduce
+        audio_packet = reduce(lambda x, y: x + y, audio_packets)
         logger.debug(
             f"Transcribing ... {len(audio_packet)} bytes at {audio_packet.sample_rate} Hz"
         )

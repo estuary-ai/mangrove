@@ -6,8 +6,6 @@ from flask_socketio import SocketIO, Namespace
 from assistant_controller import AssistantController
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
-from memory import WorldState
-
 
 
 class DigitalAssistant(Namespace):
@@ -31,7 +29,7 @@ class DigitalAssistant(Namespace):
         self.assistant_controller.start(self.server)
         self.responding_task = self.server.start_background_task(self.bg_responding_task)
 
-    def __emit__(self, event, data, status=None):
+    def __emit__(self, event, data):
         if hasattr(data, "__next__"):
             # if data is generator
             logger.debug(f"Emitting generator {event}")
@@ -45,10 +43,6 @@ class DigitalAssistant(Namespace):
             if hasattr(data, "to_dict"):
                 data = data.to_dict()
             self.server.emit(event, data)
-
-        if status is not None:
-            logger.debug(f'emitting status {status}')
-            self.server.emit("update_status", status)
 
     def emit_bot_voice(self, data):
         logger.debug("emmiting bot_voice")
@@ -71,17 +65,14 @@ class DigitalAssistant(Namespace):
             self.assistant_controller.clean_up()
         StorageManager.clean_up()
 
-    def on_stream_audio(self, audio_data, status):
+    def on_stream_audio(self, audio_data):
         with self.lock:
             # Feeding in audio stream
             write_output("-", end="")
             self.assistant_controller.feed_audio_stream(audio_data)
 
-    def on_trial(self, data, status=None):
+    def on_trial(self, data):
         write_output(f"received trial: {data}")
-
-    def on_update_world_state(self, state):
-        WorldState.update(state)
 
     def bg_responding_task(self):
         # READ BUFFER AND EMIT AS NEEDED
@@ -102,36 +93,6 @@ class DigitalAssistant(Namespace):
             if not is_responding:
                 # print('<waiting>', end='', flush=True)
                 socketio.sleep(0.1)
-
-                # stt_res = self.assistant_controller.get_transcription()
-                # if stt_res is None:
-                #     continue
-                # Now assisant is not awake
-                # logger.success(f"User: {stt_res}")
-                    # self.emit("stt_response", stt_res, status=ClientStatus.WAITING_FOR_RESPONSE)
-
-                #     try:
-                #         for bot_res, bot_voice_bytes in self.assistant_controller.respond(stt_res["text"]):
-                #             if bot_res.get('partial'):
-                #                 # TODO Include timestamps
-                #                 if bot_voice_bytes:
-                #                     self.emit("bot_voice", bot_voice_bytes, status=ClientStatus.WAITING_FOR_RESPONSE)
-                #                 logger.success(f"Bot: {bot_res}")
-                #                 self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_RESPONSE)
-
-                #         if bot_res.get('partial'):
-                #             raise Exception("Bot response should not be partial at this stage")
-
-                #         self.emit("bot_response", bot_res, status=ClientStatus.WAITING_FOR_WAKEUP)
-
-                #     except Exception as e:
-                #         logger.error(f"Error: {e}")
-                #         self.emit("bot_repsonse", {"msg": "bot is not available"}, status=ClientStatus.WAITING_FOR_WAKEUP)
-
-                #     # TODO introduce timeout
-                # else:
-                #     if self.assistant_controller.is_wake_word_detected():
-                #         self.emit("wake_up", None, status=ClientStatus.WAITING_FOR_COMMAND)
 
 
     # def on_error(self, e):

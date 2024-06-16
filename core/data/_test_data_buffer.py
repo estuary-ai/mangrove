@@ -6,13 +6,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import time
 from time import sleep
-from core import DataBuffer, AudioPacket
+from core import AudioBuffer, AudioPacket
 
 
-print("Testing DataBuffer ...")
+print("Testing AudioBuffer ...")
 import random
 
-buff = DataBuffer(frame_size=320, max_queue_size=100)
+buff = AudioBuffer(frame_size=320, max_queue_size=100)
 
 packets = []
 for i in range(3):
@@ -46,5 +46,6 @@ print(f"There are {len(buff.queue.queue)} packets in the queue")
 
 
 # sum up all packets
-sum_packet = sum(buff, AudioPacket.get_null_packet())
-print("Testing DataBuffer Done!")
+from functools import reduce
+sum_packet = reduce(lambda x, y: x + y, buff.queue.queue)
+print("Testing AudioBuffer Done!")

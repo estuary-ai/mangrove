@@ -8,6 +8,7 @@ env/
 .vs/
 .venv/
 .idea/
+.DS_Store
 
 #rasa bloat
 credentials.yml

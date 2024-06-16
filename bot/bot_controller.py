@@ -1,69 +1,60 @@
-from threading import Lock
 from typing import Generator, Dict
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from multiprocessing import JoinableQueue
-from queue import Empty
-from loguru import logger
+from core.stage import TextToTextStage
 from bot.persona.protector_of_mangrove import ProtectorOfMangrove
+from core.data.text_packet import TextPacket
+from itertools import chain
 
-class BotController:
-    def __init__(self, assistant_name='Marvin'):
+class BotController(TextToTextStage):
+    def __init__(self, assistant_name='Marvin', verbose=False):
+        super().__init__(verbose=verbose)
         self.persona = ProtectorOfMangrove(assistant_name=assistant_name)
         self.conversational_qa_chain = self.persona.respond_chain | ChatOpenAI(
             model="gpt-3.5-turbo",
         ) | StrOutputParser() | self.persona.postprocess_chain
         self.chat_history = []
-        self._lock = Lock()
 
-        self._input_queue = JoinableQueue()
-        self._output_buffer = JoinableQueue()
+        self.text_packet_generator: Generator[TextPacket, None, None] = None
 
-    def start(self, server):
-        def _start_thread():
-            while True:
-                texts = []
-                try:
-                    while True:
-                        texts.append(self._input_queue.get_nowait())
-                except Empty:
-                    pass
 
-                text = " ".join(texts)
-
-                if not text:
-                    server.sleep(0.05)
-                    # print('<bot>', end='', flush=True)
-                else:
-                    bot_res_generator = self.respond(text)
-                    while True:
-                        partial_bot_res = next(bot_res_generator, None)
-                        if partial_bot_res is None:
-                            break
-                        self._output_buffer.put(partial_bot_res)
-
-        self._process = server.start_background_task(_start_thread)
-
-    def feed(self, text):
-        self._input_queue.put(text)
-
-    def receive(self):
-        try:
-            return self._output_buffer.get_nowait()
-        except Empty:
+    def _process(self, in_text_packet: TextPacket) -> Generator[TextPacket, None, None]:
+        if in_text_packet is None and self.text_packet_generator is None:
             return None
 
+        if self.text_packet_generator:
+            try:
+                out_text_packet = next(self.text_packet_generator)
+                return out_text_packet
+            except StopIteration:
+                self.text_packet_generator = None
+
+        if in_text_packet:
+            if self.text_packet_generator is None:
+                self.text_packet_generator = self.respond(in_text_packet.text)
+            else:
+                # TODO: Implement Interruption Logic
+                _new_text_packet_generator = self.respond(in_text_packet.text)
+                self.text_packet_generator = chain(
+                    self.text_packet_generator,
+                    _new_text_packet_generator
+                )
+        return True
+
+    def on_sleep(self):
+        return self.log('<bot>')
+
+
     def respond(self, user_msg) -> Generator[Dict, None, None]:
-        def _format_response(content, partial=False, start=False):
+        def _pack_response(content, partial=False, start=False):
             # format response from openai chat to be sent to the user
-            formatted_response = {
-                "text": content,
-                "commands": [],
-                "partial": partial,
-                "start": start,
-            }
-            return formatted_response
+            return TextPacket(
+                text=content,
+                commands=[],
+                partial=partial,
+                start=start
+            )
 
         with self._lock:
             chat_history_formated = ""
@@ -86,9 +77,9 @@ class BotController:
                 if chunk == "":
                     continue
                 # TODO append to ai message internally
-                yield _format_response(chunk, partial=True, start=first_chunk)
+                yield _pack_response(chunk, partial=True, start=first_chunk)
                 first_chunk = False
-            yield _format_response(ai_res_content)
+            yield _pack_response(ai_res_content)
             self.chat_history.append(AIMessage(content=ai_res_content))
 
     def process_procedures_if_on(self):

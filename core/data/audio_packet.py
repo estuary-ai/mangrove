@@ -5,10 +5,12 @@ from decimal import *
 from typing import Type
 from loguru import logger
 
+from .data_packet import DataPacket
+
+
 TARGET_SAMPLERATE = 16000
 
-@functools.total_ordering
-class AudioPacket:
+class AudioPacket(DataPacket):
     """Represents a "Packet" of audio data."""
     resampling = 0
     resampler = None
@@ -22,10 +24,11 @@ class AudioPacket:
         if not isinstance(data_json, dict):
             data_json = json.loads(str(data_json))
 
+        super().__init__(timestamp=data_json.get("timestamp"))
+
         self._sample_rate = int(data_json["sampleRate"])
         self._num_channels = int(data_json["numChannels"])
-        self.timestamp = data_json["timestamp"]  # ms
-        self.sample_width = data_json.get("sampleWidth", 2) # 16 bit
+        self._sample_width = data_json.get("sampleWidth", 2) # 16 bit
 
         if not is_processed:
             self._bytes = self._preprocess_audio_buffer(
@@ -36,15 +39,36 @@ class AudioPacket:
         else:
             self._bytes = data_json["bytes"]
 
-        self.frame_size = len(self._bytes)
+        self._frame_size= len(self._bytes)
 
-        self.duration = data_json.get("duration")  # ms
-        if self.duration is None:
-            self.duration = (self.frame_size / self._sample_rate) / (
+        self._duration = data_json.get("duration")  # ms
+        if self._duration is None:
+            self._duration = (self._frame_size/ self._sample_rate) / (
                 self._num_channels * 4
             )
-            self.duration *= 1000  # ms
+            self._duration *= 1000  # ms
         self._id = data_json.get("packetID")
+
+    @property
+    def bytes(self):
+        return self._bytes
+
+    @property
+    def sample_rate(self):
+        return self._sample_rate
+
+    @property
+    def frame_size(self):
+        return self._frame_size
+
+    @property
+    def duration(self):
+        return self._duration
+
+    @property
+    def id(self):
+        return self._id
+
 
     def to_dict(self) -> dict:
         """Convert AudioPacket to dict
@@ -52,15 +76,18 @@ class AudioPacket:
         Returns:
             dict: AudioPacket as dict
         """
-        return {
-            "bytes": self._bytes,
-            "sampleRate": self._sample_rate,
-            "sampleWidth": self.sample_width,
-            "numChannels": self._num_channels,
-            "timestamp": self.timestamp,
-            "duration": self.duration,
-            "packetID": self._id,
-        }
+        _dict = super().to_dict()
+        _dict.update(
+            {
+                "bytes": self._bytes,
+                "sampleRate": self._sample_rate,
+                "sampleWidth": self._sample_width,
+                "numChannels": self._num_channels,
+                "duration": self._duration,
+                "packetID": self._id,
+            }
+        )
+        return _dict
 
     @staticmethod
     def verify_format(data_json):
@@ -213,22 +240,21 @@ class AudioPacket:
         """
         # ensure no errs, and snippets are consecutive
         # TODO verify + duration work
-        # if self >= _audio_packet:
-        #     raise Exception(
-        #         f"Audio Packets are not in order: {self.timestamp} > {_audio_packet.timestamp}"
-        #     )
+        if self > _audio_packet:
+            raise Exception(
+                f"Audio Packets are not in order: {self.timestamp} > {_audio_packet.timestamp}"
+            )
 
-        # assert self._sample_rate == _audio_packet.sample_rate, f"Sample rates do not match: {self._sample_rate} != {_audio_packet.sample_rate}"
-        # assert self._num_channels == _audio_packet.num_channels, f"Num channels do not match: {self._num_channels} != {_audio_packet.num_channels}"
-        # assert self.duration == _audio_packet.duration, f"Durations do not match: {self.duration} != {_audio_packet.duration}"
-        # assert self.timestamp + self.duration <= _audio_packet.timestamp, f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} = {self.timestamp + self.duration} > {_audio_packet.timestamp}"
-        # if self.timestamp + self.duration > _audio_packet.timestamp:
+        assert self._sample_rate == _audio_packet._sample_rate, f"Sample rates do not match: {self._sample_rate} != {_audio_packet._sample_rate}"
+        assert self._num_channels == _audio_packet._num_channels, f"Num channels do not match: {self._num_channels} != {_audio_packet._num_channels}"
+        # assert self.timestamp + self._duration <= _audio_packet.timestamp, f"Audio Packets are not consecutive: {self.timestamp} + {self._duration} = {self.timestamp + self._duration} > {_audio_packet.timestamp}"
+        # if self.timestamp + self._duration > _audio_packet.timestamp:
         #     import math
-        #     if math.isclose(self.timestamp + self.duration, _audio_packet.timestamp, abs_tol=0.0001):
-        #         _audio_packet.timestamp = self.timestamp + self.duration
+        #     if math.isclose(self.timestamp + self._duration, _audio_packet.timestamp, abs_tol=500): # 500 ms tolerance
+        #         _audio_packet._timestamp = self.timestamp + self._duration
         #     else:
         #         raise Exception(
-        #             f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} > {_audio_packet.timestamp}, {self.timestamp + self.duration - _audio_packet.timestamp}"
+        #             f"Audio Packets are not consecutive: {self.timestamp} + {self._duration} > {_audio_packet.timestamp}, {self.timestamp + self._duration - _audio_packet.timestamp}"
         #         )
 
         timestamp = self.timestamp
@@ -269,7 +295,7 @@ class AudioPacket:
 
             # calculate new timestamp
             calculated_timestamp = (
-                self.timestamp + float((start / self.frame_size)) * self.duration
+                self.timestamp + float((start / self.frame_size)) * self._duration
             )
 
             return AudioPacket(
@@ -291,32 +317,15 @@ class AudioPacket:
             raise TypeError("Invalid argument type: {}".format(type(key)))
 
     def __str__(self) -> str:
-        return f"{self.timestamp}, {self.duration}, {len(self._bytes)}"
+        return f"{self.timestamp}, {self._duration}, {len(self._bytes)}"
 
     def __eq__(self, __o: object) -> bool:
         return self.timestamp == __o.timestamp
 
-    # and self._bytes == __o.bytes
-
     def __lt__(self, __o: object) -> bool:
         # TODO verify + duration work
-        # return self.timestamp + self.duration <= __o.timestamp
+        # return self.timestamp + self._duration <= __o.timestamp
         return self.timestamp < __o.timestamp
 
     def __len__(self) -> int:
         return len(self._bytes)
-
-    @staticmethod
-    def get_null_packet():
-        """Get null/dummy AudioPacket"""
-        return AudioPacket(
-            {
-                "bytes": b"",
-                "timestamp": 0,
-                "sampleRate": 0,
-                "numChannels": 0,
-                "duration": 0.0,
-            },
-            resample=False,
-            is_processed=True,
-        )

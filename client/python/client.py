@@ -18,7 +18,6 @@ class AssistantClient(socketio.ClientNamespace):
         super().__init__(namespace)
         self.sound_manager = SoundManager(self._emit_audio_packet)
         self.is_connected = False
-        self._status = -1
 
     def _emit_audio_packet(self, audio_packet):
         """Emits an audio packet to the server
@@ -26,9 +25,9 @@ class AssistantClient(socketio.ClientNamespace):
         Args:
             audio_packet (bytes): audio packet to be sent to the server
         """
-        if self.is_connected and self._status is not None:
+        if self.is_connected:
             print(".", end="", flush=True)
-            self.emit("stream_audio", (audio_packet, self._status))
+            self.emit("stream_audio", audio_packet)
 
     def on_connect(self):
         sio.emit("trial", "test")
@@ -44,18 +43,18 @@ class AssistantClient(socketio.ClientNamespace):
     def on_connect_error(self, data):
         logger.warning(f"The connection failed!: {data}")
 
-    def on_wake_up(self):
-        logger.info("Wake Up!")
-        self.sound_manager.play_activation_sound()
+    # def on_wake_up(self):
+    #     logger.info("Wake Up!")
+    #     self.sound_manager.play_activation_sound()
 
-    def on_stt_response(self, data):
-        """Handles the command transcription detected from the server
+    # def on_stt_response(self, data):
+    #     """Handles the command transcription detected from the server
 
-        Args:
-            data (dict): command transcription received from the server
-        """
-        self.sound_manager.play_termination_sound()
-        logger.debug(f"Stt response: {data}")
+    #     Args:
+    #         data (dict): command transcription received from the server
+    #     """
+    #     self.sound_manager.play_termination_sound()
+    #     logger.debug(f"Stt response: {data}")
 
     def on_bot_voice(self, partial_audio_dict):
         """Handles the bot voice received from the server
@@ -74,15 +73,6 @@ class AssistantClient(socketio.ClientNamespace):
         """
         # Handle response here
         logger.debug(f"SENVA: {data}")
-
-    def on_update_status(self, status):
-        """Handles the status update received from the server
-
-        Args:
-            status (int): status received from the server
-        """
-        self._status = status
-        logger.debug(f"Status update: {status}")
 
 
 def close_callback():

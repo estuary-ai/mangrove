@@ -1,5 +1,4 @@
 import os
-import time
 import pydub
 import backoff
 from pydub import AudioSegment
@@ -25,7 +24,6 @@ def get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024) -> Generator[D
             'sampleRate': audio.frame_rate,
             'sampleWidth': audio.sample_width,
             'numChannels': audio.channels,
-            'timestamp': time.time()
         }, resample=False, is_processed=True)
 
 def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
@@ -34,7 +32,6 @@ def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
         'sampleRate': audio_segment.frame_rate,
         'sampleWidth': audio_segment.sample_width,
         'numChannels': audio_segment.channels,
-        'timestamp': time.time()
     }, resample=False, is_processed=True)
 
 class TTSEndpoint(metaclass=ABCMeta):
