@@ -6,9 +6,8 @@ from .base import PipelineStage
 
 class TextToTextStage(PipelineStage, metaclass=ABCMeta):
 
-    @property
-    def input_type(self):
-        return TextPacket
+    input_type = TextPacket
+    output_type = TextPacket
 
     @abstractmethod
     def _process(self, text_packet: TextPacket):

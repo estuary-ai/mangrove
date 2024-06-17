@@ -3,9 +3,10 @@ import os, argparse
 from flask import Flask
 from loguru import logger
 from flask_socketio import SocketIO, Namespace
-from assistant_controller import AssistantController
+from agents import BasicConversationalAgent
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
+from core import AudioPacket, TextPacket
 
 
 class DigitalAssistant(Namespace):
@@ -14,12 +15,12 @@ class DigitalAssistant(Namespace):
     def __init__(
         self,
         namespace="/",
-        **assistant_kwargs,
+        **agent_kwargs,
     ):
         super().__init__(namespace)
         self.namespace = namespace
-        self.assistant_controller = AssistantController(
-            **assistant_kwargs
+        self.agent = BasicConversationalAgent(
+            **agent_kwargs
         )
         self.lock = Lock()
         logger.info("Server is about to be Up and Running..")
@@ -27,7 +28,7 @@ class DigitalAssistant(Namespace):
     def setup(self):
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
-        self.assistant_controller.start(self)
+        self.agent.start(self)
 
     def sleep(self, seconds):
         if self.server is None:
@@ -54,24 +55,24 @@ class DigitalAssistant(Namespace):
                 data = data.to_dict()
             self.server.emit(event, data)
 
-    def emit_bot_voice(self, data):
-        self.__emit__("bot_voice", data)
+    def emit_bot_voice(self, audio_packet: AudioPacket):
+        self.__emit__("bot_voice", audio_packet)
 
-    def emit_bot_response(self, data):
-        self.__emit__("bot_response", data)
+    def emit_bot_response(self, text_packet: TextPacket):
+        self.__emit__("bot_response", text_packet)
 
-    def emit_stt_response(self, data):
-        self.__emit__("stt_response", data)
+    def emit_stt_response(self, text_packet: TextPacket):
+        self.__emit__("stt_response", text_packet)
 
     def on_connect(self):
         logger.info("client connected")
         StorageManager.establish_session()
-        self.assistant_controller.on_connect(self)
+        self.agent.on_connect()
 
     def on_disconnect(self):
         logger.info("client disconnected\n")
         with self.lock:
-            self.assistant_controller.on_disconnect()
+            self.agent.on_disconnect()
         StorageManager.clean_up()
 
     def on_stream_audio(self, audio_data):
@@ -79,7 +80,7 @@ class DigitalAssistant(Namespace):
             # Feeding in audio stream
             write_output("-", end="")
             from core import AudioPacket
-            self.assistant_controller.feed(AudioPacket(audio_data))
+            self.agent.feed(AudioPacket(audio_data))
 
     # def on_trial(self, data):
     #     write_output(f"received trial: {data}")

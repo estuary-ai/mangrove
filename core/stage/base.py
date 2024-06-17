@@ -11,6 +11,32 @@ if TYPE_CHECKING:
     from server import DigitalAssistant
 
 class PipelineStage(metaclass=ABCMeta):
+
+    input_type = None
+    output_type = None
+
+    def __init_subclass__(cls):
+        if not any("input_type" in base.__dict__ for base in cls.__mro__ if base is not PipelineStage):
+            raise NotImplementedError(
+                f"Attribute 'input_type' has not been overwritten in class '{cls.__name__}'"
+            )
+        # ensure that input_type is not None
+        if cls.input_type is None:
+            raise NotImplementedError(
+                f"Attribute 'input_type' has not been set in class '{cls.__name__}'"
+            )
+
+        # same for output_type
+        if not any("output_type" in base.__dict__ for base in cls.__mro__ if base is not PipelineStage):
+            raise NotImplementedError(
+                f"Attribute 'output_type' has not been overwritten in class '{cls.__name__}'"
+            )
+
+        if cls.output_type is None:
+            raise NotImplementedError(
+                f"Attribute 'output_type' has not been set in class '{cls.__name__}'"
+            )
+
     def __init__(
         self,
         verbose=False,
@@ -20,15 +46,11 @@ class PipelineStage(metaclass=ABCMeta):
         self._verbose = verbose
         self._lock = RLock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
-        self._server: 'DigitalAssistant' = None
+        self._host: 'DigitalAssistant' = None
 
     @property
-    def server(self):
-        return self._server
-
-    @property
-    def input_type(self):
-        raise NotImplementedError()
+    def host(self):
+        return self._host
 
     @property
     def on_ready_callback(self):
@@ -63,11 +85,11 @@ class PipelineStage(metaclass=ABCMeta):
     def on_ready(self, inference):
         self.on_ready_callback(inference)
 
-    def start(self, server):
+    def start(self, host):
         """Start processing thread"""
         logger.info(f'Starting {self}')
 
-        self._server = server
+        self._host = host
 
         self.on_start()
 
@@ -77,13 +99,13 @@ class PipelineStage(metaclass=ABCMeta):
                     data = self._unpack()
                     data_packet = self._process(data)
                 if data_packet is None:
-                    server.sleep(0.05)
+                    self._host.sleep(0.05)
                     self.on_sleep()
                 elif not isinstance(data_packet, bool):
                     # TODO this is just hacky way.. use proper standards
                     self.on_ready(data_packet)
 
-        self._processor = server.start_background_task(_start_thread)
+        self._processor = self._host.start_background_task(_start_thread)
 
     def feed(self, data_packet: DataPacket):
         self._input_buffer.put(data_packet)

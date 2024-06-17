@@ -4,9 +4,7 @@ from loguru import logger
 from queue import Empty
 from itertools import chain
 
-from core import AudioPacket
-from core import TextPacket
-
+from core.data import AudioPacket, TextPacket
 from core.stage import PipelineStage
 from storage_manager import StorageManager, write_output
 from .endpoints.base import TTSEndpoint
@@ -14,6 +12,9 @@ from .endpoints.base import TTSEndpoint
 
 class TTSController(PipelineStage):
     """Text to speech controller"""
+
+    input_type = TextPacket
+    output_type = AudioPacket
 
     def __init__(
         self,
@@ -50,10 +51,6 @@ class TTSController(PipelineStage):
 
         self.sentence_text_packet = None
         self.audiopacket_generator: Generator[AudioPacket, None, None] = None
-
-    @property
-    def input_type(self):
-        return TextPacket
 
     def _unpack(self):
         try:
@@ -111,7 +108,8 @@ class TTSController(PipelineStage):
                     _process_sentence()
 
             else:
-                if len(self.sentence_text_packet.text): # and not in_text_packet.partial:
+                if self.sentence_text_packet is not None and\
+                    len(self.sentence_text_packet.text): # and not in_text_packet.partial:
                     assert not self.sentence_text_packet.partial, "Partial should be False" # NOTE: this is the last partial response
                     # self.sentence_text_packet['partial'] = False # TODO verify this
                     _process_sentence()
