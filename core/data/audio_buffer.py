@@ -61,6 +61,21 @@ class AudioBuffer:
             except QueueFull:
                 raise AudioBuffer.Full
 
+    def get_no_wait(self, frame_size=None):
+        """Get next frame of audio packets from queue given frame size
+
+        Args:
+            frame_size (int, optional): Number of bytes to read from queue. Defaults to self.default_frame_size.
+
+        Returns:
+            AudioPacket: Audio packet of size frame_size
+
+        Raises:
+            StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
+        """
+        with self._lock:
+            return self._get(frame_size, timeout=-1)
+
     def get(self, frame_size=None, timeout=0.5) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
@@ -117,8 +132,17 @@ class AudioBuffer:
             chunk_len += len(new_packet)
             self._len -= len(new_packet)
 
-        data_packets = [data_packets.get_nowait() for _ in range(data_packets.qsize())]
-        data = reduce(lambda x, y: x + y, data_packets)
+        _data_packet_list = []
+        while True:
+            try:
+                _data_packet_list.append(data_packets.get_nowait())
+            except QueueEmpty:
+                break
+
+        if len(_data_packet_list) == 0:
+            raise AudioBuffer.Empty
+
+        data = reduce(lambda x, y: x + y, _data_packet_list)
         frame, leftover = data[:frame_size], data[frame_size:]
 
         if len(leftover) > 0:

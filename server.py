@@ -17,17 +17,27 @@ class DigitalAssistant(Namespace):
         **assistant_kwargs,
     ):
         super().__init__(namespace)
-        self.current_clients_ids = []
         self.namespace = namespace
-        self.assistant_controller = AssistantController(**assistant_kwargs)
+        self.assistant_controller = AssistantController(
+            **assistant_kwargs
+        )
         self.lock = Lock()
         logger.info("Server is about to be Up and Running..")
 
     def setup(self):
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
-        self.assistant_controller.start(self.server)
-        self.responding_task = self.server.start_background_task(self.bg_responding_task)
+        self.assistant_controller.start(self)
+
+    def sleep(self, seconds):
+        if self.server is None:
+            raise RuntimeError("Server is not initialized yet")
+        self.server.sleep(seconds)
+
+    def start_background_task(self, target, *args, **kwargs):
+        if self.server is None:
+            raise RuntimeError("Server is not initialized yet")
+        return self.server.start_background_task(target, *args, **kwargs)
 
     def __emit__(self, event, data):
         if hasattr(data, "__next__"):
@@ -45,55 +55,34 @@ class DigitalAssistant(Namespace):
             self.server.emit(event, data)
 
     def emit_bot_voice(self, data):
-        logger.debug("emmiting bot_voice")
         self.__emit__("bot_voice", data)
 
     def emit_bot_response(self, data):
-        logger.debug("emmiting bot_response")
         self.__emit__("bot_response", data)
 
+    def emit_stt_response(self, data):
+        self.__emit__("stt_response", data)
 
     def on_connect(self):
         logger.info("client connected")
         StorageManager.establish_session()
         self.assistant_controller.on_connect(self)
 
-
     def on_disconnect(self):
         logger.info("client disconnected\n")
         with self.lock:
-            self.assistant_controller.clean_up()
+            self.assistant_controller.on_disconnect()
         StorageManager.clean_up()
 
     def on_stream_audio(self, audio_data):
         with self.lock:
             # Feeding in audio stream
             write_output("-", end="")
-            self.assistant_controller.feed_audio_stream(audio_data)
+            from core import AudioPacket
+            self.assistant_controller.feed(AudioPacket(audio_data))
 
-    def on_trial(self, data):
-        write_output(f"received trial: {data}")
-
-    def bg_responding_task(self):
-        # READ BUFFER AND EMIT AS NEEDED
-        from queue import Empty
-        while True:
-            is_responding = False
-            with self.lock:
-                try:
-                    bot_res, bot_voice_bytes = self.assistant_controller.receive()
-                    if bot_voice_bytes is not None:
-                        self.emit_bot_voice(bot_voice_bytes)
-                    if bot_res is not None:
-                        self.emit_bot_response(bot_res)
-                    is_responding = True
-                except Empty:
-                    pass
-
-            if not is_responding:
-                # print('<waiting>', end='', flush=True)
-                socketio.sleep(0.1)
-
+    # def on_trial(self, data):
+    #     write_output(f"received trial: {data}")
 
     # def on_error(self, e):
     #     logger.error(f"Error: {e}")

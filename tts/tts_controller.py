@@ -51,6 +51,9 @@ class TTSController(PipelineStage):
         self.sentence_text_packet = None
         self.audiopacket_generator: Generator[AudioPacket, None, None] = None
 
+    @property
+    def input_type(self):
+        return TextPacket
 
     def _unpack(self):
         try:
@@ -64,13 +67,29 @@ class TTSController(PipelineStage):
         # accepts a stream of text packets
         # upon completion of a sentence (detection component), a stream is yielded
         # sends a stream of audio packets
+
+        def _process_sentence():
+            _new_audiopacket_generator = self._get_audiopackets_stream(
+                self.sentence_text_packet.text
+            )
+            if self.audiopacket_generator is not None:
+                self.audiopacket_generator = chain(
+                    self.audiopacket_generator,
+                    _new_audiopacket_generator
+                )
+            else:
+                self.audiopacket_generator = _new_audiopacket_generator
+
+            # NOTE: reset complete_segment because you got a complete response
+            self.sentence_text_packet = None
+
         if in_text_packet is None and self.audiopacket_generator is None:
             return None
 
         if self.audiopacket_generator:
             try:
                 partial_voice_bytes = next(self.audiopacket_generator)
-                return (None, partial_voice_bytes)
+                return partial_voice_bytes
 
             except StopIteration:
                 self.audiopacket_generator = None
@@ -89,37 +108,13 @@ class TTSController(PipelineStage):
 
                 if self.sentence_text_packet.text.endswith(('?', '!', '.')):
                     # TODO prompt engineer '.' and check other options
-                    _new_audiopacket_generator = self._get_audiopackets_stream(
-                        self.sentence_text_packet.text
-                    )
-                    if self.audiopacket_generator is not None:
-                        self.audiopacket_generator = chain(
-                            self.audiopacket_generator,
-                            _new_audiopacket_generator
-                        )
-                    else:
-                        self.audiopacket_generator = _new_audiopacket_generator
-
-                    # NOTE: reset complete_segment because you got a complete response
-                    self.sentence_text_packet = None
+                    _process_sentence()
 
             else:
-                if len(self.sentence_text_packet.text):
-                    # NOTE: this is the last partial response
+                if len(self.sentence_text_packet.text): # and not in_text_packet.partial:
+                    assert not self.sentence_text_packet.partial, "Partial should be False" # NOTE: this is the last partial response
                     # self.sentence_text_packet['partial'] = False # TODO verify this
-                    _new_audiopacket_generator = self._get_audiopackets_stream(
-                        self.sentence_text_packet.text
-                    )
-                    if self.audiopacket_generator is not None:
-                        self.audiopacket_generator = chain(
-                            self.audiopacket_generator,
-                            _new_audiopacket_generator
-                        )
-                    else:
-                        self.audiopacket_generator = _new_audiopacket_generator
-
-                    # NOTE: reset complete_segment
-                    self.sentence_text_packet = None
+                    _process_sentence()
 
                     # if not partial, then it is a final complete response
                     if not in_text_packet.start:
@@ -130,19 +125,10 @@ class TTSController(PipelineStage):
                     # NOTE: next partial_bot_res.get('start') is gonna be True
                     write_output("", end='\n')
 
-                    return (in_text_packet, None)
-
             return True # Meaning that the dispatching is still ongoing
 
     def on_sleep(self):
         self.log('<tts>')
-
-    def receive(self):
-        """Receive TTS Controller response"""
-        try:
-            return self._output_buffer.get_nowait()
-        except Empty:
-            return None
 
     def _get_audiopackets_stream(self, text) -> Generator[AudioPacket, None, None]:
         """Get generated audio packets stream for text

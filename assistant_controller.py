@@ -1,17 +1,24 @@
+from loguru import logger
+from typing import Optional
+from queue import Empty
+from storage_manager import StorageManager
 from stt import STTController
-from stt.wakeup_word.wakeup_word_detector import WakeUpVoiceDetector
-from core import AudioPacket
-from tts import TTSController
-from storage_manager import StorageManager, write_output
 from bot import BotController
-from multiprocessing import JoinableQueue
+from tts import TTSController
 from core import TextPacket, AudioPacket, AudioBuffer
+from core.data.data_packet import DataPacket
+from core.stage import PipelineStage
+
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from server import DigitalAssistant
 
 import warnings
 # TODO check on this later
 warnings.filterwarnings("ignore", category=UserWarning)
 
-class AssistantController:
+class AssistantController(PipelineStage):
     """Main controller for the assistant."""
 
     def __init__(
@@ -19,90 +26,88 @@ class AssistantController:
         verbose=True,
         device=None,
         tts_endpoint="gtts",
+        welcome_msg: str="Welcome, AI server connection is succesful.",
     ):
-        """Initialize the assistant controller.
+        """Initialize the assistant controller."""
+        super().__init__(verbose=False) # TODO
 
-        Args:
-            verbose (bool, optional): Whether to print debug messages. Defaults to True.
-            name (str, optional): Name of the assistant. Defaults to 'Traveller'.
-        """
-        self.verbose = verbose
-        self.wake_up_word_detector = WakeUpVoiceDetector(device=device)
-        write_output("Initialized WakeUpWordDetector")
         self.stt = STTController(device=device)
-        write_output("Initialized STT Controller")
         self.bot = BotController()
-        write_output("Initialized Bot Controller")
         self.tts = TTSController(tts_endpoint)
-        write_output("Initialized TTS Controller")
 
+        self.welcome_msg = welcome_msg
         self.startup_audiopacket: AudioPacket = None
+        self.started = False
+
 
     def on_connect(self, host):
         if self.startup_audiopacket:
             from copy import deepcopy
             host.emit_bot_voice(deepcopy(self.startup_audiopacket))
 
-    def start(
-        self,
-        server,
-        welcome_msg="Welcome, AI server connection is succesful."
-    ):
-        """Start the assistant
-        """
-        self.reset_audio_buffers()
-        self._output_buffer = JoinableQueue()
-        self.stt.start(server=server)
-        self.bot.start(server=server)
-        self.tts.start(server=server)
+    def on_disconnect(self):
+        """Clean up upon disconnection"""
+        if self.session_audio_buffer.is_empty():
+            return
 
-        if welcome_msg:
-            self.startup_audiopacket = self.tts.read(welcome_msg, as_generator=False)
+        StorageManager.write_audio_file(self.session_audio_buffer.dump_to_packet())
+        StorageManager.ensure_completion()
 
-        def _start_looping_thread():
-            while True:
-                is_update_occured = False
+    def on_sleep(self):
+        self.log("<assistant>")
 
-                transcription: TextPacket = self.stt.receive()
-                if transcription:
-                    write_output(f"User: {transcription.text}")
-                    self.bot.feed(transcription)
-                    is_update_occured = True
+    def on_start(self):
+        if self.started:
+            raise Exception("Assistant already started")
 
-                partial_bot_res: TextPacket = self.bot.receive()
-                if partial_bot_res:
-                    self.tts.feed(partial_bot_res)
-                    is_update_occured = True
-
-                _tts_out_packets = self.tts.receive()
-                if _tts_out_packets:
-                    self._output_buffer.put(
-                        _tts_out_packets
-                        # TODO note now that this is more than just partial voice bytes
-                    )
-                    is_update_occured = True
-
-                if not is_update_occured:
-                    # print('<agent>', end='', flush=True)
-                    server.sleep(0.1)
-
-        self._process = server.start_background_task(_start_looping_thread)
-
-    def receive(self):
-        return self._output_buffer.get_nowait()
-
-    def reset_audio_buffers(self):
-        """Resetting session and command audio logging buffers"""
         self.session_audio_buffer = AudioBuffer()
 
-    def feed_audio_stream(self, audio_data):
-        """Feed audio stream to STT """
-        audio_packet = AudioPacket(audio_data)
-        self.session_audio_buffer.put(audio_packet)
-        self.stt.feed(audio_packet)
+        def _on_ready_callback(
+            stage: PipelineStage,
+            next_stage: Optional[PipelineStage],
+            data_packet: DataPacket
+        ):
+            if next_stage is not None:
+                if not isinstance(data_packet, next_stage.input_type):
+                    raise ValueError(f"Data packet type mismatch, expected {next_stage.input_type}, got {type(data_packet)}")
 
-    def clean_up(self):
-        """Clean up upon disconnection"""
-        StorageManager.write_audio_file(self.session_audio_buffer.dump_to_packet())
-        self.stt.reset_audio_stream()
-        StorageManager.ensure_completion()
+                logger.debug(f"Feeding {data_packet} from {stage} to {next_stage}")
+                next_stage.feed(data_packet)
+
+            if isinstance(stage, STTController):
+                self.server.emit_stt_response(data_packet)
+            elif isinstance(stage, BotController):
+                self.server.emit_bot_response(data_packet)
+            elif isinstance(stage, TTSController):
+                self.server.emit_bot_voice(data_packet)
+            else:
+                raise ValueError("Unknown Pipeline Stage Type")
+
+
+        self.stt.on_ready_callback = lambda p: _on_ready_callback(self.stt, self.bot, p)
+        self.stt.start(server=self.server)
+        self.bot.on_ready_callback = lambda p: _on_ready_callback(self.bot, self.tts, p)
+        self.bot.start(server=self.server)
+        self.tts.on_ready_callback = lambda p: _on_ready_callback(self.tts, None, p)
+        self.tts.start(server=self.server)
+
+        if self.welcome_msg:
+            self.startup_audiopacket = self.tts.read(
+                self.welcome_msg,
+                as_generator=False
+            )
+
+        self.started = True
+
+    def _unpack(self):
+        try:
+            return self._input_buffer.get_nowait()
+        except Empty:
+            return None
+
+    def _process(self, data_packet: DataPacket): # TODO temporarily assuming AudioPacket
+        if data_packet is None:
+            return None
+        if not isinstance(data_packet, self.stt.input_type):
+            raise ValueError(f"Data packet type mismatch, expected {self.stt.input_type}, got {type(data_packet)}")
+        self.stt.feed(data_packet)

@@ -62,16 +62,16 @@ class STTController(AudioToTextStage):
         self.recorded_audio_length = 0
         logger.warning("Reset debug feed frames")
 
-    def feed(self, audio_packet: AudioPacket):
-        """Feed audio packet to STT Controller
+    # def feed(self, audio_packet: AudioPacket):
+    #     """Feed audio packet to STT Controller
 
-        Args:
-            audio_packet (AudioPacket): Audio packet to feed
-        """
-        # if self._command_audio_buffer.is_empty():
-        #     self._create_stream()
-        #     self.log("receiving first stream of audio command")
-        self._input_buffer.put(audio_packet)
+    #     Args:
+    #         audio_packet (AudioPacket): Audio packet to feed
+    #     """
+    #     # if self._command_audio_buffer.is_empty():
+    #     #     self._create_stream()
+    #     #     self.log("receiving first stream of audio command")
+    #     self._input_buffer.put(audio_packet)
 
     def _feed_audio_content(self, audio_packet: AudioPacket):
         """Feed audio content to stream context
@@ -105,15 +105,15 @@ class STTController(AudioToTextStage):
             Returns:
                 dict: Transcription if any found and stream finished while silence threshold is reached
             """
-            def _finish_stream(force_clear_buffer=False):
+            def _finish_stream():
                 """Finish stream and return transcription if any found"""
                 logger.debug("Trying to finish stream..")
                 time_start_recog = round(time.time() * 1000)
 
-                if force_clear_buffer:
-                    # TODO look into this
-                    # feed all remaining audio packets to stream context
-                    self._process(self._unpack())
+                # if force_clear_buffer:
+                #     # TODO look into this
+                #     # feed all remaining audio packets to stream context
+                #     self._process(self._unpack())
 
                 transcription = self.model.get_transcription()
                 if transcription:
@@ -193,3 +193,8 @@ class STTController(AudioToTextStage):
         # self.log('[refresh]', end='\n')
         # self.reset_audio_stream()
         self.vad.reset()
+
+
+    def on_disconnect(self):
+        self.reset_audio_stream()
+        self.log("[disconnect]", end="\n")
