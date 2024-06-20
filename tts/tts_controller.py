@@ -1,16 +1,14 @@
-import inflect
+from string import punctuation
 from typing import Generator
 from loguru import logger
-from queue import Empty
 from itertools import chain
 
 from core.data import AudioPacket, TextPacket
-from core.stage import PipelineStage
-from storage_manager import StorageManager, write_output
+from core.stage import TextToAudioStage
 from .endpoints.base import TTSEndpoint
 
 
-class TTSController(PipelineStage):
+class TTSController(TextToAudioStage):
     """Text to speech controller"""
 
     input_type = TextPacket
@@ -45,83 +43,79 @@ class TTSController(PipelineStage):
         else:
             raise Exception(f"Unknown Endpoint {endpoint}, available endpoints: pyttsx3, tts")
 
-        self.storage_manager = StorageManager()
-        self.number_to_word_converter = inflect.engine()
-        self.created_audio_files = []
+        self._sentence_text_packet = None
+        self._audiopacket_generator: Generator[AudioPacket, None, None] = None
+        self._generated_audio_packet_per_sentence_count = False
 
-        self.sentence_text_packet = None
-        self.audiopacket_generator: Generator[AudioPacket, None, None] = None
-
-    def _unpack(self):
-        try:
-            partial_bot_res = self._input_buffer.get_nowait()
-        except Empty:
-            partial_bot_res = None
-
-        return partial_bot_res
 
     def _process(self, in_text_packet: TextPacket):
         # accepts a stream of text packets
         # upon completion of a sentence (detection component), a stream is yielded
         # sends a stream of audio packets
 
-        def _process_sentence():
+        def _process_sentence_text_packet():
             _new_audiopacket_generator = self._get_audiopackets_stream(
-                self.sentence_text_packet.text
+                self._sentence_text_packet.text
             )
-            if self.audiopacket_generator is not None:
-                self.audiopacket_generator = chain(
-                    self.audiopacket_generator,
+            if self._audiopacket_generator is not None:
+                self._audiopacket_generator = chain(
+                    self._audiopacket_generator,
                     _new_audiopacket_generator
                 )
             else:
-                self.audiopacket_generator = _new_audiopacket_generator
+                self._audiopacket_generator = _new_audiopacket_generator
 
             # NOTE: reset complete_segment because you got a complete response
-            self.sentence_text_packet = None
+            self._sentence_text_packet = None
 
-        if in_text_packet is None and self.audiopacket_generator is None:
+        if in_text_packet is None and self._audiopacket_generator is None:
             return None
 
-        if self.audiopacket_generator:
+        if self._audiopacket_generator:
             try:
-                partial_voice_bytes = next(self.audiopacket_generator)
-                return partial_voice_bytes
+                out_audio_packet: AudioPacket = next(self._audiopacket_generator)
+                out_audio_packet._id = self._generated_audio_packet_per_sentence_count
+                self._generated_audio_packet_per_sentence_count += 1
+                return out_audio_packet
 
             except StopIteration:
-                self.audiopacket_generator = None
+                self._audiopacket_generator = None
 
         if in_text_packet:
             if in_text_packet.partial:
-                write_output(f"{in_text_packet.text}", end='')
+                self.log(f"{in_text_packet.text}")
 
-                if self.sentence_text_packet is None:
+                if self._sentence_text_packet is None:
                     if in_text_packet.start:
-                        write_output("SENVA: ", end='')
+                        self._generated_audio_packet_per_sentence_count = 0
+                        self.log("SENVA: ")
                     # implement SentenceTextDataBuffer
-                    self.sentence_text_packet: TextPacket = in_text_packet
+                    self._sentence_text_packet: TextPacket = in_text_packet
                 else:
-                    self.sentence_text_packet += in_text_packet
+                    self._sentence_text_packet += in_text_packet
 
-                if self.sentence_text_packet.text.endswith(('?', '!', '.')):
+                if self._sentence_text_packet.text.endswith(('?', '!', '.')):
                     # TODO prompt engineer '.' and check other options
-                    _process_sentence()
+                    _process_sentence_text_packet()
 
             else:
-                if self.sentence_text_packet is not None and\
-                    len(self.sentence_text_packet.text): # and not in_text_packet.partial:
-                    assert not self.sentence_text_packet.partial, "Partial should be False" # NOTE: this is the last partial response
-                    # self.sentence_text_packet['partial'] = False # TODO verify this
-                    _process_sentence()
+                # NOTE: _process leftover sentence_text_packet if any
+                if self._sentence_text_packet is not None:
+                    if len(self._sentence_text_packet.text.replace(punctuation, '').strip()) > 0:
+                        assert not self._sentence_text_packet.partial, "Partial should be False" # NOTE: this is the last partial response
+                        # self._sentence_text_packet['partial'] = False # TODO verify this
+                        _process_sentence_text_packet()
 
-                    # if not partial, then it is a final complete response
-                    if not in_text_packet.start:
-                        logger.error(f"in_text_packet.start should be True at this full response stage: {in_text_packet}")
-                        raise Exception("start should be True at this full response stage")
+                # NOTE: This must be true.. as if not partial, then it is a final complete response, which also is a start
+                # This is here just to debug the logic of previous pipeline stage
+                # So it should be removed at some point
+                if not in_text_packet.start:
+                    logger.error(f"in_text_packet.start should be True at this full response stage: {in_text_packet}")
+                    raise Exception("start should be True at this full response stage")
 
-                    # a complete response is yielded at the end
-                    # NOTE: next partial_bot_res.get('start') is gonna be True
-                    write_output("", end='\n')
+                # a complete response is yielded at the end
+                # NOTE: next partial_bot_res.get('start') is gonna be True
+                self.log("", end='\n')
 
             return True # Meaning that the dispatching is still ongoing
 
@@ -143,6 +137,7 @@ class TTSController(PipelineStage):
         if isinstance(text, list):
             text = " ".join(text)
 
+        logger.debug(f"Reading text: {text}")
         yield from self.endpoint.text_to_bytes(text)
 
     def read(self, text, as_generator=False) -> Generator[AudioPacket, None, None]:
@@ -155,4 +150,5 @@ class TTSController(PipelineStage):
             return audio_bytes_generator
         else:
             from functools import reduce
-            return reduce(lambda x, y: x + y, audio_bytes_generator)
+            audio_packet = reduce(lambda x, y: x + y, audio_bytes_generator)
+            return audio_packet
