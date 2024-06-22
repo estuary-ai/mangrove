@@ -56,7 +56,7 @@ class STTController(AudioToTextStage):
 
     def _create_stream(self):
         """Create a new stream context"""
-        self.model.create_stream()
+        self.model.reset()
 
         ##### DEBUG #####
         self.recorded_audio_length = 0
@@ -71,7 +71,7 @@ class STTController(AudioToTextStage):
     #     # if self._command_audio_buffer.is_empty():
     #     #     self._create_stream()
     #     #     self.log("receiving first stream of audio command")
-    #     self._input_buffer.put(audio_packet)
+    #     self._input_buffer.put(audio_packet)``
 
     def _feed_audio_content(self, audio_packet: AudioPacket):
         """Feed audio content to stream context
@@ -79,7 +79,7 @@ class STTController(AudioToTextStage):
         Args:
             audio_packet (AudioPacket): Audio packet of voice frame
         """
-        self.model.buffer_audio_packet(audio_packet)
+        self.model.feed(audio_packet)
 
         ##### DEBUG #####
         self.recorded_audio_length += audio_packet.duration

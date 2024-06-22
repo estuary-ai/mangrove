@@ -1,7 +1,9 @@
 import time
 from loguru import logger
-from faster_whisper import WhisperModel
 from queue import Empty
+from functools import reduce
+from faster_whisper import WhisperModel
+
 from core import AudioPacket
 from .base import STTEndpoint
 
@@ -14,8 +16,6 @@ class FasterWhisperEndpoint(STTEndpoint):
         except:
             logger.warning(f'Device {device} is not supported, defaulting to CPU!')
             self.model = WhisperModel(model_name, device='cpu')
-
-    def create_stream(self):
         self.reset()
 
     def get_transcription(self):
@@ -33,16 +33,16 @@ class FasterWhisperEndpoint(STTEndpoint):
                 except Empty:
                     break
 
-        from functools import reduce
-        audio_packet = reduce(lambda x, y: x + y, audio_packets)
-        logger.debug(
-            f"Transcribing ... {len(audio_packet)} bytes at {audio_packet.sample_rate} Hz"
-        )
+        audio_packet: AudioPacket = reduce(lambda x, y: x + y, audio_packets)
         start = time.time()
-        segments, _ = self.model.transcribe(audio_packet.float, vad_filter=True, without_timestamps=True)
+        segments, _ = self.model.transcribe(
+            audio_packet.float,
+            language='en',
+            vad_filter=True,
+            without_timestamps=True
+        )
         _out = list(segments)
         if len(_out) >= 1:
-            logger.debug("detected {} segments".format(len(_out)))
             _out = " ".join([segment.text for segment in _out])
         logger.success(f"Took {time.time() - start: < .3f} seconds")
         return _out
