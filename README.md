@@ -1,6 +1,6 @@
 
 # Mangrove
-A framework For Rapid Development Of Multi-modal Socially Intelligent Agents.
+Mangrove is the backend module of Estuary, a framework for builing multimodal real-time Socially Intelligent Agents (SIA).
 
 
 ## Instructions to install:
@@ -14,7 +14,7 @@ A framework For Rapid Development Of Multi-modal Socially Intelligent Agents.
     ```
 
 3. Install all dependancies:
-    3.1 Install package dependencies for Ubuntu 22.04 - Tested on WSl2.
+    3.1 Install package dependencies for Ubuntu 22.04 - Tested on WSL2.
 
     ```bash
     sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0
@@ -30,13 +30,14 @@ A framework For Rapid Development Of Multi-modal Socially Intelligent Agents.
 
 
 # Acknowledgements:
-This project has been build starting from our base code of developing Traveller (Also known as Eva) - SENVA's Digital Assistant. Particularly is built starting from the foundation of a server implementation hosting the **Senva Project** Digital Assistant (**Traveller**, previously called **Eva**) backend, which is typically deployed in a local network connection to communicate in real-time with Hololens 2, serving as prototype for mixed reality solution for Astronauts **SUITs**. It corresponds to the ongoing effort of **Team AEGIS** project at the **NASA-SUITs** Challenge in the following years:
+Mangrove was built from our base code of developing **Traveller**, the digital assistant of **SENVA**, a prototype Augmented Reality (AR) Heads-Up Display (HUD) solution for astronauts as part of the **NASA SUITs** Challenge. It corresponds to the effort of **Team AEGIS** project at the **NASA-SUITs** Challenge in the following years:
 
 - **2023**: **University of Southern California (USC)** with **University of Berkley (UCBerkley)**
 
 - **2022**: **University of Southern California (USC)** with **University of Arizona (UA)**.
 
-The project utilizes various great work including but not limited to the following:
+The Estuary team would like to acknowledge the developers, authors, and creatives whose work contributed to the success of this project:
+
 - SocketIO Protocol: https://socket.io/docs/v4/socket-io-protocol/
 - FlaskSocketIO Library: https://github.com/miguelgrinberg/Flask-SocketIO
 - Python SocketIO Library: https://github.com/miguelgrinberg/python-socketio
