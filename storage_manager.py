@@ -4,7 +4,6 @@ import time
 import sounddevice as sd
 from threading import Thread
 from core import AudioPacket
-from core.data.audio_packet import TARGET_SAMPLERATE
 
 BLACK_BOX_DIR = "blackbox"
 IMAGES_DIR = os.path.join(BLACK_BOX_DIR, "sample-images")
@@ -102,11 +101,11 @@ class StorageManager:
         with open(audio_filepath, mode="wb") as f:
             f.write(audio_buffer.bytes)
 
-    def _write_wav(self, audio_buffer: AudioPacket, text, prefix):
+    def _write_wav(self, audio_packet: AudioPacket, text, prefix):
         """Write audio file to disk as wav
 
         Args:
-            audio_buffer (AudioPacket): Audio packet to write
+            audio_packet (AudioPacket): Audio packet to write
             text (str): Text (transcription) to use as file name
             prefix (str): Prefix of file name
 
@@ -114,7 +113,7 @@ class StorageManager:
         import soundfile as sf
         audio_filepath = self.get_recorded_audio_filepath(text, "wav", prefix=prefix)
         # save as WAV file
-        sf.write(audio_filepath, audio_buffer.float, TARGET_SAMPLERATE)
+        sf.write(audio_filepath, audio_packet.float, audio_packet.sample_rate)
 
     @classmethod
     def write_audio_file(self, audio_buffer: AudioPacket, text="", format="wav"):
