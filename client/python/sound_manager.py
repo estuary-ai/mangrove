@@ -57,7 +57,7 @@ class SoundManager:
             frames_per_buffer=self._frames_per_buffer,
         )
 
-    def open_speaker(self, frame_rate, sample_width, channels):
+    def open_speaker(self, sample_rate, sample_width, channels):
         """Opens the speaker stream"""
         _format = pyaudio.get_format_from_width(sample_width)
         if hasattr(self, "_speaker_stream") and self._speaker_stream is not None:
@@ -65,7 +65,7 @@ class SoundManager:
             if (
                 self._speaker_stream._format == _format
                 and self._speaker_stream._channels == channels
-                and self._speaker_stream._rate == frame_rate
+                and self._speaker_stream._rate == sample_rate
             ):
                 return
             self._speaker_stream.stop_stream()
@@ -73,7 +73,7 @@ class SoundManager:
         self._speaker_stream = self._audio.open(
             format=_format,
             channels=channels,
-            rate=frame_rate,
+            rate=sample_rate,
             output=True,
         )
 
@@ -105,6 +105,7 @@ class SoundManager:
                 "numChannels": 1,
                 "sampleRate": self._sample_rate,
                 "timestamp": int(time.time() * 1000),
+                "sampleWidth": 4,  # "format": "f32le", # float32
                 # "format": "s16le", # int16
             }
         )
@@ -127,31 +128,30 @@ class SoundManager:
         thread.start()
         self.threads_pool.append(thread)
 
-    def play_audio_packet(self, audio, block=False):
+    def play_audio_packet(self, audio_packet, block=True):
         """Plays audio bytes
 
         Args:
             audio (bytes or str): audio bytes or filepath to audio bytes
             block (bool, optional): if True, blocks until audio is played. Defaults to False.
         """
-        def _play_packet(audio):
+        def _play_packet(audio_packet):
             with self._lock:
                 # divide audio into chunks
-                for i in range(0, len(audio['bytes']), self._frames_per_buffer):
+                for i in range(0, len(audio_packet['bytes']), self._frames_per_buffer):
                     print('>', end='')
-                    audio_bytes = audio['bytes'][i : i + self._frames_per_buffer]
-                # audio_bytes = audio['audio_bytes']
-                    frame_rate = audio['sampleRate']
-                    sample_width = audio['sampleWidth']
-                    channels = audio['numChannels']
+                    audio_bytes = audio_packet['bytes'][i : i + self._frames_per_buffer]
+                    sample_rate = audio_packet['sampleRate']
+                    sample_width = audio_packet['sampleWidth']
+                    num_channels = audio_packet['numChannels']
                     # play audio
-                    self.open_speaker(frame_rate, sample_width, channels)
+                    self.open_speaker(sample_rate, sample_width, num_channels)
                     self._speaker_stream.write(audio_bytes)
 
         if block:
-            _play_packet(audio)
+            _play_packet(audio_packet)
         else:
-            self._enqueue_task(_play_packet, audio)
+            self._enqueue_task(_play_packet, audio_packet)
 
     def play_audio_file(self, filepath, format, block=False):
         audio = AudioSegment.from_file(filepath, format=format)

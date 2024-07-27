@@ -6,16 +6,11 @@ from loguru import logger
 
 from .data_packet import DataPacket
 
-
-TARGET_SAMPLERATE = 16000
-
-
 class AudioPacket(DataPacket):
     """Represents a "Packet" of audio data."""
     resampling = 0
-    resampler = None
 
-    def __init__(self, data_json, resample=True, is_processed=False):
+    def __init__(self, data_json, resample=True, is_processed=False, target_sample_rate=16000):
         """Initialize AudioPacket from json data or bytes
 
         Args:
@@ -30,30 +25,43 @@ class AudioPacket(DataPacket):
         self._src_num_channels = int(data_json["numChannels"])
         self._src_sample_width = int(data_json["sampleWidth"])
         assert self._src_sample_width in [2, 4], f"Unhandled sample width `{self._src_sample_width}`. Please use `2` or `4`"
+        
+        self._dst_sample_rate = self._src_sample_rate
+        self._dst_num_channels = self._src_num_channels
+        self._dst_sample_width = self._src_sample_width
 
-        if not is_processed:
-            self._bytes = self._preprocess_audio_buffer(
-                data_json.get("bytes", data_json.get("audio")),
-                resample=resample
-            )
-        else:
-            self._bytes = data_json["bytes"]
-
-        self._src_frame_size = len(self._bytes)
-        self._duration = data_json.get("duration")  # ms
-        if self._duration is None:
-            self._duration = (self._src_frame_size/ self._src_sample_rate) / (
-                self._src_num_channels * 4
-            )
-            self._duration *= 1000  # ms
 
         # self._start = data_json.get("start", False)
         self._id = data_json.get("packetID")
         self._source = data_json.get("source", None)
 
-        self._dst_sample_rate = self._src_sample_rate
-        self._dst_num_channels = self._src_num_channels
-        self._dst_sample_width = self._src_sample_width
+
+        # NOTE: we do not keep the src_bytes as they might not be even there
+        if not is_processed:
+            self._dst_bytes = self._preprocess_audio_buffer(
+                data_json.get("bytes", data_json.get("audio")),
+                resample=resample,
+                target_sample_rate=target_sample_rate
+            )
+        else:
+            self._dst_bytes = data_json["bytes"]
+
+        # NOTE: this is happening after the resampling and processing
+        self._duration = data_json.get("duration")  # ms
+        _calculated_duration = (self.frame_size/self.sample_rate) / (
+            self.num_channels * self.sample_width # this was 4, i changed it to self.sample_width, TODO check
+        )
+        _calculated_duration *= 1000  # ms
+        
+        if self._duration is None:
+            self._duration = _calculated_duration
+        else:
+            # Verify that the duration is correct for now
+            if not Decimal(self._duration).compare(Decimal(_calculated_duration)) == 0:
+                logger.warning(f"Duration mismatch: {self._duration} != {_calculated_duration}")    
+
+        
+            
 
     # @property
     # def start(self):
@@ -61,7 +69,7 @@ class AudioPacket(DataPacket):
 
     @property
     def bytes(self):
-        return self._bytes
+        return self._dst_bytes
 
     @property
     def float(self):
@@ -72,7 +80,7 @@ class AudioPacket(DataPacket):
         """
         # NOTE: adding silence to make sure the length is a multiple of 32
         # approximation to convert int16 to float32
-        _bytes = self._bytes + b'0'*(len(self._bytes)%32)
+        _bytes = self.bytes + b'0'*(len(self.bytes)%32)
         return np.frombuffer(_bytes, dtype=np.float32).copy()
 
     @property
@@ -114,7 +122,7 @@ class AudioPacket(DataPacket):
         _dict = super().to_dict()
         _dict.update(
             {
-                "bytes": self._bytes,
+                "bytes": self.bytes,
                 "sampleRate": self.sample_rate,
                 "sampleWidth": self.sample_width,
                 "numChannels": self.num_channels,
@@ -137,12 +145,73 @@ class AudioPacket(DataPacket):
                 raise Exception(
                     f"Invalid AudioPacket format: {key} not in {data_json.keys()}"
                 )
+            
+        
+    @staticmethod
+    def from_bytes_to_float(buffer, sample_rate, num_channels, sample_width):
+        """Convert audio buffer from bytes to float
 
-    def _preprocess_audio_buffer(self, buffer, resample=True):
+        Args:
+            buffer (bytes): audio buffer
+            sample_rate (int): sample rate of buffer
+            num_channels (int): number of channels of buffer
+            sample_width (int): sample width of buffer
+
+        Returns:
+            np.array(float): audio buffer as float
+        """
+        if buffer == b"":
+            logger.debug("0 Returning empty buffer")
+            # DUMMY AUX PACKET
+            return buffer
+        
+        if sample_width == 2: # int16
+            logger.debug("1 Converting buffer to int16")
+            buffer_float = np.frombuffer(buffer, dtype=np.int16).reshape((-1, num_channels)) / (1 << (8 * sample_width - 1))
+            # import soundfile as sf
+            # sf.write(f"__original_{AudioPacket.resampling}.wav", buffer_float, sample_rate)
+        elif sample_width == 4: # float32
+            logger.debug("1 Converting buffer to float32")
+            buffer_float = np.frombuffer(buffer, dtype=np.float32).reshape((-1, num_channels)) / (1 << (8 * sample_width - 1))
+        else:
+            raise ValueError(f"Unhandled format `{format}`. Please use `int16` or `float32`")
+        
+        return buffer_float
+    
+    @staticmethod
+    def from_float_to_bytes(buffer_float, sample_rate, num_channels, sample_width):
+        """Convert audio buffer from float to bytes
+
+        Args:
+            buffer_float (np.array(float)): audio buffer
+            sample_rate (int): sample rate of buffer
+            num_channels (int): number of channels of buffer
+            sample_width (int): sample width of buffer
+
+        Returns:
+            bytes: audio buffer as bytes
+        """
+        if buffer_float.size == 0:
+            logger.debug("0 Returning empty buffer")
+            # DUMMY AUX PACKET
+            return buffer_float.tobytes()
+
+        if sample_width == 2: # int16
+            logger.debug("1 Converting buffer to int16")
+            buffer = (buffer_float * (1 << (8 * sample_width - 1))).astype(np.int16).reshape(-1).tobytes()
+        elif sample_width == 4: # float32
+            logger.debug("1 Converting buffer to float32")
+            buffer = (buffer_float * (1 << (8 * sample_width - 1))).astype(np.float32).reshape(-1).tobytes()
+        else:
+            raise ValueError(f"Unhandled sample width `{sample_width}`. Please use `2` or `4` ")
+
+        return buffer
+    
+    def _preprocess_audio_buffer(self, buffer, resample=True, target_sample_rate=16000):
         """Preprocess audio buffer to 16k 1ch int16 bytes format
 
         Args:
-            buffer Union(np.array(float)): audio buffer
+            buffer Union(np.array(float), bytes): audio buffer
             sample_rate (int): sample rate of buffer
             num_channels (int): number of channels of buffer
 
@@ -150,31 +219,28 @@ class AudioPacket(DataPacket):
             bytes: preprocessed audio buffer
         """
 
-        # Convert to a NumPy array of float32
-        self._dst_sample_width = 4
+        # TODO remove format as it is the same as sample_width
+        # 1: Convert to a NumPy array of float32
+        self._dst_sample_width = 2 # TODO debug this
         if isinstance(buffer, bytes):
-            if buffer == b"":
-                # DUMMY AUX PACKET
-                return buffer
-            if self._src_sample_width == 2:
-                buffer_float = np.frombuffer(buffer, dtype=np.int16).astype(np.float32)
-            elif self._src_sample_width == 4:
-                buffer_float = np.frombuffer(buffer, dtype=np.float32)
-            else:
-                raise ValueError(f"Unhandled sample width `{self._src_sample_width}`. Please use `2` or `4`")
+            # 1.1: converting/ensuring a bytes buffer to np.array float32 from either 2 or 4 sample width
+            buffer_float = AudioPacket.from_bytes_to_float(
+                buffer, self._src_sample_rate, 
+                self._src_num_channels, self._src_sample_width
+            )
         else:
+            # 1.2: converting/ensuring a np.array buffer to np.array float32 from either 2 or 4 sample width
             if self._src_sample_width == 2:
                 buffer_float = np.fromstring(np.array(buffer, dtype=np.int16).tobytes(), dtype=np.float32)
             elif self._src_sample_width == 4:
                 buffer_float = np.array(buffer).astype(np.float32)
             else:
                 raise ValueError(f"Unhandled sample width `{self._src_sample_width}`. Please use `2` or `4`")
-
-
-        # Merge Channels if > 1
+            
+        # 2: Merge Channels if > 1
         if self._src_num_channels > 1:
             # TODO revise
-            # logger.warning(f"AudioPacket has {self._src_num_channels} channels, merging to 1 channel")
+            logger.warning(f"AudioPacket has {self._src_num_channels} channels, merging to 1 channel")
             one_channel_buffer = np.zeros(
                 len(buffer_float) // self._src_num_channels, dtype=np.float32
             )
@@ -189,72 +255,84 @@ class AudioPacket(DataPacket):
         else:
             one_channel_buffer = buffer_float
 
-        if TARGET_SAMPLERATE != self._src_sample_rate and resample:
-            self._bytes = one_channel_buffer.tobytes()
-            self.resample(TARGET_SAMPLERATE, copy=False)
-            self._dst_sample_rate = TARGET_SAMPLERATE
-            return self._bytes
+
+        # 3: Resample if necessary
+        final_buffer = one_channel_buffer
+        if target_sample_rate != self._src_sample_rate and resample:
+            # debug resampling TODO
+            audio_resampled = AudioPacket.resample(one_channel_buffer, self._src_sample_rate, target_sample_rate)
+            AudioPacket.resampling += 1
+            self._dst_sample_rate = target_sample_rate
+            final_buffer = audio_resampled
+        
+        if isinstance(buffer, bytes):
+            self._dst_bytes = AudioPacket.from_float_to_bytes(
+                final_buffer,
+                self._dst_sample_rate,
+                self._dst_num_channels,
+                self._dst_sample_width,
+            )
         else:
-            return one_channel_buffer.tobytes()
+            self._dst_bytes = final_buffer.tobytes()
 
-    def resample(self, target_sample_rate, copy=True):
+        return self._dst_bytes
+
+    @staticmethod
+    def resample(waveform, current_sample_rate, target_sample_rate):
         # try:
-        if target_sample_rate == self._src_sample_rate:
-            return self
-
-        # increment resampling counter
-        AudioPacket.resampling += 1
+        if target_sample_rate == current_sample_rate:
+            return waveform
 
         import torch
-        from torchaudio import functional as F
         from torchaudio.transforms import Resample
 
-        one_channel_buffer = np.frombuffer(self._bytes, dtype=np.float32)
-        waveform = torch.from_numpy(one_channel_buffer.copy())
+        if current_sample_rate > target_sample_rate:
+            waveform = torch.from_numpy(waveform.copy())
 
-        # check if resampler is defined and matching the same sample rates
-        if (
-            AudioPacket.resampler is None
-            or AudioPacket.resampler.orig_freq != self._src_sample_rate
-            or AudioPacket.resampler.new_freq != target_sample_rate
-        ):
-            AudioPacket.resampler = Resample(self._src_sample_rate, target_sample_rate)
-            logger.trace(f"Resampling {self._src_sample_rate} -> {target_sample_rate}")
+            # check if resampler is defined and matching the same sample rates
+            resampler = Resample(current_sample_rate, target_sample_rate, dtype=waveform.dtype)
+            logger.debug(f"Resampling {current_sample_rate} -> {target_sample_rate}")
 
-        audio_resampled = AudioPacket.resampler(waveform)
-        audio_resampled = audio_resampled.numpy().tobytes()
-
-        if copy:
-            from copy import deepcopy
-            audio_packet = deepcopy(self)
-            audio_packet._bytes = audio_resampled
-            audio_packet._dst_sample_rate = target_sample_rate
-            return audio_packet
+            audio_resampled = resampler(waveform).numpy()
         else:
-            self._bytes = audio_resampled
-            self._dst_sample_rate = target_sample_rate
-            return self
+            # TODO revise this
+            # if  target_sample_rate % current_sample_rate == 0:
+            #     rate = target_sample_rate // current_sample_rate
+            #     audio_resampled = np.zeros(rate*len(waveform)-rate+1, dtype=waveform.dtype)
+            #     audio_resampled[::rate] = waveform
+            #     audio_resampled[1::rate] = (waveform[:-1] + waveform[1:]) / 2
+            # else:
+            audio_resampled = np.zeros(int(len(waveform) * target_sample_rate / current_sample_rate), dtype=waveform.dtype)
+            for i in range(len(audio_resampled)):
+                audio_resampled[i] = waveform[int(i * current_sample_rate / target_sample_rate)]
 
-    def __add__(self, _other: Type["AudioPacket"]):
+        # write the resampled audio to a wav file
+        # import soundfile as sf
+        # sf.write(f"resampled_{AudioPacket.resampling}.wav", audio_resampled, target_sample_rate)
+        # sf.write(f"original_{AudioPacket.resampling}.wav", waveform, current_sample_rate)
+
+        return audio_resampled
+
+    def __add__(self, _audio_packet: Type["AudioPacket"]):
         """Add two audio packets together and return new packet with combined bytes
 
         Args:
-            _other (AudioPacket): AudioPacket to add
+            _audio_packet (AudioPacket): AudioPacket to add
 
         Returns:
             AudioPacket: New AudioPacket with combined bytes
         """
         # ensure no errs, and snippets are consecutive
         # TODO verify + duration work
-        if self > _other:
+        if self > _audio_packet:
             raise Exception(
-                f"Audio Packets are not in order: {self.timestamp} > {_other.timestamp}"
+                f"Audio Packets are not in order: {self.timestamp} > {_audio_packet.timestamp}"
             )
 
         # assert not (not self._start and _other._start)
-        assert self.sample_rate == _other.sample_rate, f"Sample rates do not match: {self.sample_rate} != {_other.sample_rate}"
-        assert self.num_channels == _other.num_channels, f"Num channels do not match: {self.num_channels} != {_other.num_channels}"
-        assert self.sample_width == _other.sample_width, f"Sample width do not match: {self.sample_width} != {_other.sample_width}"
+        assert self.sample_rate == _audio_packet.sample_rate, f"Sample rates do not match: {self.sample_rate} != {_audio_packet.sample_rate}"
+        assert self.num_channels == _audio_packet.num_channels, f"Num channels do not match: {self.num_channels} != {_audio_packet.num_channels}"
+        assert self.sample_width == _audio_packet.sample_width, f"Sample width do not match: {self.sample_width} != {_audio_packet.sample_width}"
         # assert self.timestamp + self.duration <= _other.timestamp, f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} = {self.timestamp + self.duration} > {_other.timestamp}"
         # if self.timestamp + self.duration > _other.timestamp:
         #     import math
@@ -266,16 +344,16 @@ class AudioPacket(DataPacket):
         #         )
 
         timestamp = self.timestamp
-        if self._bytes == b"":  # DUMMY AUX PACKET
-            timestamp = _other.timestamp
+        if self.bytes == b"":  # DUMMY AUX PACKET
+            timestamp = _audio_packet.timestamp
 
         return AudioPacket(
             {
-                "bytes": self.bytes + _other.bytes,
+                "bytes": self.bytes + _audio_packet.bytes,
                 "timestamp": timestamp,
-                "sampleRate": self.sample_rate,
-                "numChannels": self.num_channels,
-                "sampleWidth": self.sample_width,
+                "sampleRate": _audio_packet.sample_rate,
+                "numChannels": _audio_packet.num_channels,
+                "sampleWidth": _audio_packet.sample_width,
                 # "start": self._start,
                 "packetID": self.id
             },
@@ -311,7 +389,7 @@ class AudioPacket(DataPacket):
 
             return AudioPacket(
                 {
-                    "bytes": self._bytes[start:stop],
+                    "bytes": self.bytes[start:stop],
                     "timestamp": calculated_timestamp,
                     "sampleRate": self.sample_rate,
                     "numChannels": self.num_channels,
@@ -329,6 +407,10 @@ class AudioPacket(DataPacket):
             raise NotImplementedError("Tuple as index; only slices")
         else:
             raise TypeError("Invalid argument type: {}".format(type(key)))
+        
+    
+    def __str__(self) -> str:
+        return f"{self.timestamp}, {self._duration}, {len(self.bytes)}"
 
     def __eq__(self, __o: object) -> bool:
         return self.timestamp == __o.timestamp

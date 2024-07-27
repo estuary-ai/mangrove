@@ -20,19 +20,23 @@ def get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024) -> Generator[D
     # chunk the audio
     for i in range(0, len(audio), chunk_size):
         yield AudioPacket({
-            'bytes': audio[i:i + chunk_size]._data,
-            'sampleRate': audio.frame_rate,
-            'sampleWidth': audio.sample_width,
-            'numChannels': audio.channels,
-        }, resample=False, is_processed=True)
+                'bytes': audio[i:i + chunk_size]._data,
+                'sampleRate': audio.frame_rate,
+                'sampleWidth': audio.sample_width,
+                'numChannels': audio.channels,
+            }, resample=True, is_processed=False, 
+            target_sample_rate=48000
+        )
 
 def audio_segment_to_audio_bytes_dict(audio_segment: AudioSegment):
     return AudioPacket({
-        'bytes': audio_segment._data,
-        'sampleRate': audio_segment.frame_rate,
-        'sampleWidth': audio_segment.sample_width,
-        'numChannels': audio_segment.channels,
-    }, resample=False, is_processed=True)
+            'bytes': audio_segment._data,
+            'sampleRate': audio_segment.frame_rate,
+            'sampleWidth': audio_segment.sample_width,
+            'numChannels': audio_segment.channels,
+        }, resample=True, is_processed=False, 
+        target_sample_rate=48000
+    )
 
 class TTSEndpoint(metaclass=ABCMeta):
     def __init__(self, **kwargs):
