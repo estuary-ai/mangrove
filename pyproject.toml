@@ -1,0 +1,40 @@
+[project]
+name = "mangrove"
+version = "0.1.0"
+description = "Mangrove is the backend module of Estuary, a framework for building multimodal real-time Socially Intelligent Agents (SIA)."
+authors = [
+    {name = "Basem Rizk", email = "basem.rizk@outlook.com"},
+]
+dependencies = [
+    "faster-whisper>=1.0.3",
+    "nvidia-cudnn-cu12==8.9.7.29",
+    "silero-vad>=5.1",
+    "elevenlabs>=1.4.1",
+    "langchain>=0.2.7",
+    "langchain-openai>=0.1.16",
+    "deepspeed>=0.14.4",
+    "loguru>=0.7.2",
+    "flask-socketio>=5.3.6",
+    "sounddevice>=0.4.7",
+    "langchain-community>=0.2.7",
+    "pydub>=0.25.1",
+    "backoff>=2.2.1",
+    "faiss-gpu>=1.7.2",
+    "gtts>=2.5.1",
+    "transformers==4.35.0",
+    "tts>=0.22.0",
+    "pip>=24.2",
+    "nvidia-nccl-cu12==2.18.1",
+]
+requires-python = "==3.9.*"
+readme = "README.md"
+license = {text = "AGPL-3.0-only"}
+
+
+[project.optional-dependencies]
+client = [
+    "pyaudio>=0.2.14",
+    "python-socketio[client]>=5.11.3",
+]
+[tool.pdm]
+distribution = false

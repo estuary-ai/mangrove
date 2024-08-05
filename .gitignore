@@ -32,3 +32,5 @@ tmp
 *.txt
 *.zip
 *.wav
+
+.pdm-python

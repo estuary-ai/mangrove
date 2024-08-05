@@ -3,17 +3,29 @@
 Mangrove is the backend module of Estuary, a framework for builing multimodal real-time Socially Intelligent Agents (SIA).
 
 
-## Instructions to install:
-1. Install virtual environments manager, preferably through
+## Instructions to install using PDM
+1. Install virtual environments manager
    <a href="https://www.anaconda.com/products/distribution" target="_blank">Anaconda</a>.
 
-2. Create a python 3.9 virtual environment.
+2. Install PDM Package Manager:
     ```bash
+    pipx install pdm
+    ```
+
+2. Create a python 3.9 virtual environment Using Conda or PDM.
+    ```bash
+    # Using PDM
+    pdm venv create 3.9
+    pdm venv activate
+
+    # Or Using Conda
     conda create -n mangrove python=3.9
     conda activate mangrove
     ```
 
-3. Install all dependancies:
+3. Using `pdm use` ensure that pdm is pointing to the correct environment
+
+4. Install all dependancies:
     3.1 Install package dependencies for Ubuntu 22.04 - Tested on WSL2.
 
     ```bash
@@ -23,10 +35,10 @@ Mangrove is the backend module of Estuary, a framework for builing multimodal re
     3.2 Install Python dependencies.
 
     ```bash
-    pip install -r requirements.txt
+    pdm install
     ```
 
-3.3 If running in WSL and looking to communicate over LAN network, follow one of the methods mentioned [here](https://learn.microsoft.com/en-us/windows/wsl/networking).
+*NOTE:* If running in WSL and looking to communicate over LAN network, follow one of the methods mentioned [here](https://learn.microsoft.com/en-us/windows/wsl/networking).
 
 
 # Acknowledgements:
