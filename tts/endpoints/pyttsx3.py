@@ -1,7 +1,11 @@
-from typing import Dict, Generator
-from .base import TTSEndpoint, get_mp3_audio_bytes
+from typing import Generator
+from core.data import AudioPacket
+from core.utils import filepath_to_audio_packet
+from .base import TTSEndpoint
+
 
 class Pyttsx3TTSEndpoint(TTSEndpoint):
+    
     def __init__(self, voice_rate=100, voice_id=12, **kwargs):
         # MAKE IT SINGLETON AS PYTTSX3 DOESN'T SUPPORT MULTIPLE INSTANCES
         import pyttsx3
@@ -26,7 +30,11 @@ class Pyttsx3TTSEndpoint(TTSEndpoint):
         self.engine.iterate()
         # self.engine.runAndWait()
 
-    def text_to_bytes(self, text) -> Generator[Dict, None, None]:
+    def text_to_audio(self, text) -> Generator[AudioPacket, None, None]:
         self.text_to_audio_file(text, '__temp__.mp3')
-        for audio_bytes_dict in get_mp3_audio_bytes(filepath='__temp__.mp3', chunk_size=1024):
-            yield audio_bytes_dict
+        for audio_packet in filepath_to_audio_packet(
+            filepath='__temp__.mp3', 
+            chunk_size=1024,
+            remove_after=True
+        ):
+            yield audio_packet

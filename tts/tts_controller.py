@@ -138,7 +138,7 @@ class TTSController(TextToAudioStage):
             text = " ".join(text)
 
         logger.debug(f"Reading text: {text}")
-        yield from self.endpoint.text_to_bytes(text)
+        yield from self.endpoint.text_to_audio(text)
 
     def read(self, text, as_generator=False) -> Generator[AudioPacket, None, None]:
         if isinstance(text, str):
