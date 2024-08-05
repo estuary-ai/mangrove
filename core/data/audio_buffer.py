@@ -163,7 +163,7 @@ class AudioBuffer:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
         try:
-            ret = self.get(timeout=0.1)
+            ret = self.get(timeout=-1)
             # if ret is None:
             #     raise StopIteration
         except:

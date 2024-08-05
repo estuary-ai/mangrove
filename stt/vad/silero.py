@@ -1,6 +1,6 @@
 import torch
 from typing import Union, List
-from core import AudioPacket
+from core import AudioPacket, AudioBuffer
 from .base import VoiceActivityDetector
 
 class SileroVAD(VoiceActivityDetector):
@@ -55,13 +55,16 @@ class SileroVAD(VoiceActivityDetector):
             audio_packets = [audio_packets]
             one_item = True
 
+        audio_buffer = AudioBuffer(self.frame_size)
+        for audio_packet in audio_packets:
+            audio_buffer.put(audio_packet)
+
         is_speeches = []
-        for packet in audio_packets:
+        for packet in audio_buffer:
             if len(packet) < self.frame_size:
                 # partial TODO maybe add to buffer
                 break
             _audio_tensor = torch.from_numpy(packet.float).to(self.device)
-
             is_speeches.append(
                 self.model(_audio_tensor, packet.sample_rate) > self.threshold
             )
