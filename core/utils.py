@@ -9,12 +9,15 @@ from loguru import logger
 from typing import Generator
 from core import AudioPacket
 
+# TODO adjust automatically a sort of universal target_sample_rate according to client's perference!
+TARGET_SAMPLE_RATE = 48000
+
 def filepath_to_audio_packet(
-    filepath='__temp__.mp3', 
-    chunk_size=1024,
-    remove_after=False,
-    max_tries=10,
-    target_sample_rate=48000
+    filepath: str='__temp__.mp3', 
+    chunk_size: int=1024,
+    remove_after: bool=False,
+    max_tries: int=10,
+    target_sample_rate: int=TARGET_SAMPLE_RATE
 ) -> Generator[AudioPacket, None, None]:
     # load mp3 file
     logger.debug(f"Loading mp3 file: {filepath}")
@@ -37,17 +40,20 @@ def filepath_to_audio_packet(
             target_sample_rate=target_sample_rate
         )
 
-def pydub_audio_segment_to_audio_packet(audio_segment: AudioSegment) -> AudioPacket:
+def pydub_audio_segment_to_audio_packet(
+        audio_segment: AudioSegment,
+        target_sample_rate: int=TARGET_SAMPLE_RATE
+    ) -> AudioPacket:
     return AudioPacket({
             'bytes': audio_segment._data,
             'sampleRate': audio_segment.frame_rate,
             'sampleWidth': audio_segment.sample_width,
             'numChannels': audio_segment.channels,
         }, resample=True, is_processed=False, 
-        target_sample_rate=48000
+        target_sample_rate=target_sample_rate
     )
 
-def np_audio_to_audio_segment(wav_audio, sample_rate):
+def np_audio_to_audio_segment(wav_audio: np.ndarray, sample_rate: int):
     wav_norm = wav_audio * (32767 / max(0.01, np.max(np.abs(wav_audio))))
     wav_norm = wav_norm.astype(np.int16)
     wav_buffer = io.BytesIO()
@@ -55,12 +61,12 @@ def np_audio_to_audio_segment(wav_audio, sample_rate):
     wav_buffer.seek(0)
     return AudioSegment.from_file(wav_buffer, format="wav")
 
-def np_audio_to_audio_packet(wav_audio, sample_rate):
+def np_audio_to_audio_packet(wav_audio: np.ndarray, sample_rate: int):
     return pydub_audio_segment_to_audio_packet(
         np_audio_to_audio_segment(wav_audio, sample_rate)
     )
 
-def bytes_to_audio_packet(audio_bytes, format=None) -> AudioPacket:
+def bytes_to_audio_packet(audio_bytes: bytes, format=None) -> AudioPacket:
     # convert bytes to audio segment
     audio_segment = AudioSegment.from_file(io.BytesIO(audio_bytes), format=format)
     return pydub_audio_segment_to_audio_packet(audio_segment)

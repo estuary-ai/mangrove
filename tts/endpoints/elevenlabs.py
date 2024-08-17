@@ -2,7 +2,7 @@ import os
 import numpy as np
 from typing import Generator
 from elevenlabs.client import ElevenLabs
-from core.data import AudioPacket
+from core.data import AudioPacket, TextPacket
 from core.utils import bytes_to_audio_packet
 from .base import TTSEndpoint
 
@@ -17,10 +17,11 @@ class ElevenLabsTTSEndpoint(TTSEndpoint):
             for chunk in _audio_packets:
                 f.write(chunk)
 
-    def text_to_audio(self, text) -> Generator[AudioPacket, None, None]:
+    def text_to_audio(self, text_packet: TextPacket) -> Generator[AudioPacket, None, None]:
+        # TODO fix stuttering output
         leftover = None
         for chunk in self.client.generate(
-            text=text, model=self.model_name, 
+            text=text_packet.text, model=self.model_name, 
             output_format="mp3_22050_32",
             stream=True
         ):

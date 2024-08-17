@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable
+from typing import Callable, List, Optional, Union
 from threading import RLock
 from multiprocessing import JoinableQueue
 from loguru import logger
@@ -63,26 +63,26 @@ class PipelineStage(metaclass=ABCMeta):
         self._on_ready_callback = callback
 
     @abstractmethod
-    def _unpack(self):
+    def _unpack(self) -> Optional[Union[DataPacket, List[DataPacket]]]: # TODO Make it not optional!!
         raise NotImplementedError()
 
     @abstractmethod
-    def _process(self, data_packet: DataPacket):
+    def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, List[DataPacket]]]:
         raise NotImplementedError()
 
-    def on_sleep(self):
+    def on_sleep(self) -> None:
         pass
 
-    def on_connect(self):
+    def on_connect(self) -> None:
         pass
 
-    def on_disconnect(self):
+    def on_disconnect(self) -> None:
         pass
 
-    def on_start(self):
+    def on_start(self) -> None:
         pass
 
-    def on_ready(self, inference):
+    def on_ready(self, inference) -> None:
         self.on_ready_callback(inference)
 
     def start(self, host):
@@ -107,10 +107,10 @@ class PipelineStage(metaclass=ABCMeta):
 
         self._processor = self._host.start_background_task(_start_thread)
 
-    def feed(self, data_packet: DataPacket):
+    def feed(self, data_packet: DataPacket) -> None:
         self._input_buffer.put(data_packet)
 
-    def log(self, msg, end="", force=False):
+    def log(self, msg, end="", force=False) -> None:
         """Log message to console if verbose is True or force is True with flush
 
         Args:

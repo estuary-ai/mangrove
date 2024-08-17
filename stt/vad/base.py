@@ -1,8 +1,7 @@
 import collections
-from functools import reduce
+from typing import Union, List
 from abc import ABCMeta, abstractmethod
 from functools import reduce
-from typing import Union, List
 from storage_manager import write_output
 from core import AudioBuffer, AudioPacket
 
@@ -19,22 +18,22 @@ class VoiceActivityDetector(metaclass=ABCMeta):
         self.verbose = verbose
         self.reset()
 
-    def reset(self):
+    def reset(self) -> None:
         self.num_recorded_chunks = 0
         self.silence_frame_start_timestamp = None
         self._reset_silence_buffer()
 
-    def _reset_silence_buffer(self):
+    def _reset_silence_buffer(self) -> None:
         """Reset silence buffer"""
         # TODO try increasing size
         self.buffered_silences = collections.deque(maxlen=2)
         self.num_recorded_chunks = 0
 
     @abstractmethod
-    def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]):
+    def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         raise NotImplementedError
 
-    def detected_silence_after_voice(self, frame: AudioPacket):
+    def detected_silence_after_voice(self, frame: AudioPacket) -> bool:
         if self.num_recorded_chunks > 0:
             return True
         else:
@@ -46,17 +45,17 @@ class VoiceActivityDetector(metaclass=ABCMeta):
             self.buffered_silences.append(frame)
             return False
 
-    def process_voice(self, frame: AudioPacket):
+    def process_voice(self, audio_packet: AudioPacket) -> AudioPacket:
         """Process voice frame
 
         Args:
-            frame (AudioPacket): Audio packet of voice frame
+            audio_packet (AudioPacket): Audio packet of voice frame
 
         Returns:
             AudioPacket: Audio packet of voice frame with silence buffer appended
         """
 
-        def _concat_buffered_silence(frame: AudioPacket):
+        def _concat_buffered_silence(audio_packet: AudioPacket):
             """Concatenate buffered silence to voice frame"""
 
             if len(self.buffered_silences) > 0:
@@ -69,11 +68,11 @@ class VoiceActivityDetector(metaclass=ABCMeta):
                     silence_len = len(silence_len)
 
                 # DEBUG END
-                self.buffered_silences.append(frame)
+                self.buffered_silences.append(audio_packet)
                 complete_frame = reduce(lambda x, y: x + y, self.buffered_silences)
                 self._reset_silence_buffer()
             else:
-                complete_frame = frame
+                complete_frame = audio_packet
             return complete_frame
 
         self.silence_frame_start_timestamp = None
@@ -82,11 +81,11 @@ class VoiceActivityDetector(metaclass=ABCMeta):
         else:
             self.log("=")  # still recording
         self.num_recorded_chunks += 1
-        frame_inc_silence = _concat_buffered_silence(frame)
+        frame_inc_silence = _concat_buffered_silence(audio_packet)
 
         return frame_inc_silence
 
-    def is_silence_cross_threshold(self, frame: AudioPacket):
+    def is_silence_cross_threshold(self, audio_packet: AudioPacket):
         """Check if silence threshold is reached
 
         Args:
@@ -96,10 +95,11 @@ class VoiceActivityDetector(metaclass=ABCMeta):
             bool: True if silence threshold is reached, False otherwise
         """
         if self.silence_frame_start_timestamp is None:
-            self.silence_frame_start_timestamp = frame.timestamp
+            self.silence_frame_start_timestamp = audio_packet.timestamp
             # self.silence_frame_start_timestamp = frame.timestamp + frame.duration
         else:
-            now_timestamp = frame.timestamp + frame.duration
+            # NOTE: this is according to timestamps of packet not real-time
+            now_timestamp = audio_packet.timestamp + audio_packet.duration 
             silence_duration = now_timestamp - self.silence_frame_start_timestamp
             # logger.debug(f'Got Silence after voice duration: {silence_duration}')
             if silence_duration >= self.silence_threshold:
@@ -110,7 +110,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
 
         return False
 
-    def log(self, msg, end="", force=False):
+    def log(self, msg, end="", force=False) -> None: # TODO: refactor out into progress logger
         """Log message to console if verbose is True or force is True with flush
 
         Args:

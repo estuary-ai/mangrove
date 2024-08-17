@@ -1,6 +1,6 @@
 from typing import Generator, Dict
 from abc import ABCMeta, abstractmethod
-from core import AudioPacket
+from core import AudioPacket, TextPacket
 
 class TTSEndpoint(metaclass=ABCMeta):
     def __init__(self, **kwargs):
@@ -11,6 +11,6 @@ class TTSEndpoint(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def text_to_audio(self, text) -> Generator[AudioPacket, None, None]:
+    def text_to_audio(self, text_packt: TextPacket) -> Generator[AudioPacket, None, None]:
         raise NotImplementedError()
         

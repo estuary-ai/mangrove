@@ -1,4 +1,6 @@
 import time
+import torch
+from typing import Optional
 from loguru import logger
 from core import AudioPacket, TextPacket, AudioBuffer
 from core.stage import AudioToTextStage
@@ -10,7 +12,7 @@ class STTController(AudioToTextStage):
 
     def __init__(
         self,
-        silence_threshold=300,
+        silence_threshold=300, # TODO refactor out the VAD as an AudioToAudioStage
         frame_size=512 * 4,
         device=None,
         verbose=False,
@@ -29,22 +31,23 @@ class STTController(AudioToTextStage):
         """
         super().__init__(frame_size=frame_size, verbose=verbose)
 
-        import torch
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # self.vad = WebRTCVAD(vad_aggressiveness, silence_threshold, frame_size, verbose)
-        self.vad = SileroVAD(
+        self.vad = SileroVAD( # TODO refactor out in separate Stage
             silence_threshold=silence_threshold,
             frame_size=frame_size,
             device=device,
             verbose=verbose,
         )
-        self.model = FasterWhisperEndpoint(device=device)
+        self.model = FasterWhisperEndpoint(device=device) # TODO make selection dynamic by name or type
 
+        # TODO make them all in one debug variable
         self.debug_total_size = 0
         self.debug_silence_size = 0
         self.debug_voice_size = 0
+
         self.caught_voice = False
         self._command_audio_buffer = AudioBuffer(frame_size=frame_size)
 
@@ -54,7 +57,7 @@ class STTController(AudioToTextStage):
     def on_sleep(self):
         self.log('<stt>')
 
-    def _create_stream(self):
+    def _create_stream(self) -> None:
         """Create a new stream context"""
         self.model.reset()
 
@@ -62,6 +65,7 @@ class STTController(AudioToTextStage):
         self.recorded_audio_length = 0
         logger.warning("Reset debug feed frames")
 
+    # TODO clean
     # def feed(self, audio_packet: AudioPacket):
     #     """Feed audio packet to STT Controller
 
@@ -73,7 +77,7 @@ class STTController(AudioToTextStage):
     #     #     self.log("receiving first stream of audio command")
     #     self._input_buffer.put(audio_packet)``
 
-    def _feed_audio_content(self, audio_packet: AudioPacket):
+    def _feed_audio_content(self, audio_packet: AudioPacket) -> None:
         """Feed audio content to stream context
 
         Args:
@@ -84,7 +88,7 @@ class STTController(AudioToTextStage):
         ##### DEBUG #####
         self.recorded_audio_length += audio_packet.duration
 
-    def _process(self, audio_packet):
+    def _process(self, audio_packet) -> Optional[TextPacket]:
         """Process audio buffer and return transcription if any found"""
         def _process_voice(frame: AudioPacket):
             """Process voice frame and feed to stream context
@@ -174,7 +178,7 @@ class STTController(AudioToTextStage):
             return result
 
 
-    def reset_audio_stream(self):
+    def reset_audio_stream(self) -> None:
         """Reset audio stream context"""
         self.log("[reset]", end="\n")
         if not self._command_audio_buffer.is_empty():
@@ -188,13 +192,13 @@ class STTController(AudioToTextStage):
         self.vad.reset()
 
     # TODO use after some detection
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh STT Controller"""
         # self.log('[refresh]', end='\n')
         # self.reset_audio_stream()
         self.vad.reset()
 
 
-    def on_disconnect(self):
+    def on_disconnect(self) -> None:
         self.reset_audio_stream()
         self.log("[disconnect]", end="\n")

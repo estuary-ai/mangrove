@@ -53,7 +53,7 @@ class PipelineSequence(PipelineStage):
                     if not isinstance(data_packet, next_stage.input_type):
                         raise ValueError(f"Data packet type mismatch, expected {next_stage.input_type}, got {type(data_packet)}")
 
-                    logger.warning(f"Feeding {data_packet} from {stage} to {next_stage}")
+                    logger.debug(f"Feeding {data_packet} from {stage} to {next_stage}")
                     next_stage.feed(data_packet)
                 else:
                     logger.debug(f"Final stage in {self} reached, emitting response through host")

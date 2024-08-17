@@ -1,3 +1,4 @@
+from typing import Optional
 from abc import ABCMeta, abstractmethod
 from queue import Empty
 from functools import reduce
@@ -10,10 +11,10 @@ class TextToTextStage(PipelineStage, metaclass=ABCMeta):
     output_type = TextPacket
 
     @abstractmethod
-    def _process(self, text_packet: TextPacket):
+    def _process(self, text_packet: TextPacket) -> Optional[TextPacket]:
         raise NotImplementedError()
 
-    def _unpack(self):
+    def _unpack(self) -> Optional[TextPacket]:
         """Unpack text packets from input buffer"""
         text_packets = []
         try:

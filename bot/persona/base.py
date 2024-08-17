@@ -22,5 +22,5 @@ class BotPersona(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def construct_input(self, user_msg, chat_history):
+    def construct_input(self, user_msg, chat_history) -> dict:
         pass

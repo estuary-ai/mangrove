@@ -18,7 +18,7 @@ class WebRTCVAD(VoiceActivityDetector):
         self.model = webrtcvad.Vad(aggressiveness)
         super().__init__(silence_threshold, frame_size, verbose)
 
-    def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]):
+    def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech
 
         Args:
@@ -47,6 +47,6 @@ class WebRTCVAD(VoiceActivityDetector):
             return is_speeches[0]
         return is_speeches
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
         self.model = webrtcvad.Vad(self.aggressiveness)

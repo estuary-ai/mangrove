@@ -10,7 +10,7 @@ from TTS.tts.models.xtts import Xtts
 from TTS.api import TTS
 from pydub import AudioSegment
 from loguru import logger
-from core.data import AudioPacket
+from core.data import AudioPacket, TextPacket
 from core.utils import np_audio_to_audio_packet
 from .elevenlabs import ElevenLabsTTSEndpoint
 from .base import TTSEndpoint
@@ -56,11 +56,11 @@ class TTSLibraryEndpoint(TTSEndpoint):
         raise NotImplementedError("This method is not implemented for TTSLibraryEndpoint")
     #     self.engine.tts_to_file(text=text, file_path=filepath, speaker_wav="speaker.wav", language="en")
 
-    def text_to_audio(self, text) -> Generator[AudioPacket, None, None]:
+    def text_to_audio(self, text_packet: TextPacket) -> Generator[AudioPacket, None, None]:
         t0 = time.time()
         chunks = self.model.inference_stream(
-            text,
-            language="en",
+            text_packet.text,
+            language="en", # TODO pull other associated variables from text_packet if applicable
             gpt_cond_latent=self.gpt_cond_latent,
             speaker_embedding=self.speaker_embedding,
             stream_chunk_size=500,

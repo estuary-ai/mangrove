@@ -25,11 +25,12 @@ class TTSController(TextToAudioStage):
     ):
         super().__init__(verbose=verbose)
         self.endpoint: TTSEndpoint
+        # TODO select in dynamic cleaner way
         if endpoint == "pyttsx3":
             logger.info("Using Pyttsx3 TTS Endpoint")
             from tts.endpoints.pyttsx3 import Pyttsx3TTSEndpoint
             self.endpoint = Pyttsx3TTSEndpoint(**endpoint_kwargs)
-        elif endpoint == "tts":
+        elif endpoint == "xtts":
             from tts.endpoints.xtts import TTSLibraryEndpoint
             self.endpoint = TTSLibraryEndpoint()
         elif endpoint == "elevenlabs":
@@ -55,7 +56,7 @@ class TTSController(TextToAudioStage):
 
         def _process_sentence_text_packet():
             _new_audiopacket_generator = self._get_audiopackets_stream(
-                self._sentence_text_packet.text
+                self._sentence_text_packet
             )
             if self._audiopacket_generator is not None:
                 self._audiopacket_generator = chain(
@@ -122,29 +123,31 @@ class TTSController(TextToAudioStage):
     def on_sleep(self):
         self.log('<tts>')
 
-    def _get_audiopackets_stream(self, text) -> Generator[AudioPacket, None, None]:
+    def _get_audiopackets_stream(self, text_packet: TextPacket) -> Generator[AudioPacket, None, None]:
         """Get generated audio packets stream for text
 
         Args:
-            text (str): Text to read
+            TODO
 
         Returns:
             Generator[AudioPacket, None, None]: Audio packets stream reading the text
         """
-        if text is None:
-            raise Exception("Texts cannot be None")
+        # TODO data type verification
+        # if text is None:
+        #     raise Exception("Texts cannot be None")
 
-        if isinstance(text, list):
-            text = " ".join(text)
+        # if isinstance(text, list):
+        #     text = " ".join(text)
 
-        logger.debug(f"Reading text: {text}")
-        yield from self.endpoint.text_to_audio(text)
+        logger.debug(f"Reading text: {text_packet}")
+        yield from self.endpoint.text_to_audio(text_packet)
 
     def read(self, text, as_generator=False) -> Generator[AudioPacket, None, None]:
-        if isinstance(text, str):
-            audio_bytes_generator = self._get_audiopackets_stream(text)
-        else:
-            raise ValueError("text should be a string")
+        if not isinstance(text, TextPacket):
+            if isinstance(text, str):
+                text_packet = TextPacket(text, partial=False, start=False)
+                
+        audio_bytes_generator = self._get_audiopackets_stream(text_packet)
 
         if as_generator:
             return audio_bytes_generator

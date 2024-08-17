@@ -1,3 +1,4 @@
+from typing import Optional
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from core.data import AudioPacket, TextPacket
@@ -19,10 +20,10 @@ class AudioToTextStage(PipelineStage, metaclass=ABCMeta):
         return self._frame_size
 
     @abstractmethod
-    def _process(self, audio_packet: AudioPacket):
+    def _process(self, audio_packet: AudioPacket) -> Optional[TextPacket]:
         raise NotImplementedError()
 
-    def _unpack(self):
+    def _unpack(self) -> Optional[AudioPacket]:
         """Unpack audio packets from input buffer"""
         audio_packets = []
         while True:

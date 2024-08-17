@@ -15,12 +15,10 @@ class AudioBuffer:
 
     class Empty(Exception):
         """Exception raised when queue is empty"""
-
         pass
 
     class Full(Exception):
         """Exception raised when queue is full"""
-
         pass
 
     def __init__(self, frame_size=320, max_queue_size=0):
@@ -38,7 +36,7 @@ class AudioBuffer:
         self._len = 0
         self._lock = RLock()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset queue to empty state"""
         with self.queue.mutex:
             self.queue_before_reset = self.queue.queue
@@ -47,7 +45,7 @@ class AudioBuffer:
     def __str__(self):
         return " ".join([str(packet) for packet in self.queue.queue])
 
-    def put(self, audio_packet: AudioPacket, timeout=0.5):
+    def put(self, audio_packet: AudioPacket, timeout=0.5) -> None:
         """Add audio packet to queue
 
         Args:
@@ -61,7 +59,7 @@ class AudioBuffer:
             except QueueFull:
                 raise AudioBuffer.Full
 
-    def get_no_wait(self, frame_size=None):
+    def get_no_wait(self, frame_size=None) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
         Args:
@@ -91,7 +89,7 @@ class AudioBuffer:
         with self._lock:
             return self._get(frame_size, timeout)
 
-    def _get(self, frame_size=None, timeout=0.5):
+    def _get(self, frame_size=None, timeout=0.5) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
         Args:
@@ -153,7 +151,7 @@ class AudioBuffer:
 
         return frame
 
-    def __next__(self):
+    def __next__(self) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
         Returns:
@@ -170,15 +168,15 @@ class AudioBuffer:
             raise StopIteration
         return ret
 
-    def __iter__(self):
+    def __iter__(self) -> 'AudioBuffer':
         """Get iterator of audio packets from queue given frame size"""
         return self
 
-    def size_of_leftover(self):
+    def size_of_leftover(self) -> int:
         """Get length of queue"""
         return self._len
 
-    def _debug_verify_order(self):
+    def _debug_verify_order(self) -> None:
         """Verify that queue is in order (For Debugging only)"""
         with self.queue.mutex:
             # noise_fstamps = []
@@ -196,18 +194,17 @@ class AudioBuffer:
                     except:
                         print(f"error at {i}, and {i+1}")
 
-    def _debug_play_buffer(self):
+    def _debug_play_buffer(self) -> None:
         """Play audio buffer (For Debugging only)"""
         with self.queue.mutex:
             packet = reduce(lambda x, y: x + y, self.queue.queue)
             sd.play(np.frombuffer(packet.bytes, dtype=np.int16), 16000)
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """Check if queue is empty"""
         return self.queue.qsize() == 0 and self.leftover is None
 
-
-    def dump_to_packet(self):
+    def dump_to_packet(self) -> AudioPacket:
         """Dump audio buffer to audio packet"""
         with self._lock:
             data_packets = Queue()

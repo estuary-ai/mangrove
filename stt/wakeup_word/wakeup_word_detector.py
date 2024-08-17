@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from core import AudioBuffer, AudioPacket
 from .audio_classification_endpoint import HFAudioClassificationEndpoint
 
-
+# TODO rewrite as a stage !!!
 class WakeUpVoiceDetector:
     def __init__(
         self,

@@ -8,6 +8,8 @@ from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from core import AudioPacket, TextPacket
 
+# TODO create feedback loop (ACK), and use it for interruption!! 
+# TODO refactor/encapsualte server and make it part of the agents instead
 
 class DigitalAssistant(Namespace):
     """Digital Assistant SocketIO Namespace"""
@@ -25,22 +27,22 @@ class DigitalAssistant(Namespace):
         self.lock = Lock()
         logger.info("Server is about to be Up and Running..")
 
-    def setup(self):
+    def setup(self) -> None:
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
         self.agent.start(self)
 
-    def sleep(self, seconds):
+    def sleep(self, seconds) -> None:
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
         self.server.sleep(seconds)
 
-    def start_background_task(self, target, *args, **kwargs):
+    def start_background_task(self, target, *args, **kwargs): # TODO find convenient generic type hinting
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")
         return self.server.start_background_task(target, *args, **kwargs)
 
-    def __emit__(self, event, data):
+    def __emit__(self, event, data) -> None:
         if hasattr(data, "__next__"):
             # if data is generator
             logger.debug(f"Emitting generator {event}")
@@ -55,13 +57,13 @@ class DigitalAssistant(Namespace):
                 data = data.to_dict()
             self.server.emit(event, data)
 
-    def emit_bot_voice(self, audio_packet: AudioPacket):
+    def emit_bot_voice(self, audio_packet: AudioPacket) -> None:
         self.__emit__("bot_voice", audio_packet)
 
-    def emit_bot_response(self, text_packet: TextPacket):
+    def emit_bot_response(self, text_packet: TextPacket) -> None:
         self.__emit__("bot_response", text_packet)
 
-    def emit_stt_response(self, text_packet: TextPacket):
+    def emit_stt_response(self, text_packet: TextPacket) -> None:
         self.__emit__("stt_response", text_packet)
 
     def on_connect(self):
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--tts_endpoint", dest="tts_endpoint", type=str, default="pyttsx3",
-        choices=["pyttsx3", "gtts", "elevenlabs", "tts"],
+        choices=["pyttsx3", "gtts", "elevenlabs", "xtts"],
         help="TTS Endpoint"
     )
     parser.add_argument(

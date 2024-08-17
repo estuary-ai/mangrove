@@ -1,3 +1,4 @@
+from typing import Optional
 from abc import ABCMeta, abstractmethod
 from queue import Empty
 from core.data import AudioPacket, TextPacket
@@ -9,10 +10,10 @@ class TextToAudioStage(PipelineStage, metaclass=ABCMeta):
     output_type = AudioPacket
 
     @abstractmethod
-    def _process(self, audio_packet: AudioPacket):
+    def _process(self, text_packet: TextPacket) -> Optional[AudioPacket]:
         raise NotImplementedError()
 
-    def _unpack(self):
+    def _unpack(self) -> Optional[TextPacket]:
         try:
             return self._input_buffer.get_nowait()
         except Empty:
