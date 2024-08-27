@@ -40,9 +40,15 @@ Mangrove is the backend module of Estuary, a framework for building multimodal r
     conda activate mangrove
     ```
 
-3. Using `pdm use` ensure that pdm is pointing to the correct environment
+3. Using `pdm use` ensure that pdm is pointing to the correct environment.
 
-4. Install all dependancies:
+4. Make sure to update conda forge.
+
+   ```bash
+   conda install -c conda-forge gcc=12.1.0
+   ```
+
+5. Install all dependancies:
     3.1 Install package dependencies for Ubuntu 22.04 - Tested on WSL2.
 
     ```bash
