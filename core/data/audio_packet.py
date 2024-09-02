@@ -161,17 +161,17 @@ class AudioPacket(DataPacket):
             np.array(float): audio buffer as float
         """
         if buffer == b"":
-            logger.debug("0 Returning empty buffer")
+            # logger.debug("0 Returning empty buffer")
             # DUMMY AUX PACKET
             return buffer
         
         if sample_width == 2: # int16
-            logger.debug("1 Converting buffer to int16")
+            # logger.debug("1 Converting buffer to int16")
             buffer_float = np.frombuffer(buffer, dtype=np.int16).reshape((-1, num_channels)) / (1 << (8 * sample_width - 1))
             # import soundfile as sf
             # sf.write(f"__original_{AudioPacket.resampling}.wav", buffer_float, sample_rate)
         elif sample_width == 4: # float32
-            logger.debug("1 Converting buffer to float32")
+            # logger.debug("1 Converting buffer to float32")
             buffer_float = np.frombuffer(buffer, dtype=np.float32).reshape((-1, num_channels)) / (1 << (8 * sample_width - 1))
         else:
             raise ValueError(f"Unhandled format `{format}`. Please use `int16` or `float32`")
@@ -192,15 +192,15 @@ class AudioPacket(DataPacket):
             bytes: audio buffer as bytes
         """
         if buffer_float.size == 0:
-            logger.debug("0 Returning empty buffer")
+            # logger.debug("0 Returning empty buffer")
             # DUMMY AUX PACKET
             return buffer_float.tobytes()
 
         if sample_width == 2: # int16
-            logger.debug("1 Converting buffer to int16")
+            # logger.debug("1 Converting buffer to int16")
             buffer = (buffer_float * (1 << (8 * sample_width - 1))).astype(np.int16).reshape(-1).tobytes()
         elif sample_width == 4: # float32
-            logger.debug("1 Converting buffer to float32")
+            # logger.debug("1 Converting buffer to float32")
             buffer = (buffer_float * (1 << (8 * sample_width - 1))).astype(np.float32).reshape(-1).tobytes()
         else:
             raise ValueError(f"Unhandled sample width `{sample_width}`. Please use `2` or `4` ")
