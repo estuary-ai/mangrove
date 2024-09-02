@@ -7,12 +7,10 @@ authors = [
 ]
 dependencies = [
     "faster-whisper>=1.0.3",
-    "nvidia-cudnn-cu12==8.9.7.29",
     "silero-vad>=5.1",
     "elevenlabs>=1.4.1",
     "langchain>=0.2.7",
     "langchain-openai>=0.1.16",
-    "deepspeed>=0.14.4",
     "loguru>=0.7.2",
     "flask-socketio>=5.3.6",
     "sounddevice>=0.4.7",
@@ -24,8 +22,13 @@ dependencies = [
     "transformers==4.35.0",
     "tts>=0.22.0",
     "pip>=24.2",
-    "nvidia-nccl-cu12==2.18.1",
+    "langchain-ollama>=0.1.1",
+    "torch==2.1.0+cu121",
+    "deepspeed>=0.15.0",
+    "python-dotenv>=1.0.1",
+    "pyttsx3>=2.91",
 ]
+
 requires-python = "==3.9.*"
 readme = "README.md"
 license = {text = "AGPL-3.0-only"}
@@ -38,3 +41,10 @@ client = [
 ]
 [tool.pdm]
 distribution = false
+
+[[tool.pdm.source]]
+url = "https://download.pytorch.org/whl/torch/"
+verify_ssl = true
+name = "torch"
+include_packages = ["torch"]
+type = "find_links"

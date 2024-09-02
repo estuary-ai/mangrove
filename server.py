@@ -3,10 +3,14 @@ import os, argparse
 from flask import Flask
 from loguru import logger
 from flask_socketio import SocketIO, Namespace
+from dotenv import load_dotenv
+
 from agents import BasicConversationalAgent
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from core import AudioPacket, TextPacket
+
+load_dotenv()
 
 # TODO create feedback loop (ACK), and use it for interruption!! 
 # TODO refactor/encapsualte server and make it part of the agents instead
