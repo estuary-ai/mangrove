@@ -12,7 +12,7 @@ class ElevenLabsTTSEndpoint(TTSEndpoint):
         self.model_name = model_name
 
     def text_to_audio_file(self, text, filepath) -> None:
-        _audio_packets = self.text_to_audio(text)
+        _audio_packets = self.text_to_audio(TextPacket(text=text, partial=False, start=True))
         with open(filepath, 'wb') as f:
             for chunk in _audio_packets:
                 f.write(chunk)
