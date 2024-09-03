@@ -38,6 +38,7 @@ If you already have Ubuntu 22.04 WSL installed on your machine, you can skip thi
     ```bash
     pdm venv create 3.9
     pdm venv activate
+   [copy and paste the output line to activate the environment]
    ```
 
 4. Using `pdm use` ensure that pdm is pointing to the correct environment.
