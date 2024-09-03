@@ -48,32 +48,54 @@ If you already have Ubuntu 22.04 WSL installed on your machine, you can skip thi
     ```
 
 ## Further Setup as Required
-- If running in WSL and looking to communicate over LAN network, follow one of the methods mentioned [here](https://learn.microsoft.com/en-us/windows/wsl/networking).
 
-- Running XTT (using Deepspeed) requires a standlone version of cuda library (the same version as the one used by `torch.version.cuda`).:
+### Networked Configuration
+
+If you are running Mangrove in WSL and would like to configure Local Area Network (LAN) communications for a remote client, WSL must be set to mirrored network configuration.  You can do this with the following steps:
+
+1. Open Powershell and create/open the .wslconfig file in the `C:\Users\[username]\` directory.
+2. Add the following to the .wslconfig file:
+```bash
+[wsl2]
+networkingMode=mirrored
+[experimental] 
+dnsTunneling=true
+autoProxy=true
+hostAddressLoopback=true
+```
+
+#### Tips
+
+- Ensure both Mangrove and the client are connected to the same LAN and both the machine running Mangrove and the LAN allow for device-to-device communications.
+  
+- [OPTIONAL] You may refer to the Microsoft WSL documentation on Mirrored Networking [here](https://learn.microsoft.com/en-us/windows/wsl/networking#mirrored-mode-networking).
+
+### XTTS
+- Running XTTS (using Deepspeed) requires a standlone version of cuda library (the same version as the one used by `torch.version.cuda`):
     1. Install `dkms` package to avoid issues with the installation of the cuda library: `sudo apt-get install dkms`
     2. Install CUDA 12.1 from the [NVIDIA website](https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local).
-    3. Follow the instructions given by the installation process including setting the PATH variables in the `.bashrc` file if on Ubuntu as follows:
+    3. Follow the instructions given by the installation process including setting the PATH variables in the `.bashrc` file if on Ubuntu.  Add the following to the .bashrc file with any code editor ie. `nano ~/.bashrc`
         ```bash
         export PATH=/usr/local/cuda-12.1/bin${PATH:+:${PATH}}
         export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
         ```
 
+### API Keys
 - Mangrove currently supports the usage of APIs (e.g., OpenAI), which require API keys. Create `.env` file in the root directory of the project and add your API keys as follows:
     ```bash
-    OPENAI_API_KEY=YOUR_API_KEY_FROM_OPENAI
-    ELEVENLABS_API_KEY=YOUR_API_KEY_FROM_ELEVENLABS
+    OPENAI_API_KEY=[your OpenAI API Key]
+    ELEVENLABS_API_KEY=[your ElevenLabs API Key]
     ```
 
 
 # Acknowledgements
-Mangrove was built from our base code of developing **Traveller**, the digital assistant of **SENVA**, a prototype Augmented Reality (AR) Heads-Up Display (HUD) solution for astronauts as part of the **NASA SUITs** Challenge. It corresponds to the effort of **Team AEGIS** project at the **NASA-SUITs** Challenge in the following years:
+Mangrove was built from our base code of developing **Traveller**, the digital assistant of **SENVA**, a prototype Augmented Reality (AR) Heads-Up Display (HUD) solution for astronauts.  Thank you to **Team Aegis** for participating in the **NASA SUITs Challenge** for the following years:
 
 - **2023**: **University of Southern California (USC)** with **University of Berkley (UCBerkley)**
 
 - **2022**: **University of Southern California (USC)** with **University of Arizona (UA)**.
 
-The Estuary team would like to acknowledge the developers, authors, and creatives whose work contributed to the success of this project:
+The Estuary team would also like to acknowledge the developers, authors, and creatives whose work contributed to the success of this project:
 
 - SocketIO Protocol: https://socket.io/docs/v4/socket-io-protocol/
 - FlaskSocketIO Library: https://github.com/miguelgrinberg/Flask-SocketIO
@@ -81,7 +103,6 @@ The Estuary team would like to acknowledge the developers, authors, and creative
 - Silero-VAD: https://github.com/snakers4/silero-vad
 - Faster-Whisper: https://github.com/SYSTRAN/faster-whisper
 - PyAudio: https://people.csail.mit.edu/hubert/pyaudio/
-- TTS Library and [XTTs](https://arxiv.org/abs/2406.04904): https://github.com/coqui-ai/TTS
+- [XTTs](https://arxiv.org/abs/2406.04904): https://github.com/coqui-ai/TTS
 
-
-More to come soon! Stay tuned!
+More to come soon! Stay tuned and Fight On!
