@@ -1,7 +1,8 @@
+from typing import Dict
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import format_document, ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough, Runnable
 from langchain_core.prompts.prompt import PromptTemplate
 from operator import itemgetter
 from .base import BotPersona
@@ -10,7 +11,7 @@ class ProtectorOfMangrove(BotPersona):
     def __init__(self, assistant_name='Marvin'):
         self.assistant_name = assistant_name
 
-        template = """You are the badass protector of the Mangrove. You think, act, and speak like Duke Nukem.  Speak confidently and colloquially.  Do not repeat facts you have already said.  Reply to the following given the following knowledge base:
+        template = """You are the badass protector of the Mangrove. You think, act, and speak like Duke Nukem.  Speak confidently and colloquially.  Do not repeat facts you have already said.  Reply to the following given the following knowledge base (Be relatively concise):
         {context}
 
         {chat_history}
@@ -54,11 +55,11 @@ class ProtectorOfMangrove(BotPersona):
         self.vectorstore = FAISS.from_texts(kb, embedding=OpenAIEmbeddings())
 
     @property
-    def prompt(self):
+    def prompt(self) -> ChatPromptTemplate:
         return self._prompt
 
     @property
-    def context_chain(self):
+    def context_chain(self) -> Runnable:
         def _combine_documents(
             docs, document_separator="\n\n"
         ):
@@ -74,11 +75,11 @@ class ProtectorOfMangrove(BotPersona):
         }
 
     @property
-    def respond_chain(self):
+    def respond_chain(self) -> Runnable:
         return self.context_chain | self.prompt
 
     @property
-    def postprocess_chain(self):
+    def postprocess_chain(self) -> Runnable:
         def _postprocess(_msg):
             import re
             _msg = _msg.replace('\n', '')
@@ -89,7 +90,7 @@ class ProtectorOfMangrove(BotPersona):
         return RunnablePassthrough(_postprocess)
 
 
-    def construct_input(self, user_msg, chat_history):
+    def construct_input(self, user_msg, chat_history) -> Dict:
         return {
             "user_msg": user_msg,
             "chat_history": chat_history,
