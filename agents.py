@@ -16,6 +16,7 @@ class BasicConversationalAgent(PipelineSequence):
     def __init__(
         self,
         device=None,
+        bot_endpoint="openai",
         tts_endpoint="gtts",
         welcome_msg: str="Welcome, AI server connection is succesful.",
         verbose=False,
@@ -23,8 +24,8 @@ class BasicConversationalAgent(PipelineSequence):
         super().__init__(verbose=verbose)
 
         stt = STTController(device=device)
-        bot = BotController()
-        tts = TTSController(tts_endpoint)
+        bot = BotController(endpoint=bot_endpoint)
+        tts = TTSController(endpoint=tts_endpoint)
         self.startup_audiopacket = None
         if welcome_msg:
             self.startup_audiopacket = tts.read(

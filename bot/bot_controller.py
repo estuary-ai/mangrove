@@ -1,21 +1,26 @@
 from typing import Generator, Optional, List
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
-from langchain_core.output_parsers import StrOutputParser
+from itertools import chain
+
 from core.stage import TextToTextStage
 from bot.persona.protector_of_mangrove import ProtectorOfMangrove
 from core.data.text_packet import TextPacket
-from itertools import chain
 
 class BotController(TextToTextStage):
-    def __init__(self, assistant_name='Marvin', verbose=False):
+    def __init__(self, assistant_name='Marvin', verbose=False, endpoint='openai', endpoint_kwargs={}):
         super().__init__(verbose=verbose)
         self._persona = ProtectorOfMangrove(assistant_name=assistant_name)
+        if endpoint == 'openai':
+            from .endpoints.chat_openai import ChatOpenAIEndpoint
+            self._endpoint = ChatOpenAIEndpoint(**endpoint_kwargs)
+        elif endpoint == 'ollama':
+            from .endpoints.chat_ollama import ChatOllamaEndpoint
+            self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
+        else:
+            raise Exception(f"Unknown Endpoint {endpoint}, available endpoints: openai, ollama")
+        
+        self._endpoint.setup(self._persona)
 
-        # TODO create other endpoints
-        self._conversational_qa_chain = self._persona.respond_chain | ChatOpenAI(
-            model="gpt-3.5-turbo",
-        ) | StrOutputParser() | self._persona.postprocess_chain
         self._chat_history: List[BaseMessage] = []
         self._text_packet_generator: Generator[TextPacket, None, None] = None
 
@@ -46,7 +51,6 @@ class BotController(TextToTextStage):
     def on_sleep(self) -> None:
         return self.log('<bot>')
 
-
     def respond(self, user_msg) -> Generator[TextPacket, None, None]:
         def _pack_response(content, partial=False, start=False):
             # format response from openai chat to be sent to the user
@@ -68,12 +72,13 @@ class BotController(TextToTextStage):
                     raise Exception(f'{message} is not of expected type!')
 
             self._chat_history.append(HumanMessage(content=user_msg))
-            ai_msg_stream = self._conversational_qa_chain.stream(
-                self._persona.construct_input(user_msg, chat_history_formated)
-            )
+            
             ai_res_content = ""
             first_chunk = True
-            for chunk in ai_msg_stream:
+            for chunk in self._endpoint.stream(
+                user_msg=user_msg, 
+                chat_history_formated=chat_history_formated
+            ):
                 ai_res_content += chunk
                 if chunk == "":
                     continue

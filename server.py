@@ -10,7 +10,7 @@ from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from core import AudioPacket, TextPacket
 
-load_dotenv()
+load_dotenv(override=True)
 
 # TODO create feedback loop (ACK), and use it for interruption!! 
 # TODO refactor/encapsualte server and make it part of the agents instead
@@ -104,6 +104,11 @@ if __name__ == "__main__":
         help="Use CPU instead of GPU"
     )
     parser.add_argument(
+        "--bot_endpoint", dest="bot_endpoint", type=str, default="openai",
+        choices=["openai", "ollama"],
+        help="Bot Conversational Endpoint"
+    )
+    parser.add_argument(
         "--tts_endpoint", dest="tts_endpoint", type=str, default="pyttsx3",
         choices=["pyttsx3", "gtts", "elevenlabs", "xtts"],
         help="TTS Endpoint"
@@ -144,6 +149,7 @@ if __name__ == "__main__":
     device = "cuda" if not args.cpu else "cpu"
     digital_assistant = DigitalAssistant(
         namespace="/",
+        bot_endpoint=args.bot_endpoint,
         tts_endpoint=args.tts_endpoint,
         device=device,
     )
