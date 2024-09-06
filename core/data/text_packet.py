@@ -34,7 +34,7 @@ class TextPacket(DataPacket):
         }
 
     def __str__(self):
-        return f"TextPacket({self.timestamp}, {self._text}, {self.partial}, {self.start})"
+        return f'TextPacket(ts={self.timestamp}, text="{self._text}", partial={self.partial}, start={self.start})'
 
     def __eq__(self, other):
         return self.timestamp == other.timestamp and self._text == other._text

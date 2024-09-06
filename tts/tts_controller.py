@@ -48,6 +48,8 @@ class TTSController(TextToAudioStage):
         self._audiopacket_generator: Generator[AudioPacket, None, None] = None
         self._generated_audio_packet_per_sentence_count = False
 
+        self.debug = False
+
 
     def _process(self, in_text_packet: TextPacket):
         # accepts a stream of text packets
@@ -71,16 +73,6 @@ class TTSController(TextToAudioStage):
 
         if in_text_packet is None and self._audiopacket_generator is None:
             return None
-
-        if self._audiopacket_generator:
-            try:
-                out_audio_packet: AudioPacket = next(self._audiopacket_generator)
-                out_audio_packet._id = self._generated_audio_packet_per_sentence_count
-                self._generated_audio_packet_per_sentence_count += 1
-                return out_audio_packet
-
-            except StopIteration:
-                self._audiopacket_generator = None
 
         if in_text_packet:
             if in_text_packet.partial:
@@ -118,6 +110,17 @@ class TTSController(TextToAudioStage):
                 # NOTE: next partial_bot_res.get('start') is gonna be True
                 self.log("", end='\n')
 
+        if self._audiopacket_generator:
+            try:
+                out_audio_packet: AudioPacket = next(self._audiopacket_generator)
+                out_audio_packet._id = self._generated_audio_packet_per_sentence_count
+                self._generated_audio_packet_per_sentence_count += 1
+                return out_audio_packet
+
+            except StopIteration:
+                self._audiopacket_generator = None
+
+        if in_text_packet: # and no audio is being generated at the moment
             return True # Meaning that the dispatching is still ongoing
 
     def on_sleep(self):

@@ -85,7 +85,7 @@ class BotController(TextToTextStage):
                 # TODO append to ai message internally
                 yield _pack_response(chunk, partial=True, start=first_chunk)
                 first_chunk = False
-            yield _pack_response(ai_res_content)
+            yield _pack_response(ai_res_content, partial=False, start=True)
             self._chat_history.append(AIMessage(content=ai_res_content))
 
     def process_procedures_if_on(self):
