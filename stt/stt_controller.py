@@ -12,7 +12,7 @@ class STTController(AudioToTextStage):
 
     def __init__(
         self,
-        silence_threshold=300, # TODO refactor out the VAD as an AudioToAudioStage
+        silence_threshold=700, # TODO refactor out the VAD as an AudioToAudioStage
         frame_size=512 * 4,
         device=None,
         verbose=False,
