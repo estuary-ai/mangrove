@@ -20,7 +20,7 @@ def filepath_to_audio_packet(
     target_sample_rate: int=TARGET_SAMPLE_RATE
 ) -> Generator[AudioPacket, None, None]:
     # load mp3 file
-    logger.debug(f"Loading mp3 file: {filepath}")
+    # logger.debug(f"Loading mp3 file: {filepath}")
     @backoff.on_exception(backoff.expo, FileNotFoundError, max_tries=max_tries)
     def load_mp3():
         return pydub.AudioSegment.from_mp3(filepath)

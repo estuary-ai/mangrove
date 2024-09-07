@@ -49,14 +49,14 @@ class DigitalAssistant(Namespace):
     def __emit__(self, event, data) -> None:
         if hasattr(data, "__next__"):
             # if data is generator
-            logger.debug(f"Emitting generator {event}")
+            logger.trace(f"Emitting generator {event}")
             for d in data:
                 write_output(">", end="")
                 if hasattr(d, "to_dict"):
                     d = d.to_dict()
                 self.server.emit(event, d)
         else:
-            logger.debug(f"Emitting {event}")
+            logger.trace(f"Emitting {event}")
             if hasattr(data, "to_dict"):
                 data = data.to_dict()
             self.server.emit(event, data)
