@@ -23,6 +23,9 @@ class BasicConversationalAgent(PipelineSequence):
     ):
         super().__init__(verbose=verbose)
 
+        from stt.vad_stage import VADStage
+
+        vad = VADStage(device=device)
         stt = STTController(device=device)
         bot = BotController(endpoint=bot_endpoint)
         tts = TTSController(endpoint=tts_endpoint)
@@ -33,6 +36,7 @@ class BasicConversationalAgent(PipelineSequence):
                 as_generator=False
             )
 
+        self.add_stage(vad)
         self.add_stage(stt)
         self.add_stage(bot)
         self.add_stage(tts)

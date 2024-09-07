@@ -53,10 +53,10 @@ class PipelineSequence(PipelineStage):
                     if not isinstance(data_packet, next_stage.input_type):
                         raise ValueError(f"Data packet type mismatch, expected {next_stage.input_type}, got {type(data_packet)}")
 
-                    logger.debug(f"Feeding {data_packet} from {stage} to {next_stage}")
+                    logger.trace(f"Feeding {data_packet} from {stage} to {next_stage}")
                     next_stage.feed(data_packet)
                 else:
-                    logger.debug(f"Final stage in {self} reached, emitting response through host")
+                    logger.trace(f"Final stage in {self.__class__} reached, emitting response through host")
 
                 if isinstance(stage, STTController):
                     assert isinstance(data_packet, STTController.output_type), f"Expected {STTController.output_type}, got {type(data_packet)}"
@@ -68,7 +68,8 @@ class PipelineSequence(PipelineStage):
                     assert isinstance(data_packet, TTSController.output_type), f"Expected {TTSController.output_type}, got {type(data_packet)}"
                     self._host.emit_bot_voice(data_packet)
                 else:
-                    raise ValueError("Unknown Pipeline Stage Type")
+                    logger.info(f"Unknown stage type {type(stage)}, not emitting response")    
+                    # raise ValueError("Unknown Pipeline Stage Type")
             return lambda data_packet: _callback(data_packet)
 
         for stage, next_stage in zip(self._stages, self._stages[1:] + [None]):

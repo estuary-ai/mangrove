@@ -12,7 +12,6 @@ class STTController(AudioToTextStage):
 
     def __init__(
         self,
-        silence_threshold=300, # TODO refactor out the VAD as an AudioToAudioStage
         frame_size=512 * 4,
         device=None,
         verbose=False,
@@ -34,21 +33,9 @@ class STTController(AudioToTextStage):
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # self.vad = WebRTCVAD(vad_aggressiveness, silence_threshold, frame_size, verbose)
-        self.vad = SileroVAD( # TODO refactor out in separate Stage
-            silence_threshold=silence_threshold,
-            frame_size=frame_size,
-            device=device,
-            verbose=verbose,
-        )
         self.model = FasterWhisperEndpoint(device=device) # TODO make selection dynamic by name or type
 
-        # TODO make them all in one debug variable
         self.debug_total_size = 0
-        self.debug_silence_size = 0
-        self.debug_voice_size = 0
-
-        self.caught_voice = False
         self._command_audio_buffer = AudioBuffer(frame_size=frame_size)
 
     def on_start(self):
@@ -77,75 +64,8 @@ class STTController(AudioToTextStage):
     #     #     self.log("receiving first stream of audio command")
     #     self._input_buffer.put(audio_packet)``
 
-    def _feed_audio_content(self, audio_packet: AudioPacket) -> None:
-        """Feed audio content to stream context
-
-        Args:
-            audio_packet (AudioPacket): Audio packet of voice frame
-        """
-        self.model.feed(audio_packet)
-
-        ##### DEBUG #####
-        self.recorded_audio_length += audio_packet.duration
-
     def _process(self, audio_packet) -> Optional[TextPacket]:
         """Process audio buffer and return transcription if any found"""
-        def _process_voice(frame: AudioPacket):
-            """Process voice frame and feed to stream context
-
-            Args:
-                frame (AudioPacket): Audio packet of voice frame
-            """
-            frame_inc_silence = self.vad.process_voice(frame)
-            self._feed_audio_content(frame_inc_silence)
-
-        # TODO make _process_silence using samples count or percentge instead of time
-        def _process_silence(frame: AudioPacket):
-            """Process silence frame and finish stream if silence threshold is reached
-
-            Args:
-                frame (AudioPacket): Audio packet of silence frame
-
-            Returns:
-                dict: Transcription if any found and stream finished while silence threshold is reached
-            """
-            def _finish_stream():
-                """Finish stream and return transcription if any found"""
-                logger.debug("Trying to finish stream..")
-                time_start_recog = round(time.time() * 1000)
-
-                # if force_clear_buffer:
-                #     # TODO look into this
-                #     # feed all remaining audio packets to stream context
-                #     self._process(self._unpack())
-
-                transcription = self.model.get_transcription()
-                if transcription:
-                    self.log(f"Recognized Text: {transcription}", end="\n")
-                    recog_time = round(time.time() * 1000) - time_start_recog
-                    self.refresh()
-
-                    return TextPacket(
-                        text=transcription,
-                        partial=False,
-                        start=True,
-                        recog_time=recog_time,
-                        recorded_audio_length=self.recorded_audio_length,
-                    )
-
-
-            if self.vad.detected_silence_after_voice(frame):  # recording after some voice
-                # self.log('-') # silence detected while recording
-                self._feed_audio_content(frame)
-                if self.vad.is_silence_cross_threshold(frame):
-                    # Returns decoding in JSON format and reinit the stream
-                    result = _finish_stream()
-                    # TODO move create_stream()
-                    self._create_stream()
-                    return result
-            # else:
-            #     # self.log('.') # silence detected while not recording
-            #     print(f'-------- Silence before voice at {frame.timestamp}')
 
         if audio_packet is None:
             return
@@ -157,26 +77,38 @@ class STTController(AudioToTextStage):
 
         self.debug_total_size += len(audio_packet) # For DEBUGGING
 
-        is_speech = self.vad.is_speech(audio_packet)
-        if is_speech:
-            self.debug_voice_size += len(audio_packet) # For DEBUGGING
+        # Feed audio content to stream context
+        self.model.feed(audio_packet)
 
-            _process_voice(audio_packet)
-            if not self.caught_voice:
-                self.caught_voice = True
-                logger.success(
-                    f"caught voice for the first time at {audio_packet.timestamp}"
-                )
+        ##### DEBUG #####
+        self.recorded_audio_length += audio_packet.duration
 
-        else:
-            self.debug_silence_size += len(audio_packet) # For DEBUGGING
 
-            result = _process_silence(audio_packet)
-            if result is not None:
-                self.caught_voice = False
+        # Finish stream and return transcription if any found
+        logger.debug("Trying to finish stream..")
+        time_start_recog = round(time.time() * 1000)
 
-            return result
+        # if force_clear_buffer:
+        #     # TODO look into this
+        #     # feed all remaining audio packets to stream context
+        #     self._process(self._unpack())
 
+        transcription = self.model.get_transcription()
+        if transcription:
+            logger.success(f"Recognized Text: {transcription}")
+            recog_time = round(time.time() * 1000) - time_start_recog
+            self.refresh()
+            self._create_stream() # TODO this was just moved here, verify
+
+            return TextPacket(
+                text=transcription,
+                partial=False, # TODO is it?
+                start=True,
+                recog_time=recog_time,
+                recorded_audio_length=self.recorded_audio_length,
+            )
+    
+        
 
     def reset_audio_stream(self) -> None:
         """Reset audio stream context"""
@@ -189,15 +121,12 @@ class STTController(AudioToTextStage):
         self._input_buffer.reset()
         self._command_audio_buffer.reset()
         self.model.reset()
-        self.vad.reset()
 
     # TODO use after some detection
     def refresh(self) -> None:
         """Refresh STT Controller"""
-        # self.log('[refresh]', end='\n')
+        self.log('[refresh]', end='\n')
         # self.reset_audio_stream()
-        self.vad.reset()
-
 
     def on_disconnect(self) -> None:
         self.reset_audio_stream()

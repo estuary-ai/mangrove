@@ -31,6 +31,7 @@ class SileroVAD(VoiceActivityDetector):
             force_reload=False,
             onnx=False,
         )
+        self.model: torch.nn.Module = self.model.eval()
         self.model.to(self.device)
 
         # (get_speech_timestamps,
