@@ -8,7 +8,7 @@ from core import AudioPacket
 from .base import STTEndpoint
 
 class FasterWhisperEndpoint(STTEndpoint):
-    def __init__(self, model_name="base.en", device=None):
+    def __init__(self, model_name="medium", device=None):
         super().__init__()
         self.device = "auto" if device is None else device
         try:

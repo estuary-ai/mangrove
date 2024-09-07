@@ -9,7 +9,7 @@ from .vad.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
-        silence_threshold=300,
+        silence_threshold=700,
         frame_size=512 * 4,
         device=None,
         verbose=False,

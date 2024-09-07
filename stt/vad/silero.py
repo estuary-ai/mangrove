@@ -8,7 +8,7 @@ class SileroVAD(VoiceActivityDetector):
         self,
         device=None,
         threshold=0.85,
-        silence_threshold: int = 150,
+        silence_threshold: int = 500,
         frame_size: int = 512 * 4,
         verbose=False,
     ):

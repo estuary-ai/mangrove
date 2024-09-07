@@ -63,7 +63,7 @@ class TTSLibraryEndpoint(TTSEndpoint):
             language="en", # TODO pull other associated variables from text_packet if applicable
             gpt_cond_latent=self.gpt_cond_latent,
             speaker_embedding=self.speaker_embedding,
-            stream_chunk_size=500,
+            stream_chunk_size=300,
             enable_text_splitting=True,
         )
 
