@@ -1,5 +1,5 @@
 from string import punctuation
-from typing import Generator
+from typing import Generator, Union
 from loguru import logger
 from itertools import chain
 
@@ -57,7 +57,7 @@ class TTSController(TextToAudioStage):
         # sends a stream of audio packets
 
         def _process_sentence_text_packet():
-            _new_audiopacket_generator = self._get_audiopackets_stream(
+            _new_audiopacket_generator = self.endpoint.text_to_audio(
                 self._sentence_text_packet
             )
             if self._audiopacket_generator is not None:
@@ -75,6 +75,7 @@ class TTSController(TextToAudioStage):
             return None
 
         if in_text_packet:
+            logger.success(f"Processing: {in_text_packet}")
             if in_text_packet.partial:
                 self.log(f"{in_text_packet.text}")
 
@@ -126,31 +127,14 @@ class TTSController(TextToAudioStage):
     def on_sleep(self):
         self.log('<tts>')
 
-    def _get_audiopackets_stream(self, text_packet: TextPacket) -> Generator[AudioPacket, None, None]:
-        """Get generated audio packets stream for text
-
-        Args:
-            TODO
-
-        Returns:
-            Generator[AudioPacket, None, None]: Audio packets stream reading the text
-        """
-        # TODO data type verification
-        # if text is None:
-        #     raise Exception("Texts cannot be None")
-
-        # if isinstance(text, list):
-        #     text = " ".join(text)
-
-        logger.debug(f"Reading text: {text_packet}")
-        yield from self.endpoint.text_to_audio(text_packet)
-
-    def read(self, text, as_generator=False) -> Generator[AudioPacket, None, None]:
+    def read(self, text: Union[TextPacket, str], as_generator=False) -> Generator[AudioPacket, None, None]:
         if not isinstance(text, TextPacket):
             if isinstance(text, str):
                 text_packet = TextPacket(text, partial=False, start=False)
+            else:
+                raise Exception(f"Unsupported text type: {type(text)}")
                 
-        audio_bytes_generator = self._get_audiopackets_stream(text_packet)
+        audio_bytes_generator = self.endpoint.text_to_audio(text_packet)
 
         if as_generator:
             return audio_bytes_generator
