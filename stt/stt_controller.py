@@ -7,7 +7,6 @@ from core.data import DataPacket
 from queue import Empty as QueueEmpty
 from core.stage import AudioToTextStage
 from core.utils import Timer
-from .vad.silero import SileroVAD
 from .endpoints.faster_whisper import FasterWhisperEndpoint
 
 class STTController(AudioToTextStage):

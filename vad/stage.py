@@ -1,11 +1,11 @@
 import torch
 from typing import Optional
 from loguru import logger
+from queue import Empty as QueueEmpty
 
 from core.stage import AudioToAudioStage
 from core import AudioPacket, AudioBuffer
-from .vad.silero import SileroVAD
-from queue import Empty as QueueEmpty
+from .endpoints.silero import SileroVAD
 
 
 class VADStage(AudioToAudioStage):

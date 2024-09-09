@@ -1,12 +1,14 @@
+import warnings
 from loguru import logger
+
 from stt import STTController
 from bot import BotController
 from tts import TTSController
+from vad import VADStage
 from storage_manager import StorageManager
 from core import AudioBuffer
 from core.stage import PipelineSequence
 
-import warnings
 # TODO check on this later
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -22,8 +24,6 @@ class BasicConversationalAgent(PipelineSequence):
         verbose=False,
     ):
         super().__init__(verbose=verbose)
-
-        from stt.vad_stage import VADStage
 
         vad = VADStage(device=device)
         stt = STTController(device=device)
