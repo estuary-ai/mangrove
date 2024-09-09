@@ -1,10 +1,11 @@
-import time
+from typing import Optional
 from loguru import logger
 from queue import Empty
 from functools import reduce
 from faster_whisper import WhisperModel
 
 from core import AudioPacket
+from core.utils import Timer
 from .base import STTEndpoint
 
 class FasterWhisperEndpoint(STTEndpoint):
@@ -18,7 +19,13 @@ class FasterWhisperEndpoint(STTEndpoint):
             self.model = WhisperModel(model_name, device='cpu')
         self.reset()
 
-    def get_transcription(self):
+    def get_transcription_if_any(self) -> Optional[str]:
+        """Get transcription if available
+
+        Returns:
+            str: Transcription if available, else None
+        """
+
         logger.trace("Waiting for transcription ... ")
         if self.input_queue.qsize() == 0:
             return None
@@ -34,17 +41,19 @@ class FasterWhisperEndpoint(STTEndpoint):
                     break
 
         audio_packet: AudioPacket = reduce(lambda x, y: x + y, audio_packets)
-        start = time.time()
-        segments, _ = self.model.transcribe(
-            audio_packet.float,
-            language='en',
-            vad_filter=True,
-            without_timestamps=True
-        )
-        _out = list(segments)
-        if len(_out) >= 1:
-            _out = " ".join([segment.text for segment in _out])
-        logger.success(f"Took {time.time() - start: < .3f} seconds")
+        
+        
+        with Timer() as timer:
+            segments, _ = self.model.transcribe(
+                audio_packet.float,
+                language='en',
+                vad_filter=True,
+                without_timestamps=True
+            )
+            _out = list(segments)
+            if len(_out) >= 1:
+                _out = " ".join([segment.text for segment in _out])
+            logger.success(f"Took {timer.record()} seconds")
         return _out
 
     def reset(self):
@@ -53,5 +62,4 @@ class FasterWhisperEndpoint(STTEndpoint):
                 self.input_queue.get_nowait()
             except Empty:
                 break
-        logger.debug("Resetting ...")
-        # self.output_queue.queue.clear()
+        logger.debug(f"Resetting {self.__class__.__name__} endpoint")

@@ -56,7 +56,7 @@ class PipelineSequence(PipelineStage):
                     logger.trace(f"Feeding {data_packet} from {stage} to {next_stage}")
                     next_stage.feed(data_packet)
                 else:
-                    logger.trace(f"Final stage in {self.__class__} reached, emitting response through host")
+                    logger.trace(f"Final stage in {self.__class__.__name__} reached, emitting response through host")
 
                 if isinstance(stage, STTController):
                     assert isinstance(data_packet, STTController.output_type), f"Expected {STTController.output_type}, got {type(data_packet)}"
