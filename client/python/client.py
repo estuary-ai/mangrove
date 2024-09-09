@@ -56,6 +56,11 @@ class AssistantClient(socketio.ClientNamespace):
     #     self.sound_manager.play_termination_sound()
     #     logger.debug(f"Stt response: {data}")
 
+    def on_interrupt(self, timestamp: int):
+        """Handles the interrupt signal received from the server"""
+        logger.warning("Interrupt signal received!")
+        self.sound_manager.interrupt(timestamp)
+
     def on_bot_voice(self, partial_audio_dict):
         """Handles the bot voice received from the server
 

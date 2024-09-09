@@ -54,8 +54,17 @@ class PipelineSequence(PipelineStage):
                         raise ValueError(f"Data packet type mismatch, expected {next_stage.input_type}, got {type(data_packet)}")
 
                     logger.trace(f"Feeding {data_packet} from {stage} to {next_stage}")
+                    if stage._interrupt_signal:
+                        logger.warning(f"Stage {stage} issued interrupt signal, call interrupt of {next_stage}")
+                        next_stage.on_interrupt()
+                        stage.acknowledge_interrupt()
+                        
                     next_stage.feed(data_packet)
                 else:
+                    if stage._interrupt_signal:
+                        logger.warning(f"Stage {stage} issued interrupt signal, but no next stage to call interrupt. Emitting interrupt through host")
+                        self._host.emit_interrupt()
+                        stage.acknowledge_interrupt()
                     logger.trace(f"Final stage in {self.__class__.__name__} reached, emitting response through host")
 
                 if isinstance(stage, STTController):

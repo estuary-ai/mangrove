@@ -1,5 +1,6 @@
 import sys
 import os, argparse
+from typing import Union, Iterator, Optional
 from flask import Flask
 from loguru import logger
 from flask_socketio import SocketIO, Namespace
@@ -8,7 +9,7 @@ from dotenv import load_dotenv
 from agents import BasicConversationalAgent
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
-from core import AudioPacket, TextPacket
+from core import AudioPacket, TextPacket, DataPacket
 
 load_dotenv(override=True)
 
@@ -24,7 +25,9 @@ class DigitalAssistant(Namespace):
         **agent_kwargs,
     ):
         super().__init__(namespace)
+        self.server: Optional[SocketIO]
         self.namespace = namespace
+
         self.agent = BasicConversationalAgent(
             **agent_kwargs
         )
@@ -46,7 +49,7 @@ class DigitalAssistant(Namespace):
             raise RuntimeError("Server is not initialized yet")
         return self.server.start_background_task(target, *args, **kwargs)
 
-    def __emit__(self, event, data) -> None:
+    def __emit__(self, event, data: Union[Iterator[DataPacket], DataPacket]) -> None:
         if hasattr(data, "__next__"):
             # if data is generator
             logger.trace(f"Emitting generator {event}")
@@ -69,6 +72,11 @@ class DigitalAssistant(Namespace):
 
     def emit_stt_response(self, text_packet: TextPacket) -> None:
         self.__emit__("stt_response", text_packet)
+
+    def emit_interrupt(self) -> None:
+        import time
+        timestamp = int(time.time())
+        self.server.emit("interrupt", timestamp) 
 
     def on_connect(self):
         logger.info("client connected")

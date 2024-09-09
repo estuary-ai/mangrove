@@ -51,6 +51,7 @@ class PipelineStage(metaclass=ABCMeta):
         self._lock = RLock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
+        self._interrupt_signal = False
 
     @property
     def host(self):
@@ -152,3 +153,13 @@ class PipelineStage(metaclass=ABCMeta):
         """
         if self._verbose or force:
             print(msg, end=end, flush=True)
+
+
+    def signal_interrupt(self):
+        self._interrupt_signal = True
+
+    def acknowledge_interrupt(self):
+        self._interrupt_signal = False
+
+    def on_interrupt(self):
+        self.signal_interrupt()

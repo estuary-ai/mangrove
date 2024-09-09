@@ -46,7 +46,7 @@ class TTSController(TextToAudioStage):
 
         self._sentence_text_packet = None
         self._audiopacket_generator: Generator[AudioPacket, None, None] = None
-        self._generated_audio_packet_per_sentence_count = False
+        self._generated_audio_packet_per_sentence_count = 0
 
         self.debug = False
 
@@ -86,7 +86,12 @@ class TTSController(TextToAudioStage):
                     # implement SentenceTextDataBuffer
                     self._sentence_text_packet: TextPacket = in_text_packet
                 else:
-                    self._sentence_text_packet += in_text_packet
+                    if in_text_packet.start:
+                        self._sentence_text_packet = in_text_packet
+                        self.signal_interrupt()
+                        logger.error(f"Partial response should not have start: {in_text_packet}, interrupting and starting new")
+                    else:
+                        self._sentence_text_packet += in_text_packet
 
                 if self._sentence_text_packet.text.endswith(('?', '!', '.')):
                     # TODO prompt engineer '.' and check other options
@@ -126,6 +131,13 @@ class TTSController(TextToAudioStage):
 
     def on_sleep(self):
         self.log('<tts>')
+
+    def on_interrupt(self):
+        super().on_interrupt()
+        self._audiopacket_generator = None
+        self._sentence_text_packet = None
+        self._generated_audio_packet_per_sentence_count = 0
+
 
     def read(self, text: Union[TextPacket, str], as_generator=False) -> Generator[AudioPacket, None, None]:
         if not isinstance(text, TextPacket):

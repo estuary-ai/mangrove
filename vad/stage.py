@@ -38,6 +38,9 @@ class VADStage(AudioToAudioStage):
         
         self.endpoint.feed(audio_packet)
 
+        if self.endpoint.is_speaking(threshold=500):
+            self.signal_interrupt()
+
         audio_packet_utterance = self.endpoint.get_utterance_if_any() 
         if audio_packet_utterance:
             # self.refresh()

@@ -93,6 +93,8 @@ class VoiceActivityDetector(metaclass=ABCMeta):
         audio_packet: AudioPacket = reduce(lambda x, y: x + y, audio_packets)
         return audio_packet
     
+    def is_speaking(self, threshold=500) -> bool:
+        return self._command_audio_packet is not None and self._command_audio_packet.duration >= threshold
 
     def reset(self) -> None:
         assert self._is_started, "Recording not started"

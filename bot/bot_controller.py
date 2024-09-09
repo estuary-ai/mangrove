@@ -1,6 +1,7 @@
 from typing import Generator, Optional, List
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 from itertools import chain
+from loguru import logger
 
 from core.stage import TextToTextStage
 from bot.persona.protector_of_mangrove import ProtectorOfMangrove
@@ -24,11 +25,29 @@ class BotController(TextToTextStage):
         self._chat_history: List[BaseMessage] = []
         self._text_packet_generator: Generator[TextPacket, None, None] = None
 
-
     def _process(self, in_text_packet: TextPacket) -> Optional[TextPacket]:
         if in_text_packet is None and self._text_packet_generator is None:
             return None
+                
+        if in_text_packet:
+            logger.success(f"Processing: {in_text_packet}")
 
+            if self._text_packet_generator is None:
+                self._text_packet_generator = self.respond(in_text_packet)
+            else:
+                # interrupt the current conversation and replace with new input
+                self.signal_interrupt()
+                self._text_packet_generator = None
+                # if chat history has ended with an AIMessage, delete it
+                if self._chat_history[-1] == AIMessage:
+                    self._chat_history.pop()
+                self._text_packet_generator = self.respond(in_text_packet)
+                logger.warning(f'Interrupting current conversation with new input: {in_text_packet}')
+
+                # TODO remove the below code if not needed
+                # assumption that it has already generating, ignore new input for now
+                # logger.warning(f'Dropping new input, already generating: {in_text_packet}')            
+        
         if self._text_packet_generator:
             try:
                 out_text_packet = next(self._text_packet_generator)
@@ -36,22 +55,18 @@ class BotController(TextToTextStage):
             except StopIteration:
                 self._text_packet_generator = None
 
-        if in_text_packet:
-            if self._text_packet_generator is None:
-                self._text_packet_generator = self.respond(in_text_packet.text)
-            else:
-                # TODO: Implement Interruption Logic
-                _new_text_packet_generator = self.respond(in_text_packet.text)
-                self._text_packet_generator = chain(
-                    self._text_packet_generator,
-                    _new_text_packet_generator
-                )
         return True
+    
+    def on_interrupt(self):
+        super().on_interrupt()
+        self._text_packet_generator = None
+        if len(self._chat_history) > 0 and self._chat_history[-1] == AIMessage:
+            self._chat_history.pop()
 
     def on_sleep(self) -> None:
         return self.log('<bot>')
 
-    def respond(self, user_msg) -> Generator[TextPacket, None, None]:
+    def respond(self, text_packet: TextPacket) -> Generator[TextPacket, None, None]:
         def _pack_response(content, partial=False, start=False):
             # format response from openai chat to be sent to the user
             return TextPacket(
@@ -70,21 +85,21 @@ class BotController(TextToTextStage):
                     chat_history_formated += f'{self._persona.assistant_name} Statement: {message.content}\n'
                 else:
                     raise Exception(f'{message} is not of expected type!')
-
-            self._chat_history.append(HumanMessage(content=user_msg))
-            
+        
+            self._chat_history.append(HumanMessage(content=text_packet.text))
             ai_res_content = ""
             first_chunk = True
             for chunk in self._endpoint.stream(
-                user_msg=user_msg, 
+                user_msg=text_packet.text, 
                 chat_history_formated=chat_history_formated
             ):
                 ai_res_content += chunk
                 if chunk == "":
                     continue
-                # TODO append to ai message internally
+        
                 yield _pack_response(chunk, partial=True, start=first_chunk)
                 first_chunk = False
+
             yield _pack_response(ai_res_content, partial=False, start=True)
             self._chat_history.append(AIMessage(content=ai_res_content))
 

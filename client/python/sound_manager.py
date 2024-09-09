@@ -1,10 +1,10 @@
-import os
 import time
 import pyaudio
 import numpy as np
+from typing import List
 from pydub import AudioSegment
-from pydub.playback import play
 from threading import Thread, Lock
+from loguru import logger
 
 
 class SoundManager:
@@ -41,9 +41,10 @@ class SoundManager:
         self._frames_per_buffer = _frames_per_buffer
         self.stream = None
         self.stream_callback = stream_callback
-        self.threads_pool = []
+        self.threads_pool: List[Thread] = []
         self._audio = pyaudio.PyAudio()
         self._lock = Lock()
+        self._offset = 0
 
     def open_mic(self):
         """Opens the microphone stream"""
@@ -128,6 +129,10 @@ class SoundManager:
         thread.start()
         self.threads_pool.append(thread)
 
+    def interrupt(self, timestamp):
+        """Interrupts the audio playback by setting the offset to the timestamp"""
+        self._offset = timestamp
+
     def play_audio_packet(self, audio_packet, block=True):
         """Plays audio bytes
 
@@ -139,6 +144,10 @@ class SoundManager:
             with self._lock:
                 # divide audio into chunks
                 for i in range(0, len(audio_packet['bytes']), self._frames_per_buffer):
+                    if audio_packet['timestamp'] < self._offset:
+                        logger.warning("Skipping audio packet as it is interrupted")
+                        continue
+
                     print('>', end='')
                     audio_bytes = audio_packet['bytes'][i : i + self._frames_per_buffer]
                     sample_rate = audio_packet['sampleRate']
@@ -164,7 +173,6 @@ class SoundManager:
             },
             block=True,
         )
-
 
     def play_activation_sound(self):
         """Plays activation sound"""
