@@ -13,17 +13,3 @@ class TextToTextStage(PipelineStage, metaclass=ABCMeta):
     @abstractmethod
     def _process(self, text_packet: TextPacket) -> Optional[TextPacket]:
         raise NotImplementedError()
-
-    def _unpack(self) -> Optional[TextPacket]:
-        """Unpack text packets from input buffer"""
-        text_packets = []
-        try:
-            while True:
-                text_packet = self._input_buffer.get_nowait()
-                assert text_packet is not None
-                text_packets.append(text_packet)
-        except Empty:
-            pass
-        if len(text_packets) == 0:
-            return None
-        return reduce(lambda x, y: x + y, text_packets)

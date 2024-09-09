@@ -6,10 +6,18 @@ from datetime import datetime
 @functools.total_ordering
 class DataPacket(metaclass=ABCMeta):
 
-    def __init__(self, timestamp=None, **kwargs):
+    def __init__(
+        self, 
+        timestamp: int = None,
+        start: bool = False,
+        partial: bool = False,
+        **kwargs
+    ):
         if timestamp is None:
             timestamp = int(round(datetime.now().timestamp()))
         self._timestamp = timestamp
+        self._start = start
+        self._partial = partial
 
     @property
     def timestamp(self):

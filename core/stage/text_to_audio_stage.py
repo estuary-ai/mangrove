@@ -12,9 +12,3 @@ class TextToAudioStage(PipelineStage, metaclass=ABCMeta):
     @abstractmethod
     def _process(self, text_packet: TextPacket) -> Optional[AudioPacket]:
         raise NotImplementedError()
-
-    def _unpack(self) -> Optional[TextPacket]:
-        try:
-            return self._input_buffer.get_nowait()
-        except Empty:
-            return None

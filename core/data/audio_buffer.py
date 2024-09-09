@@ -13,11 +13,11 @@ from .audio_packet import AudioPacket
 class AudioBuffer:
     """Data buffer for audio packets"""
 
-    class Empty(Exception):
+    class Empty(QueueEmpty):
         """Exception raised when queue is empty"""
         pass
 
-    class Full(Exception):
+    class Full(QueueFull):
         """Exception raised when queue is full"""
         pass
 
@@ -59,7 +59,7 @@ class AudioBuffer:
             except QueueFull:
                 raise AudioBuffer.Full
 
-    def get_no_wait(self, frame_size=None) -> AudioPacket:
+    def get_nowait(self, frame_size=None) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
         Args:

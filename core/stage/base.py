@@ -2,8 +2,10 @@ from abc import ABCMeta, abstractmethod
 from typing import Callable, List, Optional, Union
 from threading import RLock
 from multiprocessing import JoinableQueue
+from queue import Empty as QueueEmpty
 from loguru import logger
 from ..data.data_packet import DataPacket
+from ..data.exceptions import SequenceMismatchException
 
 from typing import TYPE_CHECKING
 
@@ -43,6 +45,8 @@ class PipelineStage(metaclass=ABCMeta):
         **kwargs
     ):
         self._input_buffer = JoinableQueue()
+        self._intermediate_input_buffer = []
+
         self._verbose = verbose
         self._lock = RLock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
@@ -62,9 +66,36 @@ class PipelineStage(metaclass=ABCMeta):
             raise ValueError("Callback must be callable")
         self._on_ready_callback = callback
 
-    @abstractmethod
-    def _unpack(self) -> Optional[Union[DataPacket, List[DataPacket]]]: # TODO Make it not optional!!
-        raise NotImplementedError()
+    # @abstractmethod
+    # def _unpack(self) -> Optional[Union[DataPacket, List[DataPacket]]]: # TODO Make it not optional!!
+    #     raise NotImplementedError()
+    
+    def _unpack(self) -> Optional[DataPacket]: # TODO Make it not optional!!
+        """Unpack audio packets from input buffer"""
+        data_packets: List[DataPacket] = self._intermediate_input_buffer
+        self._intermediate_input_buffer = []
+
+        while True:
+            try:
+                data_packet = self._input_buffer.get_nowait()
+                data_packets.append(data_packet)
+            except QueueEmpty:
+                if len(data_packets) == 0:
+                    # logger.warning('No audio packets found in buffer', flush=True)
+                    return
+                break
+
+        complete_data_packet = data_packets[0]
+        for i, data_packet in enumerate(data_packets[1:], start=1):
+            try:
+                complete_data_packet += data_packet
+            except SequenceMismatchException as e:
+                for j in range(i, len(data_packets)):
+                    self._intermediate_input_buffer.append(data_packets[j])
+                break
+        
+        return complete_data_packet
+
 
     @abstractmethod
     def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, List[DataPacket]]]:

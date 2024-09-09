@@ -61,7 +61,7 @@ class WakeUpVoiceDetector:
         _stride_left = 0
         while True:
             try:
-                audio_packet = iterator.get_no_wait(
+                audio_packet = iterator.get_nowait(
                     frame_size=chunk_len + stride_left + stride_right
                 )
                 # print(f"audio_packet {len(audio_packet)}: {audio_packet}")

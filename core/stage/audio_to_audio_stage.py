@@ -22,19 +22,3 @@ class AudioToAudioStage(PipelineStage, metaclass=ABCMeta):
     @abstractmethod
     def _process(self, audio_packet: AudioPacket) -> Optional[TextPacket]:
         raise NotImplementedError()
-
-    def _unpack(self) -> Optional[AudioPacket]:
-        """Unpack audio packets from input buffer"""
-        audio_packets = []
-        while True:
-            try:
-                audio_packet = self._input_buffer.get_no_wait()
-                audio_packets.append(audio_packet)
-            except AudioBuffer.Empty:
-                if len(audio_packets) == 0:
-                    # logger.warning('No audio packets found in buffer', flush=True)
-                    return
-                break
-
-        # NOTE: all packets that were able to get are combined in one here!
-        return reduce(lambda x, y: x + y, audio_packets)

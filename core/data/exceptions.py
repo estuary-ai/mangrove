@@ -1,0 +1,2 @@
+class SequenceMismatchException(Exception):
+    pass
