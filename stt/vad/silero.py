@@ -1,16 +1,16 @@
 import torch
-from typing import Union, List
+from typing import Union, List, Optional
 from core import AudioPacket, AudioBuffer
 from .base import VoiceActivityDetector
 
 class SileroVAD(VoiceActivityDetector):
     def __init__(
         self,
-        device=None,
-        threshold=0.85,
-        silence_threshold: int = 500,
+        device: Optional[str] = None,
+        threshold: float = 0.85,
+        silence_threshold: int = 300,
         frame_size: int = 512 * 4,
-        verbose=False,
+        verbose: bool = False,
     ):
         if frame_size < 512 * 4:
             raise ValueError("Frame size must be at least 512*4 with Silero VAD")

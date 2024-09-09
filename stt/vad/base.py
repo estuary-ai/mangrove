@@ -2,6 +2,9 @@ import collections
 from typing import Union, List
 from abc import ABCMeta, abstractmethod
 from functools import reduce
+from queue import Queue, Empty
+from loguru import logger
+
 from storage_manager import write_output
 from core import AudioBuffer, AudioPacket
 
@@ -12,103 +15,102 @@ class VoiceActivityDetector(metaclass=ABCMeta):
     ):
         self.silence_threshold = silence_threshold
         self.frame_size = frame_size
-        self.buffer = AudioBuffer(self.frame_size)
 
-        self.buffered_silences = collections.deque(maxlen=2)
+        self.front_silences = collections.deque(maxlen=2)
         self.verbose = verbose
-        self.reset()
+    
+        self._is_started = False
+        self.num_recorded_chunks = 0
+        self.end_silence_timestamp = None
+        self._reset_silence_buffer()
+
+        # TODO make them in one debug variable
+        self._command_audio_packet = None
+        self._output_queue = Queue()
+
+
+    def _concat_buffered_silence(self, audio_packet: AudioPacket):
+        """Concatenate buffered silence to voice frame"""
+
+        if len(self.front_silences) > 0:
+            # if there were silence buffers append them
+            # DEBUG START
+            silence_len = reduce(
+                lambda x, y: len(x) + len(y), self.front_silences
+            )
+            if isinstance(silence_len, AudioPacket):
+                silence_len = len(silence_len)
+
+            # DEBUG END
+            self.front_silences.append(audio_packet)
+            complete_frame = reduce(lambda x, y: x + y, self.front_silences)
+            self._reset_silence_buffer()
+        else:
+            complete_frame = audio_packet
+        return complete_frame
+    
+    def feed(self, audio_packet: AudioPacket) -> None:
+        if self.is_speech(audio_packet):
+            if self._command_audio_packet is None:
+                frame_inc_silence = self._concat_buffered_silence(audio_packet)
+                self._command_audio_packet = audio_packet
+                logger.success(f"Starting an utterance AudioPacket at {audio_packet.timestamp}")
+            else:
+                self._command_audio_packet += audio_packet
+            
+        else:
+            # silence    
+            if self._command_audio_packet is not None:
+                # detected silence after voice
+                # append silence to voice
+                self._command_audio_packet += audio_packet
+
+                # Check if silence threshold is reached ?? TODO
+                if self.end_silence_timestamp is None:
+                    self.end_silence_timestamp = audio_packet.timestamp
+                else:
+                    # TODO test using command_audio_buffer instead
+                    now_timestamp = audio_packet.timestamp + audio_packet.duration
+                    # TODO should i use now_timestamp or  audio_packet.timestamp
+                    silence_duration = now_timestamp - self.end_silence_timestamp
+                    # logger.debug(f'Got Silence after voice duration: {silence_duration}')
+                    if silence_duration >= self.silence_threshold:
+                        self.end_silence_timestamp = None
+                        self.log("\n[end]", force=True)
+                    
+                        self._output_queue.put(self._command_audio_packet)
+                        self._command_audio_packet = None
+            else:
+                self.front_silences.append(audio_packet)
+    
+    def get_utterance_if_any(self) -> Union[AudioPacket, None]:
+        if self._output_queue.qsize() == 0:
+            return None
+        audio_packets = []
+        while self._output_queue.qsize() > 0:
+            audio_packet = self._output_queue.get_nowait()
+            audio_packets.append(audio_packet)
+        audio_packet: AudioPacket = reduce(lambda x, y: x + y, audio_packets)
+        return audio_packet
+    
 
     def reset(self) -> None:
+        assert self._is_started, "Recording not started"
+        self._is_started = False
+
         self.num_recorded_chunks = 0
-        self.silence_frame_start_timestamp = None
+        self.end_silence_timestamp = None
         self._reset_silence_buffer()
 
     def _reset_silence_buffer(self) -> None:
         """Reset silence buffer"""
         # TODO try increasing size
-        self.buffered_silences = collections.deque(maxlen=2)
+        self.front_silences = collections.deque(maxlen=2)
         self.num_recorded_chunks = 0
 
     @abstractmethod
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
-        raise NotImplementedError
-
-    def detected_silence_after_voice(self, frame: AudioPacket) -> bool:
-        if self.num_recorded_chunks > 0:
-            return True
-        else:
-            # print('Silence before any voice')
-            # VAD has a tendency to cut the first bit of audio data
-            # from the start of a recording
-            # so keep a buffer of that first bit of audio and
-            # in addBufferedSilence() reattach it to the beginning of the recording
-            self.buffered_silences.append(frame)
-            return False
-
-    def process_voice(self, audio_packet: AudioPacket) -> AudioPacket:
-        """Process voice frame
-
-        Args:
-            audio_packet (AudioPacket): Audio packet of voice frame
-
-        Returns:
-            AudioPacket: Audio packet of voice frame with silence buffer appended
-        """
-
-        def _concat_buffered_silence(audio_packet: AudioPacket):
-            """Concatenate buffered silence to voice frame"""
-
-            if len(self.buffered_silences) > 0:
-                # if there were silence buffers append them
-                # DEBUG START
-                silence_len = reduce(
-                    lambda x, y: len(x) + len(y), self.buffered_silences
-                )
-                if isinstance(silence_len, AudioPacket):
-                    silence_len = len(silence_len)
-
-                # DEBUG END
-                self.buffered_silences.append(audio_packet)
-                complete_frame = reduce(lambda x, y: x + y, self.buffered_silences)
-                self._reset_silence_buffer()
-            else:
-                complete_frame = audio_packet
-            return complete_frame
-
-        self.silence_frame_start_timestamp = None
-        if self.num_recorded_chunks == 0:
-            self.log("\n[start]", force=True)  # recording started
-        else:
-            self.log("=")  # still recording
-        self.num_recorded_chunks += 1
-        frame_inc_silence = _concat_buffered_silence(audio_packet)
-
-        return frame_inc_silence
-
-    def is_silence_cross_threshold(self, audio_packet: AudioPacket):
-        """Check if silence threshold is reached
-
-        Args:
-            frame (AudioPacket): Audio packet of silence frame
-
-        Returns:
-            bool: True if silence threshold is reached, False otherwise
-        """
-        if self.silence_frame_start_timestamp is None:
-            self.silence_frame_start_timestamp = audio_packet.timestamp
-            # self.silence_frame_start_timestamp = frame.timestamp + frame.duration
-        else:
-            # NOTE: this is according to timestamps of packet not real-time
-            now_timestamp = audio_packet.timestamp + audio_packet.duration 
-            silence_duration = now_timestamp - self.silence_frame_start_timestamp
-            # logger.debug(f'Got Silence after voice duration: {silence_duration}')
-            if silence_duration >= self.silence_threshold:
-                # logger.info(f'Got Silence duration: {silence_duration}, threshold: {self.silence_threshold}')
-                self.silence_frame_start_timestamp = None
-                self.log("\n[end]", force=True)
-                return True
-
-        return False
+        raise NotImplementedError("is_speech must be implemented in subclass")
 
     def log(self, msg, end="", force=False) -> None: # TODO: refactor out into progress logger
         """Log message to console if verbose is True or force is True with flush
