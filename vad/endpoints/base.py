@@ -33,9 +33,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
         if len(self.head_silences_buffer) > 0:
             # if there were silence buffers append them
             # DEBUG START
-            silence_len = reduce(
-                lambda x, y: len(x) + len(y), self.head_silences_buffer,
-            )
+            silence_len = reduce(lambda x, y: x + len(y), self.head_silences_buffer, 0)
             if isinstance(silence_len, AudioPacket):
                 silence_len = len(silence_len)
 
@@ -102,10 +100,11 @@ class VoiceActivityDetector(metaclass=ABCMeta):
         self.tail_silence_timestamp = None
         self._reset_head_silences_buffer()
 
-    def _reset_head_silences_buffer(self) -> None:
+    def _reset_head_silences_buffer(self, amount_to_keep_ms=200) -> None:
         """Reset silence buffer"""
         # TODO try increasing size
-        self.head_silences_buffer = collections.deque(maxlen=2)
+        amount_to_keep_packets = (self.frame_size // 320) * (amount_to_keep_ms // 20)
+        self.head_silences_buffer = collections.deque(maxlen=amount_to_keep_packets)
         self.num_recorded_chunks = 0
 
     @abstractmethod
