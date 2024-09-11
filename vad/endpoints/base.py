@@ -11,7 +11,7 @@ from core import AudioBuffer, AudioPacket
 class VoiceActivityDetector(metaclass=ABCMeta):
 
     def __init__(
-        self, tail_silence_threshold: int = 200, frame_size: int = 320 * 3, verbose=False
+        self, tail_silence_threshold: int = 150, frame_size: int = 320 * 3, verbose=False
     ):
         self.tail_silence_threshold = tail_silence_threshold
         self.frame_size = frame_size
