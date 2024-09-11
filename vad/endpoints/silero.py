@@ -7,8 +7,8 @@ class SileroVAD(VoiceActivityDetector):
     def __init__(
         self,
         device: Optional[str] = None,
-        threshold: float = 0.85,
-        silence_threshold: int = 300,
+        is_speech_threshold: float = 0.85,
+        tail_silence_threshold: int = 300,
         frame_size: int = 512 * 4,
         verbose: bool = False,
     ):
@@ -24,7 +24,7 @@ class SileroVAD(VoiceActivityDetector):
             # because others are not guaranteed to work
             self.device = "cpu"
 
-        self.threshold = threshold
+        self.is_speech_threshold = is_speech_threshold
         self.model, utils = torch.hub.load(
             repo_or_dir="snakers4/silero-vad",
             model="silero_vad",
@@ -40,7 +40,7 @@ class SileroVAD(VoiceActivityDetector):
         # VADIterator,
         # collect_chunks) = utils
         # vad_iterator = VADIterator(model)
-        super().__init__(silence_threshold, frame_size, verbose)
+        super().__init__(tail_silence_threshold, frame_size, verbose)
 
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech
@@ -67,7 +67,7 @@ class SileroVAD(VoiceActivityDetector):
                 break
             _audio_tensor = torch.from_numpy(packet.float).to(self.device)
             is_speeches.append(
-                self.model(_audio_tensor, packet.sample_rate) > self.threshold
+                self.model(_audio_tensor, packet.sample_rate) > self.is_speech_threshold
             )
 
         # if any([not is_speech for is_speech in is_speeches]):

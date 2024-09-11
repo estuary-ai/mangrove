@@ -11,40 +11,38 @@ from core import AudioBuffer, AudioPacket
 class VoiceActivityDetector(metaclass=ABCMeta):
 
     def __init__(
-        self, silence_threshold: int = 200, frame_size: int = 320 * 3, verbose=False
+        self, tail_silence_threshold: int = 200, frame_size: int = 320 * 3, verbose=False
     ):
-        self.silence_threshold = silence_threshold
+        self.tail_silence_threshold = tail_silence_threshold
         self.frame_size = frame_size
 
-        self.front_silences = collections.deque(maxlen=2)
         self.verbose = verbose
     
         self._is_started = False
-        self.num_recorded_chunks = 0
-        self.end_silence_timestamp = None
-        self._reset_silence_buffer()
+        self.tail_silence_timestamp = None
+        self._reset_head_silences_buffer()
 
         # TODO make them in one debug variable
         self._command_audio_packet = None
         self._output_queue = Queue()
 
 
-    def _concat_buffered_silence(self, audio_packet: AudioPacket):
+    def _concat_head_buffered_silences(self, audio_packet: AudioPacket):
         """Concatenate buffered silence to voice frame"""
 
-        if len(self.front_silences) > 0:
+        if len(self.head_silences_buffer) > 0:
             # if there were silence buffers append them
             # DEBUG START
             silence_len = reduce(
-                lambda x, y: len(x) + len(y), self.front_silences
+                lambda x, y: len(x) + len(y), self.head_silences_buffer,
             )
             if isinstance(silence_len, AudioPacket):
                 silence_len = len(silence_len)
 
             # DEBUG END
-            self.front_silences.append(audio_packet)
-            complete_frame = reduce(lambda x, y: x + y, self.front_silences)
-            self._reset_silence_buffer()
+            self.head_silences_buffer.append(audio_packet)
+            complete_frame = reduce(lambda x, y: x + y, self.head_silences_buffer)
+            self._reset_head_silences_buffer()
         else:
             complete_frame = audio_packet
         return complete_frame
@@ -52,7 +50,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
     def feed(self, audio_packet: AudioPacket) -> None:
         if self.is_speech(audio_packet):
             if self._command_audio_packet is None:
-                frame_inc_silence = self._concat_buffered_silence(audio_packet)
+                frame_inc_silence = self._concat_head_buffered_silences(audio_packet)
                 self._command_audio_packet = audio_packet
                 logger.success(f"Starting an utterance AudioPacket at {audio_packet.timestamp}")
             else:
@@ -66,22 +64,23 @@ class VoiceActivityDetector(metaclass=ABCMeta):
                 self._command_audio_packet += audio_packet
 
                 # Check if silence threshold is reached ?? TODO
-                if self.end_silence_timestamp is None:
-                    self.end_silence_timestamp = audio_packet.timestamp
+                if self.tail_silence_timestamp is None:
+                    self.tail_silence_timestamp = audio_packet.timestamp
                 else:
                     # TODO test using command_audio_buffer instead
                     now_timestamp = audio_packet.timestamp + audio_packet.duration
                     # TODO should i use now_timestamp or  audio_packet.timestamp
-                    silence_duration = now_timestamp - self.end_silence_timestamp
+                    silence_duration = now_timestamp - self.tail_silence_timestamp
                     # logger.debug(f'Got Silence after voice duration: {silence_duration}')
-                    if silence_duration >= self.silence_threshold:
-                        self.end_silence_timestamp = None
+                    if silence_duration >= self.tail_silence_threshold:
+                        self.tail_silence_timestamp = None
                         self.log("\n[end]", force=True)
                     
                         self._output_queue.put(self._command_audio_packet)
                         self._command_audio_packet = None
             else:
-                self.front_silences.append(audio_packet)
+                assert isinstance(audio_packet, AudioPacket), "audio_packet must be AudioPacket, found {}".format(type(audio_packet))
+                self.head_silences_buffer.append(audio_packet)
     
     def get_utterance_if_any(self) -> Union[AudioPacket, None]:
         if self._output_queue.qsize() == 0:
@@ -99,15 +98,14 @@ class VoiceActivityDetector(metaclass=ABCMeta):
     def reset(self) -> None:
         assert self._is_started, "Recording not started"
         self._is_started = False
+        self._command_audio_packet = None
+        self.tail_silence_timestamp = None
+        self._reset_head_silences_buffer()
 
-        self.num_recorded_chunks = 0
-        self.end_silence_timestamp = None
-        self._reset_silence_buffer()
-
-    def _reset_silence_buffer(self) -> None:
+    def _reset_head_silences_buffer(self) -> None:
         """Reset silence buffer"""
         # TODO try increasing size
-        self.front_silences = collections.deque(maxlen=2)
+        self.head_silences_buffer = collections.deque(maxlen=2)
         self.num_recorded_chunks = 0
 
     @abstractmethod
