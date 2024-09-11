@@ -1,7 +1,6 @@
 from typing import Optional
 from loguru import logger
 from queue import Empty
-from functools import reduce
 from faster_whisper import WhisperModel
 
 from core import AudioPacket
@@ -27,20 +26,10 @@ class FasterWhisperEndpoint(STTEndpoint):
         """
 
         logger.trace("Waiting for transcription ... ")
-        if self.input_queue.qsize() == 0:
+
+        audio_packet = self.get_buffered_audio_packet()
+        if audio_packet is None:
             return None
-
-        # unpack as many as possible from queue
-        while self.input_queue.qsize() > 0:
-            audio_packets = []
-            while True:
-                try:
-                    audio_packet = self.input_queue.get_nowait()
-                    audio_packets.append(audio_packet)
-                except Empty:
-                    break
-
-        audio_packet: AudioPacket = reduce(lambda x, y: x + y, audio_packets)
         
         
         with Timer() as timer:
