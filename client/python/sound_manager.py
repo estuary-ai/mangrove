@@ -146,7 +146,7 @@ class SoundManager:
                 for i in range(0, len(audio_packet['bytes']), self._frames_per_buffer):
                     if audio_packet['timestamp'] < self._offset:
                         logger.warning("Skipping audio packet as it is interrupted")
-                        continue
+                        break
 
                     print('>', end='')
                     audio_bytes = audio_packet['bytes'][i : i + self._frames_per_buffer]
