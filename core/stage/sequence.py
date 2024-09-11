@@ -57,6 +57,7 @@ class PipelineSequence(PipelineStage):
                     if stage._interrupt_signal:
                         logger.warning(f"Stage {stage} issued interrupt signal, call interrupt of {next_stage}")
                         next_stage.on_interrupt()
+                        self._host.emit_interrupt()
                         stage.acknowledge_interrupt()
                         
                     next_stage.feed(data_packet)
