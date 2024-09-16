@@ -2,6 +2,11 @@
 # Mangrove
 Mangrove is the backend module of Estuary, a framework for building multimodal real-time Socially Intelligent Agents (SIAs).
 
+## Give us a Star! ⭐
+If you find Estuary helpful, please give us a star!  Your support means a lot! 
+If you find any bugs or would like to request a new feature, feel free to open an
+issue!
+
 ## Supported Endpoints
 
 ### Speech-To-Text (STT/ASR)
