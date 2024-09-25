@@ -10,6 +10,7 @@ from .endpoints.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
+        interrupt_threshold=200,
         is_speech_threshold=0.85,
         tail_silence_threshold=350,
         frame_size=512 * 4,
@@ -21,13 +22,15 @@ class VADStage(AudioToAudioStage):
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.endpoint = SileroVAD( 
+        self._endpoint = SileroVAD(
             is_speech_threshold=is_speech_threshold,
             tail_silence_threshold=tail_silence_threshold,
             frame_size=frame_size,
             device=device,
             verbose=verbose,
         )
+
+        self._interrupt_threshold = interrupt_threshold
 
     def _process(self, audio_packet: AudioPacket) -> Optional[AudioPacket]:
         if audio_packet is None:
@@ -36,19 +39,19 @@ class VADStage(AudioToAudioStage):
         if len(audio_packet) < self.frame_size:
             raise Exception("Partial audio packet found; this should not happen")
         
-        self.endpoint.feed(audio_packet)
+        self._endpoint.feed(audio_packet)
 
-        if self.endpoint.is_speaking(threshold=200): # TODO make this a parameter 
+        if self._endpoint.is_speaking(threshold=self._interrupt_threshold):
             self.signal_interrupt()
 
-        audio_packet_utterance = self.endpoint.get_utterance_if_any() 
+        audio_packet_utterance = self._endpoint.get_utterance_if_any() 
         if audio_packet_utterance:
             # self.refresh()
             return audio_packet_utterance
 
     def reset_audio_stream(self) -> None:
         """Reset audio stream context"""
-        self.endpoint.reset()
+        self._endpoint.reset()
 
     # TODO use after some detection
     def refresh(self) -> None:
