@@ -89,18 +89,22 @@ class AudioPacket(DataPacket):
 
     @property
     def sample_width(self):
+        """Get sample width of AudioPacket"""
         return self._dst_sample_width
 
     @property
     def num_channels(self):
+        """Get number of channels of AudioPacket"""
         return self._dst_num_channels
 
     @property
     def frame_size(self):
+        """Get frame size of AudioPacket"""
         return len(self.bytes)
 
     @property
     def duration(self):
+        """Get duration of AudioPacket in ms"""
         return self._duration
 
     @property
@@ -426,3 +430,22 @@ class AudioPacket(DataPacket):
     def play(self):
         import sounddevice as sd
         sd.play(self.float, self.sample_rate)
+
+    
+    def to_wav(self, filepath, on_different_thread=True):
+        """Save AudioPacket to wav file at filepath
+
+        Args:
+            filepath (str): path to save wav file
+            on_different_thread (bool, optional): Save on different thread. Defaults to True.
+        """
+        import os
+        import soundfile as sf
+
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+        if on_different_thread:
+            import threading
+            threading.Thread(target=lambda: sf.write(filepath, self.float, self.sample_rate)).start()
+        else:
+            sf.write(filepath, self.float, self.sample_rate)

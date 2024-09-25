@@ -49,23 +49,24 @@ class PipelineSequence(PipelineStage):
                 from bot.bot_controller import BotController
                 from tts.tts_controller import TTSController
 
+                if stage._interrupt_signal:
+                    if next_stage is not None:
+                        logger.warning(f"Stage {stage} issued interrupt signal, call interrupt of {next_stage}")    
+                        next_stage.on_interrupt()
+                    else:
+                        logger.warning(f"Stage {stage} issued interrupt signal, no next stage to call")
+                    self._host.emit_interrupt()
+                    stage.acknowledge_interrupt()
+
                 if next_stage is not None:
                     if not isinstance(data_packet, next_stage.input_type):
                         raise ValueError(f"Data packet type mismatch, expected {next_stage.input_type}, got {type(data_packet)}")
 
                     logger.trace(f"Feeding {data_packet} from {stage} to {next_stage}")
-                    if stage._interrupt_signal:
-                        logger.warning(f"Stage {stage} issued interrupt signal, call interrupt of {next_stage}")
-                        next_stage.on_interrupt()
-                        self._host.emit_interrupt()
-                        stage.acknowledge_interrupt()
+
                         
                     next_stage.feed(data_packet)
                 else:
-                    if stage._interrupt_signal:
-                        logger.warning(f"Stage {stage} issued interrupt signal, but no next stage to call interrupt. Emitting interrupt through host")
-                        self._host.emit_interrupt()
-                        stage.acknowledge_interrupt()
                     logger.trace(f"Final stage in {self.__class__.__name__} reached, emitting response through host")
 
                 if isinstance(stage, STTController):

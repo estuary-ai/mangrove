@@ -59,8 +59,11 @@ class BotController(TextToTextStage):
     
     def on_interrupt(self):
         super().on_interrupt()
-        self._text_packet_generator = None
+        if self._text_packet_generator is not None:
+            logger.warning('Interrupting conversation, dropping text packet generator')
+            self._text_packet_generator = None
         if len(self._chat_history) > 0 and self._chat_history[-1] == AIMessage:
+            logger.warning('Interrupting conversation, removing last AIMessage')
             self._chat_history.pop()
 
     def on_sleep(self) -> None:

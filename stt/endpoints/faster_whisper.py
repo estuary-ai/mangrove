@@ -43,6 +43,13 @@ class FasterWhisperEndpoint(STTEndpoint):
             if len(_out) >= 1:
                 _out = " ".join([segment.text for segment in _out])
             logger.success(f"Took {timer.record()} seconds")
+
+        # if _out:
+        #     logger.success(f"Transcription: {_out}")
+        #     # Save the transcription to a wav file
+        #     filepath = f"blackbox/transcribed_{audio_packet.timestamp}.wav"
+        #     audio_packet.to_wav(filepath)
+
         return _out
 
     def reset(self):

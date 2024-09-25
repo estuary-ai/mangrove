@@ -32,15 +32,28 @@ class STTController(AudioToTextStage):
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.endpoint = FasterWhisperEndpoint(device=device) # TODO make selection dynamic by name or type        
+        self._endpoint = FasterWhisperEndpoint(device=device)  # TODO make selection dynamic by name or type
+
+        self._recorded_audio_length: int = 0  # FOR DEBUGGING
+        self._interrupted_audio_packet: Optional[AudioPacket] = None
 
     def on_start(self):
-        self.recorded_audio_length: int = 0 # FOR DEBUGGING
-        self._interrupted_audio_packet: Optional[AudioPacket] = None
+        self._recorded_audio_length = 0  # FOR DEBUGGING
+        self._interrupted_audio_packet = None
+
+    def reset_audio_stream(self, reset_buffers=True) -> None:
+        """Reset audio stream context"""
+        if reset_buffers:
+            self.log("[stt-hard-reset]", end="\n")
+            self._endpoint.reset()
+            self._input_buffer.reset()
+            self._interrupted_audio_packet = None
+        else:
+            self.log("[stt-soft-reset]", end=" ")
+        self._recorded_audio_length = 0
 
     def on_sleep(self):
         self.log('<stt>')
-
 
     def _process(self, audio_packet) -> Optional[TextPacket]:
         """Process audio buffer and return transcription if any found"""
@@ -53,36 +66,26 @@ class STTController(AudioToTextStage):
         # Feed audio content to stream context
         logger.info(f"Processing {audio_packet}")
         if self._interrupted_audio_packet is not None:
+            logger.debug("Interrupted audio packet found, appending at head")
             audio_packet = self._interrupted_audio_packet + audio_packet
             self._interrupted_audio_packet = None
-        self.endpoint.feed(audio_packet)
-        self.recorded_audio_length += audio_packet.duration # FOR DEBUGGING
+        self._endpoint.feed(audio_packet)
+        self._recorded_audio_length += audio_packet.duration # FOR DEBUGGING
 
         # Finish stream and return transcription if any found
         logger.debug("Trying to finish stream..")
         with Timer() as timer:
-            transcription: Optional[str] = self.endpoint.get_transcription_if_any()
-            if transcription:
+            transcription: Optional[str] = self._endpoint.get_transcription_if_any()
+            if transcription is not None:
                 self.reset_audio_stream(reset_buffers=False)
 
                 return TextPacket(
                     text=transcription,
-                    partial=True, # TODO is it?
+                    partial=True,  # TODO is it?
                     start=False,
                     recog_time=timer.record(),
-                    recorded_audio_length=self.recorded_audio_length,
+                    recorded_audio_length=self._recorded_audio_length,
                 )
-    
-    def reset_audio_stream(self, reset_buffers=True) -> None:
-        """Reset audio stream context"""
-        if reset_buffers:
-            self.log("[stt-hard-reset]", end="\n")
-            self.endpoint.reset()
-            self._input_buffer.reset()
-            self._interrupted_audio_packet = None
-        else:
-            self.log("[stt-soft-reset]", end=" ")
-        self.recorded_audio_length = 0
 
     def on_disconnect(self) -> None:
         self.reset_audio_stream()
@@ -91,13 +94,15 @@ class STTController(AudioToTextStage):
     def on_interrupt(self):
         super().on_interrupt()
         # pack the data from endpoint to buffer
-        self._interrupted_audio_packet = self.endpoint.get_buffered_audio_packet()
+        self._interrupted_audio_packet = self._endpoint.get_buffered_audio_packet()
         while True:
             try:
                 audio_packet = self._input_buffer.get_nowait()
-                self._interrupted_audio_packet += audio_packet
+                if self._interrupted_audio_packet is None:
+                    self._interrupted_audio_packet = audio_packet
+                else:
+                    self._interrupted_audio_packet += audio_packet
             except QueueEmpty:
                 break
         self.reset_audio_stream(reset_buffers=False)
         self.log("[interrupt]", end=" ")
-        
