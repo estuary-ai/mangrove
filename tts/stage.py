@@ -8,8 +8,8 @@ from core.stage import TextToAudioStage
 from .endpoints.base import TTSEndpoint
 
 
-class TTSController(TextToAudioStage):
-    """Text to speech controller"""
+class TTSStage(TextToAudioStage):
+    """Text to speech Stage"""
 
     input_type = TextPacket
     output_type = AudioPacket

@@ -1,1 +1,1 @@
-from .stt_controller import STTController
+from .stage import STTStage

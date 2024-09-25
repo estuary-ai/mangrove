@@ -1,1 +1,1 @@
-from .bot_controller import BotController
+from .stage import BotStage

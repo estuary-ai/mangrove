@@ -30,7 +30,7 @@ class STTEndpoint(metaclass=ABCMeta):
         return audio_packet
 
     @abstractmethod
-    def get_transcription_if_any(self) -> Optional[TextPacket]: # TODO make it a generator and adjust STTController
+    def get_transcription_if_any(self) -> Optional[TextPacket]: # TODO make it a generator and adjust STTStage
         raise NotImplementedError()
 
     @abstractmethod

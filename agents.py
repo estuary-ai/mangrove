@@ -1,9 +1,9 @@
 import warnings
 from loguru import logger
 
-from stt import STTController
-from bot import BotController
-from tts import TTSController
+from stt import STTStage
+from bot import BotStage
+from tts import TTSStage
 from vad import VADStage
 from storage_manager import StorageManager
 from core import AudioBuffer
@@ -26,9 +26,9 @@ class BasicConversationalAgent(PipelineSequence):
         super().__init__(verbose=verbose)
 
         vad = VADStage(device=device)
-        stt = STTController(device=device)
-        bot = BotController(endpoint=bot_endpoint)
-        tts = TTSController(endpoint=tts_endpoint)
+        stt = STTStage(device=device)
+        bot = BotStage(endpoint=bot_endpoint)
+        tts = TTSStage(endpoint=tts_endpoint)
         self.startup_audiopacket = None
         if welcome_msg:
             self.startup_audiopacket = tts.read(

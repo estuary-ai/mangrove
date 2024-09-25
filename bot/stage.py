@@ -7,7 +7,8 @@ from core.stage import TextToTextStage
 from bot.persona.protector_of_mangrove import ProtectorOfMangrove
 from core.data.text_packet import TextPacket
 
-class BotController(TextToTextStage):
+class BotStage(TextToTextStage):
+    
     def __init__(self, assistant_name='Marvin', verbose=False, endpoint='openai', endpoint_kwargs={}):
         super().__init__(verbose=verbose)
         self._persona = ProtectorOfMangrove(assistant_name=assistant_name)

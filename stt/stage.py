@@ -8,8 +8,8 @@ from core.stage import AudioToTextStage
 from core.utils import Timer
 from .endpoints.faster_whisper import FasterWhisperEndpoint
 
-class STTController(AudioToTextStage):
-    """Speech to Text Controller"""
+class STTStage(AudioToTextStage):
+    """Speech to Text Stage"""
 
     def __init__(
         self,
@@ -17,7 +17,7 @@ class STTController(AudioToTextStage):
         device=None,
         verbose=False,
     ):
-        """Initialize STT Controller
+        """Initialize STT Stage
 
         Args:
             frame_size (int, optional): audio frame size. Defaults to 320.

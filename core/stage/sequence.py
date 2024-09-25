@@ -45,9 +45,9 @@ class PipelineSequence(PipelineStage):
             next_stage: Optional[PipelineStage],
         ):
             def _callback(data_packet: DataPacket):
-                from stt.stt_controller import STTController
-                from bot.bot_controller import BotController
-                from tts.tts_controller import TTSController
+                from stt import STTStage
+                from bot import BotStage
+                from tts import TTSStage
 
                 if stage._interrupt_signal:
                     if next_stage is not None:
@@ -69,14 +69,14 @@ class PipelineSequence(PipelineStage):
                 else:
                     logger.trace(f"Final stage in {self.__class__.__name__} reached, emitting response through host")
 
-                if isinstance(stage, STTController):
-                    assert isinstance(data_packet, STTController.output_type), f"Expected {STTController.output_type}, got {type(data_packet)}"
+                if isinstance(stage, STTStage):
+                    assert isinstance(data_packet, STTStage.output_type), f"Expected {STTStage.output_type}, got {type(data_packet)}"
                     self._host.emit_stt_response(data_packet)
-                elif isinstance(stage, BotController):
-                    assert isinstance(data_packet, BotController.output_type), f"Expected {BotController.output_type}, got {type(data_packet)}"
+                elif isinstance(stage, BotStage):
+                    assert isinstance(data_packet, BotStage.output_type), f"Expected {BotStage.output_type}, got {type(data_packet)}"
                     self._host.emit_bot_response(data_packet)
-                elif isinstance(stage, TTSController):
-                    assert isinstance(data_packet, TTSController.output_type), f"Expected {TTSController.output_type}, got {type(data_packet)}"
+                elif isinstance(stage, TTSStage):
+                    assert isinstance(data_packet, TTSStage.output_type), f"Expected {TTSStage.output_type}, got {type(data_packet)}"
                     self._host.emit_bot_voice(data_packet)
                 else:
                     logger.info(f"Unknown stage type {type(stage)}, not emitting response")    
