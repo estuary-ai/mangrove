@@ -4,8 +4,8 @@ from itertools import chain
 from loguru import logger
 
 from core.stage import TextToTextStage
-from bot.persona.protector_of_mangrove import ProtectorOfMangrove
 from core.data.text_packet import TextPacket
+from .persona.protector_of_mangrove import ProtectorOfMangrove
 
 class BotStage(TextToTextStage):
     

@@ -45,9 +45,7 @@ class PipelineSequence(PipelineStage):
             next_stage: Optional[PipelineStage],
         ):
             def _callback(data_packet: DataPacket):
-                from stt import STTStage
-                from bot import BotStage
-                from tts import TTSStage
+                from mangrove import STTStage, BotStage, TTSStage
 
                 if stage._interrupt_signal:
                     if next_stage is not None:

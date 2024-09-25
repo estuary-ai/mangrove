@@ -28,17 +28,17 @@ class TTSStage(TextToAudioStage):
         # TODO select in dynamic cleaner way
         if endpoint == "pyttsx3":
             logger.info("Using Pyttsx3 TTS Endpoint")
-            from tts.endpoints.pyttsx3 import Pyttsx3TTSEndpoint
+            from .endpoints.pyttsx3 import Pyttsx3TTSEndpoint
             self.endpoint = Pyttsx3TTSEndpoint(**endpoint_kwargs)
         elif endpoint == "xtts":
-            from tts.endpoints.xtts import TTSLibraryEndpoint
+            from .endpoints.xtts import TTSLibraryEndpoint
             self.endpoint = TTSLibraryEndpoint()
         elif endpoint == "elevenlabs":
-            from tts.endpoints.elevenlabs import ElevenLabsTTSEndpoint
+            from .endpoints.elevenlabs import ElevenLabsTTSEndpoint
             logger.info("Using ElevenLabs TTS Endpoint")
             self.endpoint = ElevenLabsTTSEndpoint()
         elif endpoint == "gtts":
-            from tts.endpoints.gtts import GTTSEndpoint
+            from .endpoints.gtts import GTTSEndpoint
             logger.info("Using GTTS TTS Endpoint")
             self.endpoint = GTTSEndpoint()
         else:

@@ -1,10 +1,12 @@
 import warnings
 from loguru import logger
 
-from stt import STTStage
-from bot import BotStage
-from tts import TTSStage
-from vad import VADStage
+from mangrove import (
+    VADStage,
+    STTStage,
+    BotStage,
+    TTSStage,
+)
 from storage_manager import StorageManager
 from core import AudioBuffer
 from core.stage import PipelineSequence
