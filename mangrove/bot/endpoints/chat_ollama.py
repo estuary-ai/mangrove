@@ -5,7 +5,7 @@ from .base import LangchainCompatibleConversationalChainEndpoint
 class ChatOllamaEndpoint(LangchainCompatibleConversationalChainEndpoint):
     def __init__(
         self,
-        model='phi3.5',
+        model='nemotron-mini',
         temperature = 0.8,
         num_predict = 256,
         **llm_kwargs
