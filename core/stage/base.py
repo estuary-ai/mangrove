@@ -51,7 +51,8 @@ class PipelineStage(metaclass=ABCMeta):
         self._lock = RLock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
-        self._interrupt_signal = False
+        self._is_interrupt_forward_pending: bool = False
+        self._is_interrupt_signal_pending: bool = False
 
     @property
     def host(self):
@@ -130,12 +131,17 @@ class PipelineStage(metaclass=ABCMeta):
                 with self._lock:
                     data = self._unpack()
                     data_packet = self._process(data)
+                    
+                    if self._is_interrupt_signal_pending:
+                        self.on_interrupt()
+
                 if data_packet is None:
                     self._host.sleep(0.05)
                     self.on_sleep()
                 elif not isinstance(data_packet, bool):
                     # TODO this is just hacky way.. use proper standards
                     self.on_ready(data_packet)
+                    
 
         self._processor = self._host.start_background_task(_start_thread)
 
@@ -154,12 +160,19 @@ class PipelineStage(metaclass=ABCMeta):
         if self._verbose or force:
             print(msg, end=end, flush=True)
 
+    def is_interrupt_forward_pending(self):
+        return self._is_interrupt_forward_pending
 
-    def signal_interrupt(self):
-        self._interrupt_signal = True
+    def schedule_forward_interrupt(self):
+        self._is_interrupt_forward_pending = True
 
-    def acknowledge_interrupt(self):
-        self._interrupt_signal = False
+    def acknowledge_interrupt_forwarded(self):
+        self._is_interrupt_forward_pending = False
+
+    def signal_interrupt(self, timestamp: int):
+        self._is_interrupt_signal_pending = True
+        # TODO use timestamp
 
     def on_interrupt(self):
-        self.signal_interrupt()
+        self._is_interrupt_signal_pending = False
+        self.schedule_forward_interrupt()

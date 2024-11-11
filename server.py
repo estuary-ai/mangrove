@@ -73,9 +73,7 @@ class DigitalAssistant(Namespace):
     def emit_stt_response(self, text_packet: TextPacket) -> None:
         self.__emit__("stt_response", text_packet)
 
-    def emit_interrupt(self) -> None:
-        import time
-        timestamp = int(time.time())
+    def emit_interrupt(self, timestamp: int) -> None:
         self.server.emit("interrupt", timestamp) 
 
     def on_connect(self):

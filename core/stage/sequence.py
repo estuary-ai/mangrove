@@ -47,14 +47,16 @@ class PipelineSequence(PipelineStage):
             def _callback(data_packet: DataPacket):
                 from mangrove import STTStage, BotStage, TTSStage
 
-                if stage._interrupt_signal:
+                if stage.is_interrupt_forward_pending():
+                    import time
+                    timestamp = int(time.time()) # TODO generate this timestamp in the beginning of the process of detecting the interrupt!
                     if next_stage is not None:
                         logger.warning(f"Stage {stage} issued interrupt signal, call interrupt of {next_stage}")    
-                        next_stage.on_interrupt()
+                        # next_stage.signal_interrupt(timestamp) # TODO add this line back, after proper implementation
                     else:
                         logger.warning(f"Stage {stage} issued interrupt signal, no next stage to call")
-                    self._host.emit_interrupt()
-                    stage.acknowledge_interrupt()
+                    self._host.emit_interrupt(timestamp)
+                    stage.acknowledge_interrupt_forwarded()
 
                 if next_stage is not None:
                     if not isinstance(data_packet, next_stage.input_type):

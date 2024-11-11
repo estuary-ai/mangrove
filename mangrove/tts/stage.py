@@ -88,7 +88,7 @@ class TTSStage(TextToAudioStage):
                 else:
                     if in_text_packet.start:
                         self._sentence_text_packet = in_text_packet
-                        self.signal_interrupt()
+                        self.schedule_forward_interrupt()
                         logger.error(f"Partial response should not have start: {in_text_packet}, interrupting and starting new")
                     else:
                         self._sentence_text_packet += in_text_packet

@@ -37,7 +37,7 @@ class BotStage(TextToTextStage):
                 self._text_packet_generator = self.respond(in_text_packet)
             else:
                 # interrupt the current conversation and replace with new input
-                self.signal_interrupt()
+                self.schedule_forward_interrupt()
                 self._text_packet_generator = None
                 # if chat history has ended with an AIMessage, delete it
                 if self._chat_history[-1] == AIMessage:
