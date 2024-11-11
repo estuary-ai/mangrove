@@ -6,16 +6,19 @@ from loguru import logger
 from core.stage import TextToTextStage
 from core.data.text_packet import TextPacket
 from .persona.protector_of_mangrove import ProtectorOfMangrove
+from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
 
 class BotStage(TextToTextStage):
     
     def __init__(self, assistant_name='Marvin', verbose=False, endpoint='openai', endpoint_kwargs={}):
         super().__init__(verbose=verbose)
-        self._persona = ProtectorOfMangrove(assistant_name=assistant_name)
+        
         if endpoint == 'openai':
+            self._persona = ProtectorOfMangrove(assistant_name=assistant_name)
             from .endpoints.chat_openai import ChatOpenAIEndpoint
             self._endpoint = ChatOpenAIEndpoint(**endpoint_kwargs)
         elif endpoint == 'ollama':
+            self._persona = ProtectorOfMangroveNemotron(assistant_name=assistant_name)
             from .endpoints.chat_ollama import ChatOllamaEndpoint
             self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
         else:

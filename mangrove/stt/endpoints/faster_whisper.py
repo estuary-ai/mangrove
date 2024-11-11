@@ -8,7 +8,7 @@ from core.utils import Timer
 from .base import STTEndpoint
 
 class FasterWhisperEndpoint(STTEndpoint):
-    def __init__(self, model_name="medium", device=None):
+    def __init__(self, model_name="distil-small.en", device=None):
         super().__init__()
         self.device = "auto" if device is None else device
         try:
