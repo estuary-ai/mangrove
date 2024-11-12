@@ -10,9 +10,9 @@ from .endpoints.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
-        interrupt_threshold=200,
+        interrupt_threshold=2000,
         is_speech_threshold=0.85,
-        tail_silence_threshold=350,
+        tail_silence_threshold=500,
         frame_size=512 * 4,
         device=None,
         verbose=False,

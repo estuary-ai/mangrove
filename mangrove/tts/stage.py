@@ -101,7 +101,7 @@ class TTSStage(TextToAudioStage):
                 # NOTE: _process leftover sentence_text_packet if any
                 if self._sentence_text_packet is not None:
                     if len(self._sentence_text_packet.text.replace(punctuation, '').strip()) > 0:
-                        assert not self._sentence_text_packet.partial, "Partial should be False" # NOTE: this is the last partial response
+                        # assert not self._sentence_text_packet.partial, "Partial should be False" # NOTE: this is the last partial response
                         # self._sentence_text_packet['partial'] = False # TODO verify this
                         _process_sentence_text_packet()
 

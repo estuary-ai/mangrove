@@ -42,7 +42,7 @@ class ProtectorOfMangrove(BotPersona):
             "Whiskers is the master of destroying Palmerians with her razor sharp claws.",
             "Whiskers is a very cute cat.",
             "You went to the store to buy some groceries with Whiskers yesterday.",
-            "You have a close companion named Alice.",
+            "You have a friend named Alice.",
             "Alice is a master of the bow.  Her enemies are many, her equals are none."
             "Alice hates the Palmerians with a passion.",
             "Alice's family was kidnapped by the Palmerians.",
