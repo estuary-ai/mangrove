@@ -14,6 +14,7 @@ issue!
 
 ### Large Language Models (LLMs)
 * ChatGPT
+* Ollama
 
 ### Text-To-Speech (TTS)
 * ElevenLabs
