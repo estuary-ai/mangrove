@@ -43,7 +43,7 @@ class BotStage(TextToTextStage):
                 self.schedule_forward_interrupt()
                 self._text_packet_generator = None
                 # if chat history has ended with an AIMessage, delete it
-                if self._chat_history[-1] == AIMessage:
+                if isinstance(self._chat_history[-1], AIMessage):
                     self._chat_history.pop()
                 self._text_packet_generator = self.respond(in_text_packet)
                 logger.warning(f'Interrupting current conversation with new input: {in_text_packet}')
@@ -66,7 +66,7 @@ class BotStage(TextToTextStage):
         if self._text_packet_generator is not None:
             logger.warning('Interrupting conversation, dropping text packet generator')
             self._text_packet_generator = None
-        if len(self._chat_history) > 0 and self._chat_history[-1] == AIMessage:
+        if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
             logger.warning('Interrupting conversation, removing last AIMessage')
             self._chat_history.pop()
 
