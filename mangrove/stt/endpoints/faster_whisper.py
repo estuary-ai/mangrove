@@ -12,10 +12,18 @@ class FasterWhisperEndpoint(STTEndpoint):
         super().__init__()
         self.device = "auto" if device is None else device
         try:
-            self.model = WhisperModel(model_name, device=self.device)
+            self.model = WhisperModel(model_name, device=self.device, compute_type="int8")
         except:
             logger.warning(f'Device {device} is not supported, defaulting to CPU!')
             self.model = WhisperModel(model_name, device='cpu')
+        
+        # Custom VAD parameters
+        self.vad_parameters = {
+            "threshold": 0.3,          # Lower = more sensitive to quiet speech
+            "min_speech_duration_ms": 500,    # Minimum speech chunk
+            "min_silence_duration_ms": 1000,  # Longer pause needed to split
+            "speech_pad_ms": 600,            # Padding around speech segments
+        }
         self.reset()
 
     def get_transcription_if_any(self) -> Optional[str]:
@@ -37,6 +45,7 @@ class FasterWhisperEndpoint(STTEndpoint):
                 audio_packet.float,
                 language='en',
                 vad_filter=True,
+                vad_parameters=self.vad_parameters,  # Pass custom VAD settings
                 without_timestamps=True
             )
             _out = list(segments)
