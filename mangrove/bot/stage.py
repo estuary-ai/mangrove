@@ -8,6 +8,8 @@ from core.data.text_packet import TextPacket
 from .persona.protector_of_mangrove import ProtectorOfMangrove
 from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
 
+import re
+
 class BotStage(TextToTextStage):
     
     def __init__(self, assistant_name='Marvin', verbose=False, endpoint='openai', endpoint_kwargs={}):
@@ -74,15 +76,23 @@ class BotStage(TextToTextStage):
         return self.log('<bot>')
 
     def respond(self, text_packet: TextPacket) -> Generator[TextPacket, None, None]:
+        def _extract_function_calls(self, text: str) -> tuple[str, list[str]]:
+            # Find all [COMMAND] patterns
+            function_calls = re.findall(r'\[(.*?)\]', text)
+            # Remove function calls from text
+            clean_text = re.sub(r'\[(.*?)\]', '', text).strip()
+            return clean_text, function_calls
+        
         def _pack_response(content, partial=False, start=False):
             # format response from openai chat to be sent to the user
+            clean_chunk, functions = _extract_function_calls(self, content)
             return TextPacket(
-                text=content,
-                commands=[],
+                text=clean_chunk,
+                commands=functions,
                 partial=partial,
                 start=start
             )
-
+        
         with self._lock:
             chat_history_formated = ""
             for message in self._chat_history:

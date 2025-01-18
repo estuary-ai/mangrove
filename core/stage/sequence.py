@@ -52,7 +52,7 @@ class PipelineSequence(PipelineStage):
                     timestamp = int(time.time()) # TODO generate this timestamp in the beginning of the process of detecting the interrupt!
                     if next_stage is not None:
                         logger.warning(f"Stage {stage} issued interrupt signal, call interrupt of {next_stage}")    
-                        # next_stage.signal_interrupt(timestamp) # TODO add this line back, after proper implementation
+                        next_stage.signal_interrupt(timestamp) # TODO add this line back, after proper implementation
                     else:
                         logger.warning(f"Stage {stage} issued interrupt signal, no next stage to call")
                     self._host.emit_interrupt(timestamp)
