@@ -1,4 +1,3 @@
-![image](https://github.com/user-attachments/assets/d306cc93-b340-462d-8ac8-d83668d55892)
 # Mangrove
 Mangrove is the backend module of Estuary, a framework for building multimodal real-time Socially Intelligent Agents (SIAs).
 
@@ -34,10 +33,10 @@ If you already have Ubuntu 22.04 WSL installed on your machine, you can skip thi
 ## Installing Dependencies
 1. Install packages' dependencies for Ubuntu 22.04 - Tested on WSL2.
     ```bash
-    sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0 clang
+    sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0 clang gcc-11 g++-11
     ```
 2. Install virtual environments manager
-   <a href="https://docs.anaconda.com/miniconda/install/" target="_blank">Miniconda</a>.
+   <a href="https://docs.anaconda.com/miniconda/install/" target="blank">Miniconda</a>.
    
 4. Open a powershell terminal window and restart your WSL shell (some packages require a restart to finish installation)
     ```bash
@@ -109,6 +108,7 @@ hostAddressLoopback=true
 - Running XTTS (using Deepspeed) requires a standlone version of cuda library (the same version as the one used by `torch.version.cuda`):
     1. Install `dkms` package to avoid issues with the installation of the cuda library: `sudo apt-get install dkms`
     2. Install CUDA 12.1 from the [NVIDIA website](https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local).
+      - If there is a gcc compiler issue, this may be due to your version of gcc being too new.  You can try to get around this by adding the `--override` flag.
     3. Follow the instructions given by the installation process including setting the PATH variables in the `.bashrc` file if on Ubuntu.  Add the following to the .bashrc file with any code editor ie. `nano ~/.bashrc`
         ```bash
         export PATH=/usr/local/cuda-12.1/bin${PATH:+:${PATH}}
