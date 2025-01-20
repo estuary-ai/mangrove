@@ -1,4 +1,4 @@
-
+![image](https://github.com/user-attachments/assets/d306cc93-b340-462d-8ac8-d83668d55892)
 # Mangrove
 Mangrove is the backend module of Estuary, a framework for building multimodal real-time Socially Intelligent Agents (SIAs).
 
@@ -36,25 +36,53 @@ If you already have Ubuntu 22.04 WSL installed on your machine, you can skip thi
     ```bash
     sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0 clang
     ```
-    
 2. Install virtual environments manager
-   <a href="https://www.anaconda.com/products/distribution" target="_blank">Anaconda</a>.
-
-3. Create a python 3.9 virtual environment Using Conda or PDM as follows:
+   <a href="https://docs.anaconda.com/miniconda/install/" target="_blank">Miniconda</a>.
+   
+4. Open a powershell terminal window and restart your WSL shell (some packages require a restart to finish installation)
     ```bash
-    pdm venv create 3.9
-    pdm venv activate
-   [copy and paste the output line to activate the environment]
-   ```
-
-4. Using `pdm use` ensure that pdm is pointing to the correct environment.
-
-5. Install Python dependencies.
+    wsl --shutdown
+    ```
+5. Clone this repository into your WSL environment and navigate into it
+    ```bash
+    git clone https://github.com/estuary-ai/mangrove.git
+    cd mangrove
+    ```
+6. Create a Python 3.9.19 virtual environment with Conda:
+    ```bash
+    conda create -n mangrove python=3.9.19
+    conda activate mangrove
+    ```
+7. Enter the command `pdm use` and select the correct Python interpreter to use e.g. `/home/username/miniconda3/envs/mangrove/bin/python`
+8. Install Python dependencies.
     ```bash
     pdm install -G :all
     ```
+9. Install Portaudio package:
+   ```bash
+   conda install -c conda-forge portaudio
+   ```
+
+Congrats!  This is the end of the initial installation for Mangrove.  Please refer to the next section for running Mangrove for the first time!
+
+## Running Mangrove for the First Time
+
+### Selecting an LLM
+
+Currently, you may choose to use OpenAI or Ollama for your LLM.  Refer to the API Keys section below for set up if you would like to use OpenAI.
+
+### Selecting a TTS module
+
+We recommend trying XTTS
 
 ## Further Setup as Required
+
+### API Keys
+- Mangrove supports the usage of APIs (e.g., OpenAI), which require API keys. Create `.env` file in the root directory of the project and add your API keys as follows:
+    ```bash
+    OPENAI_API_KEY=[your OpenAI API Key]
+    ELEVENLABS_API_KEY=[your ElevenLabs API Key]
+    ```
 
 ### Networked Configuration
 
@@ -86,13 +114,6 @@ hostAddressLoopback=true
         export PATH=/usr/local/cuda-12.1/bin${PATH:+:${PATH}}
         export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
         ```
-
-### API Keys
-- Mangrove currently supports the usage of APIs (e.g., OpenAI), which require API keys. Create `.env` file in the root directory of the project and add your API keys as follows:
-    ```bash
-    OPENAI_API_KEY=[your OpenAI API Key]
-    ELEVENLABS_API_KEY=[your ElevenLabs API Key]
-    ```
 
 
 # Acknowledgements
