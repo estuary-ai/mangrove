@@ -94,7 +94,7 @@ Congrats!  This is the end of the initial installation for Mangrove.  Please ref
   ```
 * Example command which uses the above flags:
   ```bash
-   python server.py --bot_endpoint ollama --tts_endpoint xtts --port 4000
+  python server.py --bot_endpoint ollama --tts_endpoint xtts --port 4000
   ```
 
 ## Further Setup as Required
