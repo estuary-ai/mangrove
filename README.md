@@ -57,22 +57,39 @@ If you already have Ubuntu 22.04 WSL installed on your machine, you can skip thi
     ```bash
     pdm install -G :all
     ```
-9. Install Portaudio package:
-   ```bash
-   conda install -c conda-forge portaudio
-   ```
 
 Congrats!  This is the end of the initial installation for Mangrove.  Please refer to the next section for running Mangrove for the first time!
 
 ## Running Mangrove for the First Time
 
+### Initial Steps
+1. Navigate to the Mangrove root directory.
+     ```bash
+    cd mangrove
+     ```
+2. Activate the Conda virtual environment that was previously set up.
+    ```bash
+    conda activate mangrove
+    ```
 ### Selecting an LLM
-
-Currently, you may choose to use OpenAI or Ollama for your LLM.  Refer to the API Keys section below for set up if you would like to use OpenAI.
+* ChatGPT: Refer to the [API Keys](https://github.com/estuary-ai/mangrove?tab=readme-ov-file#api-keys) section below for set up if you would like to use OpenAI
+    * Flag: `--bot_endpoint openai`      
+* Ollama: If you would like to use offline LLMs and have the VRAM to run them, you may use any LLMs from Ollama 
+    * Flag: `--bot_endpoint ollama`
 
 ### Selecting a TTS module
+* XTTS: This is a popular offline TTS module that produces both high quality results and is performant at runtime.  You can refer to the [XTTS](https://github.com/estuary-ai/mangrove?tab=readme-ov-file#xtts) section for set up instructions.
+    * Flag: `--tts_endpoint xtts`
+* gTTS: This is a free cloud-based TTS module offered by Google.
+    * Flag: `--tts_endpoint gtts`
 
-We recommend trying XTTS
+ ### Other Configurations
+ * You may specify which Port number you would like to use with the `--port` flag.
+ * You may use CPU for processing with the `--cpu` flag.
+
+### Example Commands
+* Default run command: `python server.py` which uses OpenAI and ElevenLabs and port 4000
+* Example command which uses the above flags: `python server.py --bot_endpoint ollama --tts_endpoint xtts --port 4000`
 
 ## Further Setup as Required
 
@@ -82,6 +99,22 @@ We recommend trying XTTS
     OPENAI_API_KEY=[your OpenAI API Key]
     ELEVENLABS_API_KEY=[your ElevenLabs API Key]
     ```
+
+### XTTS
+- Running XTTS (using Deepspeed) requires a standlone version of cuda library (the same version as the one used by `torch.version.cuda`):
+    1. Install `dkms` package to avoid issues with the installation of the cuda library: `sudo apt-get install dkms`
+    2. Install CUDA 12.1 from the [NVIDIA website](https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local).
+    3. Follow the instructions given by the installation process including installing the driver.
+       ```bash
+       sudo sh cuda_12.1.0_530.30.02_linux.run --silent --driver
+       ```
+    4. Add the following to the .bashrc file with any code editor ie. `nano ~/.bashrc`
+        ```bash
+        export PATH=/usr/local/cuda-12.1/bin${PATH:+:${PATH}}
+        export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+        ```
+    5. Add a 6s-30s voice training clip to the root of the project directory.  Make sure to name it `speaker.wav`. 
+    6. Make sure to restart WSL afterwards with `wsl --shutdown` in Powershell.
 
 ### Networked Configuration
 
@@ -103,18 +136,6 @@ hostAddressLoopback=true
 - Ensure both Mangrove and the client are connected to the same LAN and both the machine running Mangrove and the LAN allow for device-to-device communications.
   
 - [OPTIONAL] You may refer to the Microsoft WSL documentation on Mirrored Networking [here](https://learn.microsoft.com/en-us/windows/wsl/networking#mirrored-mode-networking).
-
-### XTTS
-- Running XTTS (using Deepspeed) requires a standlone version of cuda library (the same version as the one used by `torch.version.cuda`):
-    1. Install `dkms` package to avoid issues with the installation of the cuda library: `sudo apt-get install dkms`
-    2. Install CUDA 12.1 from the [NVIDIA website](https://developer.nvidia.com/cuda-12-1-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local).
-      - If there is a gcc compiler issue, this may be due to your version of gcc being too new.  You can try to get around this by adding the `--override` flag.
-    3. Follow the instructions given by the installation process including setting the PATH variables in the `.bashrc` file if on Ubuntu.  Add the following to the .bashrc file with any code editor ie. `nano ~/.bashrc`
-        ```bash
-        export PATH=/usr/local/cuda-12.1/bin${PATH:+:${PATH}}
-        export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-        ```
-
 
 # Acknowledgements
 Mangrove was built from our base code of developing **Traveller**, the digital assistant of **SENVA**, a prototype Augmented Reality (AR) Heads-Up Display (HUD) solution for astronauts.  Thank you to **Team Aegis** for participating in the **NASA SUITs Challenge** for the following years:
