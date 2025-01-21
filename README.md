@@ -33,7 +33,7 @@ If you already have Ubuntu 22.04 WSL installed on your machine, you can skip thi
 ## Installing Dependencies
 1. Install packages' dependencies for Ubuntu 22.04 - Tested on WSL2.
     ```bash
-    sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0 clang gcc-11 g++-11
+    sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0 clang
     ```
 2. Install virtual environments manager
    <a href="https://docs.anaconda.com/miniconda/install/" target="blank">Miniconda</a>.
@@ -74,7 +74,7 @@ Congrats!  This is the end of the initial installation for Mangrove.  Please ref
 ### Selecting an LLM
 * ChatGPT: Refer to the [API Keys](https://github.com/estuary-ai/mangrove?tab=readme-ov-file#api-keys) section below for set up if you would like to use OpenAI
     * Flag: `--bot_endpoint openai`      
-* Ollama: If you would like to use offline LLMs and have the VRAM to run them, you may use any LLMs from Ollama 
+* Ollama: If you would like to use offline LLMs and have the VRAM to run them, you may consult the [Ollama](https://github.com/estuary-ai/mangrove?tab=readme-ov-file#ollama) section for set up instructions.
     * Flag: `--bot_endpoint ollama`
 
 ### Selecting a TTS module
@@ -99,6 +99,16 @@ Congrats!  This is the end of the initial installation for Mangrove.  Please ref
     OPENAI_API_KEY=[your OpenAI API Key]
     ELEVENLABS_API_KEY=[your ElevenLabs API Key]
     ```
+
+### Ollama
+- Install Ollama inside of wsl by running the command:
+  ```bash
+  curl -fsSL https://ollama.com/install.sh | sh
+  ```
+- Install an LLM from [Ollama's model library](https://ollama.com/search) e.g.
+  ```bash
+  ollama run nemotron-mini
+  ```
 
 ### XTTS
 - Running XTTS (using Deepspeed) requires a standlone version of cuda library (the same version as the one used by `torch.version.cuda`):
