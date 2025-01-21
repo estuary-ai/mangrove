@@ -88,8 +88,14 @@ Congrats!  This is the end of the initial installation for Mangrove.  Please ref
  * You may use CPU for processing with the `--cpu` flag.
 
 ### Example Commands
-* Default run command: `python server.py` which uses OpenAI and ElevenLabs and port 4000
-* Example command which uses the above flags: `python server.py --bot_endpoint ollama --tts_endpoint xtts --port 4000`
+* Default run command which uses OpenAI and ElevenLabs and port 4000:
+  ```bash
+  python server.py
+  ```
+* Example command which uses the above flags:
+  ```bash
+   python server.py --bot_endpoint ollama --tts_endpoint xtts --port 4000
+  ```
 
 ## Further Setup as Required
 
