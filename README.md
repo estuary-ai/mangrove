@@ -146,11 +146,13 @@ dnsTunneling=true
 autoProxy=true
 hostAddressLoopback=true
 ```
+3. Add an inbound network rule in Windows Security Settings > Firewall & Network Protection > Advanced Settings > Inbound Rules > New Rule...
+    - Port > TCP, Specific local ports: 4000 > Allow the connection > Check: Domain, Private, Public > Name: Mangrove
 
 #### Tips
 
 - Ensure both Mangrove and the client are connected to the same LAN and both the machine running Mangrove and the LAN allow for device-to-device communications.
-  
+- Try restarting after applying the above Network Configurations if they do not initially work 
 - [OPTIONAL] You may refer to the Microsoft WSL documentation on Mirrored Networking [here](https://learn.microsoft.com/en-us/windows/wsl/networking#mirrored-mode-networking).
 
 # Acknowledgements
