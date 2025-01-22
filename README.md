@@ -92,10 +92,23 @@ Congrats!  This is the end of the initial installation for Mangrove.  Please ref
   ```bash
   python server.py
   ```
-* Example command which uses the above flags:
+* Example run command which uses the above flags:
   ```bash
   python server.py --bot_endpoint ollama --tts_endpoint xtts --port 4000
   ```
+
+### Connecting a Client
+* Python Client: This option is recommended for Python projects or for quick debugging purposes.
+    * Navigate to the client/python directory.
+      ```bash
+      cd client/python/
+      ```
+    * Run the following command to start the client on port 4000:
+      ```bash
+      python client.py
+      ```
+    * You may also specify the address and port for the client to connect to with the `--address` and `--port` flags.
+* Unity Client: If you are building a Unity application, refer to the Estuary Unity SDK [Documentation](https://github.com/estuary-ai/Estuary-Unity-SDK). 
 
 ## Further Setup as Required
 
