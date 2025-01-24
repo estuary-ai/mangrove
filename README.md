@@ -23,37 +23,35 @@ issue!
 
 
 # Setup
-## WSL Setup
-If you already have Ubuntu 22.04 WSL installed on your machine, you can skip this section.  Otherwise, follow the steps below:
+## Environment Setup
 1. **[WSL Ubuntu 22.04]** Currently, Mangrove is tested to work in WSL Ubuntu 22.04.  To install WSL, follow this [official guide]((https://learn.microsoft.com/en-us/windows/wsl/install)) from Microsoft.
 2. **[Updating WSL]** Run `sudo apt update` and `sudo apt upgrade` in WSL.
 3. **[Installing pipx]** Run `sudo apt install pipx` in WSL.
 4. **[Installing pdm]** Run `pipx install pdm` in WSL.
+5. **[Installing Conda]** Refer to the Miniconda installation
+   <a href="https://docs.anaconda.com/miniconda/install/" target="blank">guide</a>.
 
 ## Installing Dependencies
-1. Install packages' dependencies for Ubuntu 22.04 - Tested on WSL2.
+1. Run the following command to install packages:
     ```bash
     sudo apt-get install libcairo2-dev pulseaudio portaudio19-dev libgirepository1.0-dev libespeak-dev sox ffmpeg gstreamer-1.0 clang
     ```
-2. Install virtual environments manager
-   <a href="https://docs.anaconda.com/miniconda/install/" target="blank">Miniconda</a>.
-   
-4. Open a powershell terminal window and restart your WSL shell (some packages require a restart to finish installation)
+2. Open a powershell terminal window and restart your WSL shell (some packages require a restart to finish installation)
     ```bash
     wsl --shutdown
     ```
-5. Clone this repository into your WSL environment and navigate into it
+3. Clone this repository into your WSL environment and navigate into it
     ```bash
     git clone https://github.com/estuary-ai/mangrove.git
     cd mangrove
     ```
-6. Create a Python 3.9.19 virtual environment with Conda:
+4. Create a Python 3.9.19 virtual environment with Conda:
     ```bash
     conda create -n mangrove python=3.9.19
     conda activate mangrove
     ```
-7. Enter the command `pdm use` and select the correct Python interpreter to use e.g. `/home/username/miniconda3/envs/mangrove/bin/python`
-8. Install Python dependencies.
+5. Enter the command `pdm use` and select the correct Python interpreter to use e.g. `/home/username/miniconda3/envs/mangrove/bin/python`
+6. Install Python dependencies.
     ```bash
     pdm install -G :all
     ```
