@@ -28,6 +28,8 @@ class BotStage(TextToTextStage):
 
         self._chat_history: List[BaseMessage] = []
         self._text_packet_generator: Generator[TextPacket, None, None] = None
+        self._partial_command = ""
+        self._in_command = False
 
     def _process(self, in_text_packet: TextPacket) -> Optional[TextPacket]:
         if in_text_packet is None and self._text_packet_generator is None:
@@ -73,12 +75,31 @@ class BotStage(TextToTextStage):
     def on_sleep(self) -> None:
         return self.log('<bot>')
 
+    def _process_stream_chunk(self, chunk: str) -> tuple[str, list[str]]:
+        clean_text = ""
+        commands = []
+        
+        for char in chunk:
+            if char == '[':
+                self._in_command = True
+                self._partial_command = '['
+            elif char == ']' and self._in_command:
+                self._in_command = False
+                self._partial_command += ']'
+                commands.append(self._partial_command[1:-1])
+                self._partial_command = ""
+            elif self._in_command:
+                self._partial_command += char
+            else:
+                clean_text += char
+        return clean_text, commands
+
     def respond(self, text_packet: TextPacket) -> Generator[TextPacket, None, None]:
-        def _pack_response(content, partial=False, start=False):
+        def _pack_response(content, commands=[], partial=False, start=False):
             # format response from openai chat to be sent to the user
             return TextPacket(
                 text=content,
-                commands=[],
+                commands=commands,
                 partial=partial,
                 start=start
             )
@@ -95,6 +116,8 @@ class BotStage(TextToTextStage):
         
             self._chat_history.append(HumanMessage(content=text_packet.text))
             ai_res_content = ""
+            clean_ai_res_content = ""
+            current_commands = []
             first_chunk = True
             for chunk in self._endpoint.stream(
                 user_msg=text_packet.text, 
@@ -103,11 +126,15 @@ class BotStage(TextToTextStage):
                 ai_res_content += chunk
                 if chunk == "":
                     continue
-        
-                yield _pack_response(chunk, partial=True, start=first_chunk)
+
+                clean_text, commands = self._process_stream_chunk(chunk)
+                clean_ai_res_content += clean_text
+                current_commands += commands
+                yield _pack_response(clean_text, commands=commands, partial=True, start=first_chunk)
+
                 first_chunk = False
 
-            yield _pack_response(ai_res_content, partial=False, start=True)
+            yield _pack_response(clean_ai_res_content, commands=current_commands, partial=False, start=True)
             self._chat_history.append(AIMessage(content=ai_res_content))
 
     def process_procedures_if_on(self):
