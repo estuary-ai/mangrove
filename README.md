@@ -6,6 +6,27 @@ If you find Estuary helpful, please give us a star!  Your support means a lot!
 If you find any bugs or would like to request a new feature, feel free to open an
 issue!
 
+## Citing Estuary
+If you would like to use Estuary for your work, please cite:
+
+```bash
+   @inproceedings{10.1145/3652988.3696198,
+   author = {Lin, Spencer and Rizk, Basem and Jun, Miru and Artze, Andy and Sullivan, Caitl\'{\i}n and Mozgai, Sharon and Fisher, Scott},
+   title = {Estuary: A Framework For Building Multimodal Low-Latency Real-Time Socially Interactive Agents},
+   year = {2024},
+   isbn = {9798400706257},
+   publisher = {Association for Computing Machinery},
+   address = {New York, NY, USA},
+   url = {https://doi.org/10.1145/3652988.3696198},
+   doi = {10.1145/3652988.3696198},
+   booktitle = {Proceedings of the 24th ACM International Conference on Intelligent Virtual Agents},
+   articleno = {50},
+   numpages = {3},
+   location = {GLASGOW, United Kingdom},
+   series = {IVA '24}
+   }
+```
+
 ## Supported Endpoints
 
 ### Speech-To-Text (STT/ASR)
