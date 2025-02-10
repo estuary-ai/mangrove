@@ -23,8 +23,7 @@ If you would like to use Estuary for your work, please cite:
    articleno = {50},
    numpages = {3},
    location = {GLASGOW, United Kingdom},
-   series = {IVA '24}
-   }
+   series = {IVA '24}}
 ```
 
 ## Supported Endpoints
