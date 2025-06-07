@@ -1,8 +1,8 @@
 from typing import Optional
-from loguru import logger
 from queue import Empty
 from faster_whisper import WhisperModel
 
+from core.utils import logger
 from core import AudioPacket
 from core.utils import Timer
 from .base import STTEndpoint

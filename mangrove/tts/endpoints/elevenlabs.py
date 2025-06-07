@@ -3,7 +3,7 @@ import numpy as np
 from typing import Generator
 from elevenlabs.client import ElevenLabs
 from core.data import AudioPacket, TextPacket
-from core.utils import bytes_to_audio_packet
+from core.utils.audio import bytes_to_audio_packet
 from .base import TTSEndpoint
 
 class ElevenLabsTTSEndpoint(TTSEndpoint):

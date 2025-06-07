@@ -1,5 +1,5 @@
 from typing import Optional, List
-from loguru import logger
+from core.utils import logger
 from core.stage.base import PipelineStage
 from core.data import DataPacket
 

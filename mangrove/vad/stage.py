@@ -1,7 +1,7 @@
 import torch
 from typing import Optional
-from loguru import logger
 
+from core.utils import logger
 from core.stage import AudioToAudioStage
 from core import AudioPacket
 from .endpoints.silero import SileroVAD

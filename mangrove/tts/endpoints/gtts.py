@@ -3,7 +3,7 @@ from typing import Generator
 from pydub import AudioSegment
 from gtts import gTTS, gTTSError
 from core.data import AudioPacket, TextPacket
-from core.utils import bytes_to_audio_packet
+from core.utils.audio import bytes_to_audio_packet
 from .base import TTSEndpoint
 
 class GTTSEndpoint(TTSEndpoint):

@@ -3,10 +3,9 @@ from typing import Union, List
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from queue import Queue, Empty
-from loguru import logger
-
 from storage_manager import write_output
 from core import AudioBuffer, AudioPacket
+from core.utils import logger
 
 class VoiceActivityDetector(metaclass=ABCMeta):
 

@@ -1,6 +1,6 @@
 from typing import Generator
 from core.data import AudioPacket, TextPacket
-from core.utils import filepath_to_audio_packet
+from core.utils.audio import filepath_to_audio_packet
 from .base import TTSEndpoint
 
 

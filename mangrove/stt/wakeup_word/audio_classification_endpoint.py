@@ -2,7 +2,7 @@ from typing import Generator
 from abc import ABC, abstractmethod
 from transformers import pipeline
 from storage_manager import write_output
-from loguru import logger
+from core.utils import logger
 
 
 class AudioClassificationEndpoint(ABC):

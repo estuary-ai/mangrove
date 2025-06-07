@@ -1,11 +1,11 @@
 import torch
 from typing import Optional
-from loguru import logger
 from queue import Empty as QueueEmpty
+
 
 from core import TextPacket, AudioPacket
 from core.stage import AudioToTextStage
-from core.utils import Timer
+from core.utils import Timer, logger
 from .endpoints.faster_whisper import FasterWhisperEndpoint
 
 class STTStage(AudioToTextStage):

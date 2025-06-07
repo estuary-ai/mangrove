@@ -1,6 +1,4 @@
 import warnings
-from loguru import logger
-
 from mangrove import (
     VADStage,
     STTStage,
@@ -10,6 +8,7 @@ from mangrove import (
 from storage_manager import StorageManager
 from core import AudioBuffer
 from core.stage import PipelineSequence
+from core.utils import logger
 
 # TODO check on this later
 warnings.filterwarnings("ignore", category=UserWarning)

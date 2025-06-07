@@ -1,5 +1,5 @@
 from typing import List
-from loguru import logger
+from core.utils import logger
 from .data_packet import DataPacket
 from .exceptions import SequenceMismatchException
 

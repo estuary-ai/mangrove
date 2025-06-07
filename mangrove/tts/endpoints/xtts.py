@@ -9,9 +9,10 @@ from TTS.tts.configs.xtts_config import XttsConfig, XttsAudioConfig
 from TTS.tts.models.xtts import Xtts
 from TTS.api import TTS
 from pydub import AudioSegment
-from loguru import logger
+
+from core.utils import logger
 from core.data import AudioPacket, TextPacket
-from core.utils import np_audio_to_audio_packet
+from core.utils.audio import np_audio_to_audio_packet
 from .elevenlabs import ElevenLabsTTSEndpoint
 from .base import TTSEndpoint
 

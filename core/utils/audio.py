@@ -5,7 +5,6 @@ import pydub
 import backoff
 import numpy as np
 from pydub import AudioSegment
-from loguru import logger
 from typing import Generator
 from core import AudioPacket
 

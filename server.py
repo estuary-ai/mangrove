@@ -2,7 +2,6 @@ import sys
 import os, argparse
 from typing import Union, Iterator, Optional
 from flask import Flask
-from loguru import logger
 from flask_socketio import SocketIO, Namespace
 from dotenv import load_dotenv
 
@@ -10,6 +9,7 @@ from agents import BasicConversationalAgent
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from core import AudioPacket, TextPacket, DataPacket
+from core.utils import logger
 
 load_dotenv(override=True)
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         help="Bot Conversational Endpoint"
     )
     parser.add_argument(
-        "--tts_endpoint", dest="tts_endpoint", type=str, default="pyttsx3",
+        "--tts_endpoint", dest="tts_endpoint", type=str, default="xtts",
         choices=["pyttsx3", "gtts", "elevenlabs", "xtts"],
         help="TTS Endpoint"
     )

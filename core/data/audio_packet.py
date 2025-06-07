@@ -2,8 +2,8 @@ import json
 import numpy as np
 from decimal import *
 from typing import Type
-from loguru import logger
 
+from core.utils import logger
 from .data_packet import DataPacket
 
 class AudioPacket(DataPacket):

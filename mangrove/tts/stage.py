@@ -1,8 +1,8 @@
 from string import punctuation
 from typing import Generator, Union
-from loguru import logger
 from itertools import chain
 
+from core.utils import logger
 from core.data import AudioPacket, TextPacket
 from core.stage import TextToAudioStage
 from .endpoints.base import TTSEndpoint

@@ -3,7 +3,8 @@ from typing import Callable, List, Optional, Union
 from threading import RLock
 from multiprocessing import JoinableQueue
 from queue import Empty as QueueEmpty
-from loguru import logger
+
+from core.utils import logger
 from ..data.data_packet import DataPacket
 from ..data.exceptions import SequenceMismatchException
 

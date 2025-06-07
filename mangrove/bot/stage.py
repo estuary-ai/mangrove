@@ -1,8 +1,7 @@
 from typing import Generator, Optional, List
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
-from itertools import chain
-from loguru import logger
 
+from core.utils import logger
 from core.stage import TextToTextStage
 from core.data.text_packet import TextPacket
 from .persona.protector_of_mangrove import ProtectorOfMangrove
