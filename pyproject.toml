@@ -27,6 +27,7 @@ dependencies = [
     "deepspeed>=0.15.0",
     "python-dotenv>=1.0.1",
     "pyttsx3>=2.91",
+    "ninja>=1.11.1.4",
 ]
 
 requires-python = "==3.9.*"
