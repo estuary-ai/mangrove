@@ -8,8 +8,10 @@ class SileroVAD(VoiceActivityDetector):
         self,
         device: Optional[str] = None,
         is_speech_threshold: float = 0.85,
+        head_silence_buffer_size: int = 200,
         tail_silence_threshold: int = 300,
-        frame_size: int = 512 * 4,
+        threshold_to_determine_speaking: int = 500,
+        frame_size: int = 512 * 2,
         verbose: bool = False,
     ):
         if frame_size < 512 * 4:
@@ -40,7 +42,13 @@ class SileroVAD(VoiceActivityDetector):
         # VADIterator,
         # collect_chunks) = utils
         # vad_iterator = VADIterator(model)
-        super().__init__(tail_silence_threshold, frame_size, verbose)
+        super().__init__(
+            head_silence_buffer_size=head_silence_buffer_size,
+            tail_silence_threshold=tail_silence_threshold, 
+            threshold_to_determine_speaking=threshold_to_determine_speaking,
+            frame_size=frame_size,
+            verbose=verbose
+        )
 
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech

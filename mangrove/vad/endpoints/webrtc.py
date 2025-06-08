@@ -16,7 +16,11 @@ class WebRTCVAD(VoiceActivityDetector):
             raise ValueError("Frame size must be 320, 640 or 960 with WebRTC VAD")
         self.aggressiveness = aggressiveness
         self.model = webrtcvad.Vad(aggressiveness)
-        super().__init__(silence_threshold, frame_size, verbose)
+        super().__init__(
+            tail_silence_threshold=silence_threshold,
+            frame_size=frame_size,
+            verbose=verbose
+        )
 
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech

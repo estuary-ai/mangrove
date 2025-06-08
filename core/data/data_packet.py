@@ -13,14 +13,32 @@ class DataPacket(metaclass=ABCMeta):
         partial: bool = False,
         **kwargs
     ):
+        """Constructor for DataPacket.
+        Args:
+            timestamp (int, optional): Timestamp in milliseconds. Defaults to current time in milliseconds.
+            start (bool, optional): Indicates if this is the start of a new data packet. Defaults to False.
+            partial (bool, optional): Indicates if this is a partial data packet. Defaults to False.
+        """
         if timestamp is None:
-            timestamp = int(round(datetime.now().timestamp()))
+            try:
+                timestamp = self.generate_timestamp()
+            except NotImplementedError:
+                raise NotImplementedError(
+                    f"{self.__class__.__name__} does not implement generate_timestamp method to support automatic timestamp generation."
+                )
         self._timestamp = timestamp
         self._start = start
         self._partial = partial
 
+    def generate_timestamp(self) -> int:
+        raise NotImplementedError("Subclasses must implement generate_timestamp method")
+
     @property
     def timestamp(self):
+        """Get the timestamp of the data packet.
+        Returns:
+            int: Timestamp in milliseconds.
+        """
         return self._timestamp
 
     def to_dict(self) -> dict:

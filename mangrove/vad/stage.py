@@ -10,9 +10,10 @@ from .endpoints.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
-        interrupt_threshold=2000,
         is_speech_threshold=0.85,
-        tail_silence_threshold=500,
+        head_silence_buffer_size=200,
+        tail_silence_threshold=300,
+        interrupt_threshold=2000,
         frame_size=512 * 4,
         device=None,
         verbose=False,
@@ -24,24 +25,24 @@ class VADStage(AudioToAudioStage):
 
         self._endpoint = SileroVAD(
             is_speech_threshold=is_speech_threshold,
+            head_silence_buffer_size=head_silence_buffer_size,
             tail_silence_threshold=tail_silence_threshold,
+            threshold_to_determine_speaking=interrupt_threshold,
             frame_size=frame_size,
             device=device,
             verbose=verbose,
         )
-
-        self._interrupt_threshold = interrupt_threshold
 
     def _process(self, audio_packet: AudioPacket) -> Optional[AudioPacket]:
         if audio_packet is None:
             return
 
         if len(audio_packet) < self.frame_size:
-            raise Exception("Partial audio packet found; this should not happen")
+            raise NotImplementedError("Partial audio packet found; this should not happen")
         
         self._endpoint.feed(audio_packet)
 
-        if self._endpoint.is_speaking(threshold=self._interrupt_threshold):
+        if self._endpoint.is_speaking():
             self.schedule_forward_interrupt()
 
         audio_packet_utterance = self._endpoint.get_utterance_if_any() 

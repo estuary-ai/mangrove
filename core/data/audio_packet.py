@@ -1,4 +1,5 @@
 import json
+import time
 import numpy as np
 from decimal import *
 from typing import Type
@@ -10,7 +11,7 @@ class AudioPacket(DataPacket):
     """Represents a "Packet" of audio data."""
     resampling = 0
 
-    def __init__(self, data_json, resample=True, is_processed=False, target_sample_rate=16000):
+    def __init__(self, data_json, resample: bool = True, is_processed: bool = False, target_sample_rate: int = 16000):
         """Initialize AudioPacket from json data or bytes
 
         Args:
@@ -19,21 +20,19 @@ class AudioPacket(DataPacket):
         if not isinstance(data_json, dict):
             data_json = json.loads(str(data_json))
 
-        super().__init__(timestamp=data_json.get("timestamp"))
-
-        self._src_sample_rate = int(data_json["sampleRate"])
-        self._src_num_channels = int(data_json["numChannels"])
-        self._src_sample_width = int(data_json["sampleWidth"])
+        self._src_sample_rate: int = int(data_json["sampleRate"])
+        self._src_num_channels: int = int(data_json["numChannels"])
+        self._src_sample_width: int = int(data_json["sampleWidth"])
         assert self._src_sample_width in [2, 4], f"Unhandled sample width `{self._src_sample_width}`. Please use `2` or `4`"
         
-        self._dst_sample_rate = self._src_sample_rate
-        self._dst_num_channels = self._src_num_channels
-        self._dst_sample_width = self._src_sample_width
+        self._dst_sample_rate: int = self._src_sample_rate
+        self._dst_num_channels: int = self._src_num_channels
+        self._dst_sample_width: int = self._src_sample_width
 
 
         # self._start = data_json.get("start", False)
-        self._id = data_json.get("packetID")
-        self._source = data_json.get("source", None)
+        self._id: str = data_json.get("packetID")
+        self._source: str = data_json.get("source", None)
 
 
         # NOTE: we do not keep the src_bytes as they might not be even there
@@ -54,14 +53,22 @@ class AudioPacket(DataPacket):
         _calculated_duration *= 1000  # ms
         
         if self._duration is None:
+            # if duration is not provided, we use the calculated duration
             self._duration = _calculated_duration
         else:
-            # Verify that the duration is correct for now
+            # NOTE: if duration is provided, we still verify it for now
             if not Decimal(self._duration).compare(Decimal(_calculated_duration)) == 0:
                 logger.warning(f"Duration mismatch: {self._duration} != {_calculated_duration}")    
-
-        
             
+        self._duration: int = np.ceil(self._duration)  # ensure duration is int
+
+        super().__init__(timestamp=data_json.get("timestamp"))
+
+    def generate_timestamp(self):
+        """Generate timestamp for AudioPacket based on its duration, given that a timestamp is not provided"""
+        current_timestamp = time.time() * 1000  # current timestamp in milliseconds
+        supposed_timestamp = current_timestamp - self._duration
+        return int(supposed_timestamp)
 
     # @property
     # def start(self):
@@ -351,7 +358,7 @@ class AudioPacket(DataPacket):
         if self.bytes == b"":  # DUMMY AUX PACKET
             timestamp = _audio_packet.timestamp
 
-        return AudioPacket(
+        new_audio_packet = AudioPacket(
             {
                 "bytes": self.bytes + _audio_packet.bytes,
                 "timestamp": timestamp,
@@ -365,6 +372,35 @@ class AudioPacket(DataPacket):
             is_processed=True,
         )
 
+        assert new_audio_packet.timestamp == self.timestamp, f"Timestamp mismatch: {new_audio_packet.timestamp} != {self.timestamp}"
+        assert new_audio_packet.sample_rate == self.sample_rate, f"Sample rate mismatch: {new_audio_packet.sample_rate} != {self.sample_rate}"
+        assert new_audio_packet.num_channels == self.num_channels, f"Num channels mismatch: {new_audio_packet.num_channels} != {self.num_channels}"
+        assert new_audio_packet.sample_width == self.sample_width, f"Sample width mismatch: {new_audio_packet.sample_width} != {self.sample_width}"
+        assert new_audio_packet.id == self.id, f"Packet ID mismatch: {new_audio_packet.id} != {self.id}"
+        assert new_audio_packet.duration == self.duration + _audio_packet.duration, f"Duration mismatch: {new_audio_packet.duration} != {self.duration + _audio_packet.duration}"
+
+        difference_between_packets = self.ending_timestamp - _audio_packet.timestamp
+        
+
+        difference_between_endings_timestamps = new_audio_packet.ending_timestamp - _audio_packet.ending_timestamp
+        assert difference_between_endings_timestamps == difference_between_packets, \
+            f"Difference between ending timestamps mismatch: {difference_between_endings_timestamps} != {difference_between_packets}"
+        
+        # TODO review again
+        # assert difference_between_endings_timestamps == 0, \
+        #     f"Ending timestamp mismatch: {_audio_packet.ending_timestamp} != {new_audio_packet.ending_timestamp}, with difference between original packets {difference_between_packets}."
+
+        return new_audio_packet
+    
+    @property
+    def ending_timestamp(self):
+        """Get ending timestamp of AudioPacket
+
+        Returns:
+            float: ending timestamp of AudioPacket
+        """
+        return self.timestamp + self.duration
+    
     def __getitem__(self, key):
         """Get item from AudioPacket
 

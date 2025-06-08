@@ -1,3 +1,4 @@
+import time
 from typing import List
 from core.utils import logger
 from .data_packet import DataPacket
@@ -6,7 +7,8 @@ from .exceptions import SequenceMismatchException
 class TextPacket(DataPacket):
 
     def __init__(
-        self, text: str,
+        self, 
+        text: str,
         partial: bool,
         start: bool,
         commands: List[str]=[],
@@ -19,9 +21,14 @@ class TextPacket(DataPacket):
             partial=partial
         )
         self._text = text
+        assert isinstance(self._text, str), "Text must be a string"
         self.commands = commands if commands else []
         for key, value in metadata.items():
             setattr(self, key, value)
+
+    def generate_timestamp(self) -> int:
+        """Generate a timestamp in milliseconds."""
+        return int(time.time() * 1000)
 
     @property
     def text(self):
