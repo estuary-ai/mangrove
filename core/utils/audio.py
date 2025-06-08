@@ -1,5 +1,6 @@
 import io
 import os
+import time
 import scipy
 import pydub
 import backoff
@@ -29,8 +30,16 @@ def filepath_to_audio_packet(
         os.remove(filepath)
 
     # chunk the audio
+    last_packet_timestamp = time.time() * 1000  # current timestamp in milliseconds
+    num_chunks = len(audio) // chunk_size + (1 if len(audio) % chunk_size > 0 else 0)
+    # generate timestamps for each chunk (going back in time)
+    simulated_timestamps = list(reversed([
+        last_packet_timestamp - (i * chunk_size) for i in range(num_chunks)
+    ]))
+    timestamps_idx = 0
     for i in range(0, len(audio), chunk_size):
         yield AudioPacket({
+                'timestamp': int(simulated_timestamps[timestamps_idx]),
                 'bytes': audio[i:i + chunk_size]._data,
                 'sampleRate': audio.frame_rate,
                 'sampleWidth': audio.sample_width,
@@ -38,6 +47,7 @@ def filepath_to_audio_packet(
             }, resample=True, is_processed=False, 
             target_sample_rate=target_sample_rate
         )
+        timestamps_idx += 1
 
 def pydub_audio_segment_to_audio_packet(
         audio_segment: AudioSegment,
