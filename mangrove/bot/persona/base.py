@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Dict
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import RunnableSerializable
 from langchain_core.prompts import ChatPromptTemplate
 
 class BotPersona(metaclass=ABCMeta):
@@ -11,17 +11,17 @@ class BotPersona(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def context_chain(self) -> Runnable:
+    def context_chain(self) -> RunnableSerializable:
         pass
 
     @property
     @abstractmethod
-    def respond_chain(self) -> Runnable:
+    def respond_chain(self) -> RunnableSerializable:
         pass
 
     @property
     @abstractmethod
-    def postprocess_chain(self) -> Runnable:
+    def postprocess_chain(self) -> RunnableSerializable:
         pass
 
     @abstractmethod
