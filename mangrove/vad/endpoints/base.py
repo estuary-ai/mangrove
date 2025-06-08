@@ -3,6 +3,7 @@ from typing import Union, List
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from queue import Queue, Empty
+
 from storage_manager import write_output
 from core import AudioBuffer, AudioPacket
 from core.utils import logger
@@ -16,7 +17,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
     def __init__(
         self,
         head_silence_buffer_size: int = 200,
-        tail_silence_threshold: int = 150,
+        tail_silence_threshold: int = 300,
         threshold_to_determine_speaking: int = 500,
         frame_size: int = 320 * 3,
         verbose: bool = False

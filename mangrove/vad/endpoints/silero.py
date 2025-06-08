@@ -4,16 +4,31 @@ from core import AudioPacket, AudioBuffer
 from .base import VoiceActivityDetector
 
 class SileroVAD(VoiceActivityDetector):
+    """Voice Activity Detector using Silero VAD
+    This class implements a voice activity detector using the Silero VAD model.
+    It checks if the audio packets contain speech based on a threshold.
+    """
+
     def __init__(
         self,
-        device: Optional[str] = None,
         is_speech_threshold: float = 0.85,
-        head_silence_buffer_size: int = 200,
-        tail_silence_threshold: int = 300,
-        threshold_to_determine_speaking: int = 500,
-        frame_size: int = 512 * 2,
-        verbose: bool = False,
+        device: Optional[str] = None,
+        frame_size: int = 512 * 4,
+        **kwargs
     ):
+        """
+        Initialize the SileroVAD.
+
+        Args:
+            is_speech_threshold (float): Threshold to determine if the audio is speech.
+            device (Optional[str]): Device to run the model on, e.g., 'cpu' or 'cuda:0'.
+            frame_size (int): Size of the audio frame in samples. Must be at least 512*4 for Silero VAD.
+            **kwargs: Additional keyword arguments for the base class.
+            
+        Raises:
+            ValueError: If frame_size is less than 512*4. (Silero VAD requires a minimum frame size of 2048 samples)
+        """
+
         if frame_size < 512 * 4:
             raise ValueError("Frame size must be at least 512*4 with Silero VAD")
 
@@ -42,13 +57,7 @@ class SileroVAD(VoiceActivityDetector):
         # VADIterator,
         # collect_chunks) = utils
         # vad_iterator = VADIterator(model)
-        super().__init__(
-            head_silence_buffer_size=head_silence_buffer_size,
-            tail_silence_threshold=tail_silence_threshold, 
-            threshold_to_determine_speaking=threshold_to_determine_speaking,
-            frame_size=frame_size,
-            verbose=verbose
-        )
+        super().__init__(frame_size=frame_size, **kwargs)
 
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech

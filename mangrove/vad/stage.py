@@ -10,28 +10,20 @@ from .endpoints.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
-        is_speech_threshold=0.85,
-        head_silence_buffer_size=200,
-        tail_silence_threshold=300,
-        interrupt_threshold=2000,
-        frame_size=512 * 4,
-        device=None,
-        verbose=False,
+        device: str = None,
+        verbose: bool = False,
+        **endpoint_kwargs
     ):
-        super().__init__(frame_size=frame_size, verbose=verbose)
-
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self._endpoint = SileroVAD(
-            is_speech_threshold=is_speech_threshold,
-            head_silence_buffer_size=head_silence_buffer_size,
-            tail_silence_threshold=tail_silence_threshold,
-            threshold_to_determine_speaking=interrupt_threshold,
-            frame_size=frame_size,
+            **endpoint_kwargs,
             device=device,
-            verbose=verbose,
+            verbose=verbose
         )
+
+        super().__init__(frame_size=self._endpoint.frame_size, verbose=verbose)
 
     def _process(self, audio_packet: AudioPacket) -> Optional[AudioPacket]:
         if audio_packet is None:
