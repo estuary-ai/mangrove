@@ -1,7 +1,7 @@
 import time
 import pyaudio
 import numpy as np
-from typing import List
+from typing import List, Dict
 from pydub import AudioSegment
 from threading import Thread, Lock
 from loguru import logger
@@ -33,12 +33,20 @@ class SoundManager:
             _format (pyaudio format, optional): pyaudio format. Defaults to pyaudio.paFloat32.
             _channels (int, optional): number of channels. Defaults to 1.
             _sample_rate (int, optional): sample rate. Defaults to 16000.
-            _frames_per_buffer (int, optional): frames per buffer. Defaults to 1024.
+            _frames_per_buffer (int, optional): frames per buffer. Defaults to 1024., Where each byte corresponds to a sample of duration of 1/sample_rate seconds.
+
+        Further explanation:
+            _sample_rate: The number of samples per second. For example, 16000 means 16000 samples per second, meaning each sample corresponds to 1/16000 seconds.
+            _frames_per_buffer: The number of samples per buffer. For example, 1024 means 1024 samples per buffer, meaning each buffer corresponds to 1024/16000 seconds = 64 milliseconds.
+            _format: The format of the audio data. For example, pyaudio.paFloat32 means each sample is a float32 value.
+            _channels: The number of audio channels. For example, 1 means mono audio, 2 means stereo audio.    
+            _stream_callback: A callback function that will be called with the audio data when it is received. It gets called every time a new audio packet is available. which is approximately every 64 milliseconds (1024 samples at 16000 Hz sample rate).
         """
         self._format = _format
         self._channels = _channels
         self._sample_rate = _sample_rate
         self._frames_per_buffer = _frames_per_buffer
+        self._DEBUG_last_packet_details: Dict = None
         self.stream = None
         self.stream_callback = stream_callback
         self.threads_pool: List[Thread] = []
@@ -99,17 +107,35 @@ class SoundManager:
 
         audio_float32 = np.fromstring(audio_bytes, np.float32).astype(float)
         # audio_int16 = np.fromstring(audio_bytes, np.int16).astype(float)
+        timestamp = int(time.time() * 1000)  # current timestamp in milliseconds
+        duration_ms = (frame_count / self._sample_rate) * 1000  # duration in milliseconds
 
         self.stream_callback(
             {
                 "audio": list(audio_float32),
                 "numChannels": 1,
                 "sampleRate": self._sample_rate,
-                "timestamp": int(time.time() * 1000),
+                "timestamp": timestamp,
                 "sampleWidth": 4,  # "format": "f32le", # float32
                 # "format": "s16le", # int16
             }
         )
+        # if self._DEBUG_last_packet_details is not None:
+        #     _last_timestamp = self._DEBUG_last_packet_details['timestamp']
+        #     _last_duration = self._DEBUG_last_packet_details['duration']
+        #     _last_timestamp_end = _last_timestamp + _last_duration
+        #     if timestamp - _last_timestamp_end > 0:
+        #         logger.warning(
+        #             f"Audio packet received with timestamp {timestamp} ms, "
+        #             f"but last packet ended at {_last_timestamp_end} ms. "
+        #             f"DIFFERENCE: {timestamp - _last_timestamp_end} ms"
+        #         )
+                
+        # self._DEBUG_last_packet_details = {
+        #     "timestamp": timestamp,
+        #     "duration": duration_ms,
+        #  }
+
         return audio_bytes, pyaudio.paContinue
 
     def close_mic(self):
