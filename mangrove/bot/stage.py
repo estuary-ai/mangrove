@@ -1,4 +1,4 @@
-from typing import Generator, Optional, List
+from typing import Generator, Optional, List, Dict
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 
 from core.utils import logger
@@ -9,17 +9,25 @@ from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
 
 class BotStage(TextToTextStage):
     
-    def __init__(self, assistant_name='Marvin', verbose=False, endpoint='openai', endpoint_kwargs={}):
+    def __init__(self, endpoint: str='openai', endpoint_kwargs: Dict={}, persona_kwargs: Dict={}, verbose: bool=False):
+        """Initialize Bot Stage
+
+        Args:
+            endpoint (str, optional): Endpoint to use for the bot. Defaults to 'openai'.
+            endpoint_kwargs (Dict, optional): Additional keyword arguments for the endpoint. Defaults to {}.
+            persona_kwargs (Dict, optional): Additional keyword arguments for the persona. Defaults to {}.
+            verbose (bool, optional): Whether to print debug messages. Defaults to False.
+        """
         super().__init__(verbose=verbose)
         
         if endpoint == 'openai':
-            self._persona = ProtectorOfMangrove(assistant_name=assistant_name)
+            self._persona = ProtectorOfMangrove(**persona_kwargs)
             from .endpoints.chat_openai import ChatOpenAIEndpoint
             self._endpoint = ChatOpenAIEndpoint(**endpoint_kwargs)
-        elif endpoint == 'ollama':
-            self._persona = ProtectorOfMangroveNemotron(assistant_name=assistant_name)
-            from .endpoints.chat_ollama import ChatOllamaEndpoint
-            self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
+        # elif endpoint == 'ollama':
+        #     self._persona = ProtectorOfMangroveNemotron()
+        #     from .endpoints.chat_ollama import ChatOllamaEndpoint
+        #     self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
         else:
             raise Exception(f"Unknown Endpoint {endpoint}, available endpoints: openai, ollama")
         
