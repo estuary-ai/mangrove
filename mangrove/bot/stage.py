@@ -34,50 +34,65 @@ class BotStage(TextToTextStage):
         self._endpoint.setup(self._persona)
 
         self._chat_history: List[BaseMessage] = []
-        self._text_packet_generator: Generator[TextPacket, None, None] = None
+        self._in_progress_human_message: Optional[HumanMessage] = None
+
+        self._output_text_packet_generator: Generator[TextPacket, None, None] = None
         self._partial_command = ""
         self._in_command = False
 
     def _process(self, in_text_packet: TextPacket) -> Optional[TextPacket]:
-        if in_text_packet is None and self._text_packet_generator is None:
+        if in_text_packet is None and self._output_text_packet_generator is None:
             return None
                 
         if in_text_packet:
             logger.success(f"Processing: {in_text_packet}")
 
-            if self._text_packet_generator is None:
-                self._text_packet_generator = self.respond(in_text_packet)
+            if self._output_text_packet_generator is None:
+                self._output_text_packet_generator = self.respond(in_text_packet)
             else:
                 # interrupt the current conversation and replace with new input
                 self.schedule_forward_interrupt()
-                self._text_packet_generator = None
+                self._output_text_packet_generator = None
                 # if chat history has ended with an AIMessage, delete it
-                if isinstance(self._chat_history[-1], AIMessage):
+                if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
                     self._chat_history.pop()
-                self._text_packet_generator = self.respond(in_text_packet)
+                
+                if self._in_progress_human_message is not None:
+                    logger.warning(f'Interrupting current conversation with in-progress human message: {self._in_progress_human_message}')
+                    # self._chat_history.append(self._in_progress_human_message)
+                    # TODO just old input be attached to new input?
+
+                self._output_text_packet_generator = self.respond(in_text_packet)
                 logger.warning(f'Interrupting current conversation with new input: {in_text_packet}')
 
                 # TODO remove the below code if not needed
                 # assumption that it has already generating, ignore new input for now
                 # logger.warning(f'Dropping new input, already generating: {in_text_packet}')            
         
-        if self._text_packet_generator:
+        if self._output_text_packet_generator:
             try:
-                out_text_packet = next(self._text_packet_generator)
+                out_text_packet = next(self._output_text_packet_generator)
                 return out_text_packet
             except StopIteration:
-                self._text_packet_generator = None
+                self._output_text_packet_generator = None
 
         return True
     
     def on_interrupt(self):
         super().on_interrupt()
-        if self._text_packet_generator is not None:
+        if self._output_text_packet_generator is not None:
+            assert self._in_progress_human_message is not None, \
+                "In progress human message should not be None when interrupting"
+            logger.warning(f'Interrupting conversation, dropping in progress human message: {self._in_progress_human_message}')
             logger.warning('Interrupting conversation, dropping text packet generator')
-            self._text_packet_generator = None
-        if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
-            logger.warning('Interrupting conversation, removing last AIMessage')
-            self._chat_history.pop()
+            self._output_text_packet_generator = None
+            # TODO adjust new input to include the in-progress human message as well as the new input
+            self._in_progress_human_message = None # TODO for now, just drop the in-progress human message
+            
+        # TODO review since that does not make sense apparently?
+        # if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
+        #     logger.warning('Interrupting conversation, removing last AIMessage')
+        #     self._chat_history.pop()
 
     def on_sleep(self) -> None:
         return self.log('<bot>')
@@ -112,23 +127,14 @@ class BotStage(TextToTextStage):
             )
 
         with self._lock:
-            chat_history_formated = ""
-            for message in self._chat_history:
-                if isinstance(message, HumanMessage):
-                    chat_history_formated += f'User Statement: {message.content}\n'
-                elif isinstance(message, AIMessage):
-                    chat_history_formated += f'{self._persona.assistant_name} Statement: {message.content}\n'
-                else:
-                    raise Exception(f'{message} is not of expected type!')
-        
-            self._chat_history.append(HumanMessage(content=text_packet.text))
+            self._in_progress_human_message = HumanMessage(content=text_packet.text)
             ai_res_content = ""
             clean_ai_res_content = ""
             current_commands = []
             first_chunk = True
             for chunk in self._endpoint.stream(
-                user_msg=text_packet.text, 
-                chat_history_formated=chat_history_formated
+                chat_history=self._chat_history,
+                user_msg=self._in_progress_human_message.content, 
             ):
                 ai_res_content += chunk
                 if chunk == "":
@@ -138,10 +144,12 @@ class BotStage(TextToTextStage):
                 clean_ai_res_content += clean_text
                 current_commands += commands
                 yield _pack_response(clean_text, commands=commands, partial=True, start=first_chunk)
-
                 first_chunk = False
 
             yield _pack_response(clean_ai_res_content, commands=current_commands, partial=False, start=True)
+            self._chat_history.append(self._in_progress_human_message)
+            self._in_progress_human_message = None
+            # append the AIMessage to the chat history
             self._chat_history.append(AIMessage(content=ai_res_content))
 
     def process_procedures_if_on(self):

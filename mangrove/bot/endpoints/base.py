@@ -1,7 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from typing import Iterator
+from typing import Iterator, List
+from copy import copy
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 
 from ..persona.base import BotPersona
 
@@ -39,7 +41,16 @@ class LangchainCompatibleConversationalChainEndpoint(ConversationalChainEndpoint
             raise NotSetupYetError("You must call setup() before accessing the chain")
         return self._chain
     
-    def stream(self, user_msg, chat_history_formated) -> Iterator[str]:
+    def stream(self, user_msg, chat_history: List[BaseMessage]) -> Iterator[str]:     
+        # chat_history_formatted: str = ""
+        # for message in chat_history:
+        #     if isinstance(message, HumanMessage):
+        #         chat_history_formatted += f'User Statement: {message.content}\n'
+        #     elif isinstance(message, AIMessage):
+        #         chat_history_formatted += f'{self._persona.assistant_name} Statement: {message.content}\n'
+        #     else:
+        #         raise Exception(f'{message} is not of expected type!')
+               
         return self._chain.stream(
-            self._persona.construct_input(user_msg, chat_history_formated)
+            self._persona.construct_input(user_msg, chat_history)
         )
