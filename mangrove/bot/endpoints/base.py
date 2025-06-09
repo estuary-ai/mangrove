@@ -21,13 +21,21 @@ class LangchainCompatibleConversationalChainEndpoint(ConversationalChainEndpoint
         raise NotImplementedError("You must implement the llm property in your subclass")
 
     def setup(self, persona: BotPersona):
-        self._persona = persona
+        self._persona: BotPersona = persona
         self._chain: Runnable = (
-            persona.respond_chain 
-            | self.llm 
+            persona.respond_chain.with_config({
+                "run_name": f"{persona.__class__.__name__}PersonaRespondChain"
+            })
+            | self.llm
             | StrOutputParser() 
-            | persona.postprocess_chain
-        )
+            | persona.postprocess_chain.with_config(
+                {
+                    "run_name": f"{persona.__class__.__name__}PersonaPostprocessChain"
+                }
+            )
+        ).with_config({
+            "run_name": f"{persona.__class__.__name__}PersonaChain",
+        })
 
     @property
     def persona(self) -> BotPersona:
