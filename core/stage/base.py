@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Callable, List, Optional, Union
-from threading import RLock
+from threading import Lock
 from multiprocessing import JoinableQueue
 from queue import Empty as QueueEmpty
 
@@ -49,7 +49,7 @@ class PipelineStage(metaclass=ABCMeta):
         self._intermediate_input_buffer = []
 
         self._verbose = verbose
-        self._lock = RLock() # TODO option to disable lock
+        self._lock = Lock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
         self._is_interrupt_forward_pending: bool = False

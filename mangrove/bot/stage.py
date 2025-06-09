@@ -126,31 +126,30 @@ class BotStage(TextToTextStage):
                 start=start
             )
 
-        with self._lock:
-            self._in_progress_human_message = HumanMessage(content=text_packet.text)
-            ai_res_content = ""
-            clean_ai_res_content = ""
-            current_commands = []
-            first_chunk = True
-            for chunk in self._endpoint.stream(
-                chat_history=self._chat_history,
-                user_msg=self._in_progress_human_message.content, 
-            ):
-                ai_res_content += chunk
-                if chunk == "":
-                    continue
+        self._in_progress_human_message = HumanMessage(content=text_packet.text)
+        ai_res_content = ""
+        clean_ai_res_content = ""
+        current_commands = []
+        first_chunk = True
+        for chunk in self._endpoint.stream(
+            chat_history=self._chat_history,
+            user_msg=self._in_progress_human_message.content, 
+        ):
+            ai_res_content += chunk
+            if chunk == "":
+                continue
 
-                clean_text, commands = self._process_stream_chunk(chunk)
-                clean_ai_res_content += clean_text
-                current_commands += commands
-                yield _pack_response(clean_text, commands=commands, partial=True, start=first_chunk)
-                first_chunk = False
+            clean_text, commands = self._process_stream_chunk(chunk)
+            clean_ai_res_content += clean_text
+            current_commands += commands
+            yield _pack_response(clean_text, commands=commands, partial=True, start=first_chunk)
+            first_chunk = False
 
-            yield _pack_response(clean_ai_res_content, commands=current_commands, partial=False, start=True)
-            self._chat_history.append(self._in_progress_human_message)
-            self._in_progress_human_message = None
-            # append the AIMessage to the chat history
-            self._chat_history.append(AIMessage(content=ai_res_content))
+        yield _pack_response(clean_ai_res_content, commands=current_commands, partial=False, start=True)
+        self._chat_history.append(self._in_progress_human_message)
+        self._in_progress_human_message = None
+        # append the AIMessage to the chat history
+        self._chat_history.append(AIMessage(content=ai_res_content))
 
     def process_procedures_if_on(self):
         # TODO: Implement in different stage
