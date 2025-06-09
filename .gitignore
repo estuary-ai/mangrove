@@ -35,4 +35,3 @@ tmp
 *.wav
 
 .pdm-python
-pdm.lock
