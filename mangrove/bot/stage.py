@@ -24,10 +24,10 @@ class BotStage(TextToTextStage):
             self._persona = ProtectorOfMangrove(**persona_kwargs)
             from .endpoints.chat_openai import ChatOpenAIEndpoint
             self._endpoint = ChatOpenAIEndpoint(**endpoint_kwargs)
-        # elif endpoint == 'ollama':
-        #     self._persona = ProtectorOfMangroveNemotron()
-        #     from .endpoints.chat_ollama import ChatOllamaEndpoint
-        #     self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
+        elif endpoint == 'ollama':
+            self._persona = ProtectorOfMangroveNemotron()
+            from .endpoints.chat_ollama import ChatOllamaEndpoint
+            self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
         else:
             raise Exception(f"Unknown Endpoint {endpoint}, available endpoints: openai, ollama")
         
