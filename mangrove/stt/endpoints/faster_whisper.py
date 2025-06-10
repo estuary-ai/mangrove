@@ -59,6 +59,11 @@ class FasterWhisperEndpoint(STTEndpoint):
         #     filepath = f"blackbox/transcribed_{audio_packet.timestamp}.wav"
         #     audio_packet.to_wav(filepath)
 
+        if isinstance(_out, list):
+            assert len(_out) == 0, "Transcription list is empty"
+            return None
+
+        assert isinstance(_out, str), f"Transcription must be a string, got {type(_out)}"
         return _out
 
     def reset(self):

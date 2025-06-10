@@ -59,8 +59,6 @@ class STTStage(AudioToTextStage):
 
     def _process(self, audio_packet) -> Optional[TextPacket]:
         """Process audio buffer and return transcription if any found"""
-        # if audio_packet is None:
-        #     return
         assert isinstance(audio_packet, AudioPacket), f"Expected AudioPacket, got {type(audio_packet)}"
 
         if len(audio_packet) < self.frame_size:
@@ -79,7 +77,7 @@ class STTStage(AudioToTextStage):
         logger.debug("Trying to finish stream..")
         with Timer() as timer:
             transcription: Optional[str] = self._endpoint.get_transcription_if_any()
-            if transcription is not None:
+            if transcription:
                 self.reset_audio_stream(reset_buffers=False)
 
                 return TextPacket(
