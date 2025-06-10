@@ -30,11 +30,13 @@ class AudioBuffer:
         """
         self.max_queue_size = max_queue_size
         self.queue = PriorityQueue(maxsize=self.max_queue_size)
+        # self.queue_reception = PriorityQueue(maxsize=self.max_queue_size)
         self.leftover = None
         self.default_frame_size = frame_size
         self.queue_before_reset = None
         self._len = 0
         self._lock = RLock()
+        # self._lock_queue_reception = RLock()
 
     def reset(self) -> None:
         """Reset queue to empty state"""
@@ -44,6 +46,26 @@ class AudioBuffer:
 
     def __str__(self):
         return " ".join([str(packet) for packet in self.queue.queue])
+    
+    def __len__(self) -> int:
+        """Get length of queue"""
+        with self._lock:
+            return self._len
+
+    # def put(self, audio_packet: AudioPacket, timeout=0.5) -> None:
+    #     """Add audio packet to queue
+
+    #     Args:
+    #         audio_packet (AudioPacket): Audio packet to add to queue
+    #     """
+    #     # with self._lock:
+    #     with self._lock_queue_reception:
+    #         try:
+    #             # self._len += len(audio_packet)/self.default_frame_size
+    #             self._len += len(audio_packet)
+    #             self.queue_reception.put(audio_packet, timeout=timeout)
+    #         except QueueFull:
+    #             raise AudioBuffer.Full
 
     def put(self, audio_packet: AudioPacket, timeout=0.5) -> None:
         """Add audio packet to queue
@@ -51,13 +73,12 @@ class AudioBuffer:
         Args:
             audio_packet (AudioPacket): Audio packet to add to queue
         """
-        with self._lock:
-            try:
-                # self._len += len(audio_packet)/self.default_frame_size
-                self._len += len(audio_packet)
-                self.queue.put(audio_packet, timeout=timeout)
-            except QueueFull:
-                raise AudioBuffer.Full
+        try:
+            # self._len += len(audio_packet)/self.default_frame_size
+            self._len += len(audio_packet)
+            self.queue.put(audio_packet, timeout=timeout)
+        except QueueFull:
+            raise AudioBuffer.Full
 
     def get_nowait(self, frame_size=None) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
@@ -71,8 +92,7 @@ class AudioBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
-        with self._lock:
-            return self._get(frame_size, timeout=-1)
+        return self._get(frame_size, timeout=-1)
 
     def get(self, frame_size=None, timeout=0.5) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
@@ -86,8 +106,7 @@ class AudioBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
-        with self._lock:
-            return self._get(frame_size, timeout)
+        return self._get(frame_size, timeout)
 
     def _get(self, frame_size=None, timeout=0.5) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
@@ -101,6 +120,18 @@ class AudioBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
+
+        # empty first the reception queue
+        # with self._lock_queue_reception:
+        #     while not self.queue_reception.empty():
+        #         try:
+        #             packet = self.queue_reception.get_nowait()
+        #             if self.max_queue_size > 0 and self.queue.qsize() >= self.max_queue_size:
+        #                 logger.warning("AudioBuffer Queue is full, dropping packet")
+        #                 continue
+        #             self.queue.put(packet)
+        #         except QueueEmpty:
+        #             break
 
         frame_size = frame_size or self.default_frame_size
         chunk_len = 0
