@@ -1,6 +1,4 @@
-from typing import Optional, List, Generator
-from tqdm import tqdm
-
+from typing import Optional, List, Generator, Union
 from core.utils import logger
 from core.stage.base import PipelineStage
 from core.data import DataPacket
@@ -47,7 +45,14 @@ class PipelineSequence(PipelineStage):
             stage: PipelineStage,
             next_stage: Optional[PipelineStage],
         ):
-            def _callback(data_packet: DataPacket):
+            def _callback(data_packet: Union[DataPacket, Generator[DataPacket, None, None]]):
+                """Callback to be called when stage data is processed and ready to be fed to the next stage.
+                Args:
+                    data_packet (DataPacket or Generator[DataPacket, None]): Data packet to be fed to the next stage, or a generator of data packets.
+
+                Raises:
+                    ValueError: If data packet type does not match the expected type of the next stage.
+                """
                 from mangrove import STTStage, BotStage, TTSStage
 
                 if not isinstance(data_packet, DataPacket):
@@ -91,7 +96,7 @@ class PipelineSequence(PipelineStage):
                 else:
                     logger.info(f"Unknown stage type {type(stage)}, not emitting response")    
                     # raise ValueError("Unknown Pipeline Stage Type")
-            return lambda data_packet: _callback(data_packet)
+            return _callback
 
         for stage, next_stage in zip(self._stages, self._stages[1:] + [None]):
             stage.on_ready_callback = _build_on_ready_callback(stage, next_stage)

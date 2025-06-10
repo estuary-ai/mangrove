@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable, List, Optional, Union, Generator
+from typing import Callable, List, Optional, Union, Iterator
 from threading import Lock
 from multiprocessing import JoinableQueue
 from queue import Empty as QueueEmpty
@@ -70,6 +70,10 @@ class PipelineStage(metaclass=ABCMeta):
         self._on_ready_callback = callback
 
     def _unpack(self) -> DataPacket:
+        """Unpack data from input buffer and return a complete DataPacket
+        This method collects data packets from the input buffer and combines them into a single DataPacket, that can be processed by the next stage in the pipeline.
+        """
+
         data_packets: List[DataPacket] = self._intermediate_input_buffer
         self._intermediate_input_buffer = []
 
@@ -129,7 +133,7 @@ class PipelineStage(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, Generator[DataPacket, None, None]]]:
+    def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, Iterator[DataPacket]]]:
         raise NotImplementedError()
 
     def on_sleep(self) -> None:

@@ -1,9 +1,7 @@
 import torch
-from typing import Optional, List
+from typing import Optional
 
-from core.utils import logger
 from core.stage import AudioToAudioStage
-from core.stage.base import QueueEmpty, SequenceMismatchException
 from core import AudioPacket
 from .endpoints.silero import SileroVAD
 

@@ -1,10 +1,9 @@
-from typing import Generator, Optional, List, Dict
+from typing import Iterator, Optional, List, Dict
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 
 from core.utils import logger
 from core.stage import TextToTextStage
 from core.data.text_packet import TextPacket
-from core.stage.base import SequenceMismatchException, QueueEmpty
 from .persona.protector_of_mangrove import ProtectorOfMangrove
 from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
 
@@ -37,15 +36,13 @@ class BotStage(TextToTextStage):
         self._chat_history: List[BaseMessage] = []
         self._in_progress_human_message: Optional[HumanMessage] = None
 
-        self._output_text_packet_generator: Generator[TextPacket, None, None] = None
+        self._output_text_packet_generator: Iterator[TextPacket] = None
         self._partial_command = ""
         self._in_command = False
 
-    def _process(self, in_text_packet: TextPacket) -> Optional[TextPacket]:
+    def _process(self, in_text_packet: TextPacket) -> Iterator[TextPacket]:
         assert isinstance(in_text_packet, TextPacket), f"Expected TextPacket, got {type(in_text_packet)}"
-  
         logger.success(f"Processing: {in_text_packet}")
-
         return self.respond(in_text_packet)
     
         # else:
@@ -116,7 +113,7 @@ class BotStage(TextToTextStage):
                 clean_text += char
         return clean_text, commands
 
-    def respond(self, text_packet: TextPacket) -> Generator[TextPacket, None, None]:
+    def respond(self, text_packet: TextPacket) -> Iterator[TextPacket]:
         def _pack_response(content, commands=[], partial=False, start=False):
             # format response from openai chat to be sent to the user
             return TextPacket(
