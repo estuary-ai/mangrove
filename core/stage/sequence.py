@@ -1,7 +1,10 @@
-from typing import Optional, List
+from typing import Optional, List, Generator
+from tqdm import tqdm
+
 from core.utils import logger
 from core.stage.base import PipelineStage
 from core.data import DataPacket
+
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -46,6 +49,13 @@ class PipelineSequence(PipelineStage):
         ):
             def _callback(data_packet: DataPacket):
                 from mangrove import STTStage, BotStage, TTSStage
+
+                if not isinstance(data_packet, DataPacket):
+                    logger.debug(f"Data packet is not a DataPacket, but a {type(data_packet)}, unpacking it")
+                    assert isinstance(data_packet, Generator), f"Expected DataPacket or Generator, got {type(data_packet)}"
+                    for dp in data_packet:
+                        _callback(dp)
+                    return
 
                 if stage.is_interrupt_forward_pending():
                     import time
