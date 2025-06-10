@@ -52,7 +52,6 @@ class TTSStage(TextToAudioStage):
 
         self.debug = False
 
-
     def _process(self, in_text_packet: TextPacket):
         # accepts a stream of text packets
         # upon completion of a sentence (detection component), a stream is yielded
@@ -141,7 +140,6 @@ class TTSStage(TextToAudioStage):
         self._sentence_text_packet = None
         self._generated_audio_packet_per_sentence_count = 0
 
-
     def read(self, text: Union[TextPacket, str], as_generator=False) -> Generator[AudioPacket, None, None]:
         if not isinstance(text, TextPacket):
             if isinstance(text, str):
@@ -155,68 +153,3 @@ class TTSStage(TextToAudioStage):
         else:
             audio_packet = reduce(lambda x, y: x + y, audio_bytes_generator)
             return audio_packet
-        
-
-
-    def _unpack(self) -> TextPacket:
-        data_packets: List[TextPacket] = self._intermediate_input_buffer
-        self._intermediate_input_buffer = []
-
-        if not self._intermediate_input_buffer: # if intermediate buffer is empty, we need to get at least one packet from input buffer
-            data_packet = self._input_buffer.get(timeout=None) # blocking call at least for the first time
-            data_packets.append(data_packet)
-        else:
-            logger.debug("Intermediate buffer is not empty, skipping first get from input buffer")
-
-        # Now we have at least one packet in data_packets, we can try to get more packets
-        while True:
-            try:
-                data_packet = self._input_buffer.get_nowait()
-                data_packets.append(data_packet)
-            except QueueEmpty:
-                # if len(data_packets) == 0:
-                #     # logger.warning('No audio packets found in buffer', flush=True)
-                #     return
-                break
-
-        complete_data_packet = data_packets[0]
-        for i, data_packet in enumerate(data_packets[1:], start=1):
-            try:
-                complete_data_packet += data_packet
-            except SequenceMismatchException as e:
-                for j in range(i, len(data_packets)):
-                    self._intermediate_input_buffer.append(data_packets[j])
-                break
-        
-        return complete_data_packet
-
-    def start(self, host):
-        """Start processing thread"""
-        logger.info(f'Starting {self}')
-
-        self._host = host
-
-        self.on_start()
-
-        def _start_thread():
-            while True:
-                with self._lock:
-                    logger.debug(f"Unpacking data in {self.__class__.__name__}")
-                    data = self._unpack()
-                    logger.debug(f"Unpacked data: {data}")
-                    assert isinstance(data, TextPacket), f"Expected TextPacket, got {type(data)}"
-                    data_packet = self._process(data)
-                    logger.success(f"Processed data packet: {data_packet}")
-                    
-                    if self._is_interrupt_signal_pending:
-                        logger.warning(f"Interrupt signal pending in {self.__class__.__name__}, calling on_interrupt")
-                        self.on_interrupt()
-
-                    logger.debug(f"Data packet after processing: {data_packet}")
-                    if data_packet is not None and not isinstance(data_packet, bool):
-                        # TODO this is just hacky way.. use proper standards
-                        self.on_ready(data_packet)
-                        logger.debug(f"Data packet {data_packet} sent to on_ready in {self.__class__.__name__}")
-                    
-
-        self._processor = self._host.start_background_task(_start_thread)

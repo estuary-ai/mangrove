@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Union, Generator
 from threading import Lock
 from multiprocessing import JoinableQueue
 from queue import Empty as QueueEmpty
@@ -69,23 +69,25 @@ class PipelineStage(metaclass=ABCMeta):
             raise ValueError("Callback must be callable")
         self._on_ready_callback = callback
 
-    # @abstractmethod
-    # def _unpack(self) -> Optional[Union[DataPacket, List[DataPacket]]]: # TODO Make it not optional!!
-    #     raise NotImplementedError()
-    
-    def _unpack(self) -> Optional[DataPacket]: # TODO Make it not optional!!
-        """Unpack audio packets from input buffer"""
+    def _unpack(self) -> DataPacket:
         data_packets: List[DataPacket] = self._intermediate_input_buffer
         self._intermediate_input_buffer = []
 
+        if not self._intermediate_input_buffer: # if intermediate buffer is empty, we need to get at least one packet from input buffer
+            data_packet = self._input_buffer.get() # blocking call at least for the first time
+            data_packets.append(data_packet)
+        else:
+            logger.debug("Intermediate buffer is not empty, skipping first get from input buffer")
+
+        # Now we have at least one packet in data_packets, we can try to get more packets
         while True:
             try:
                 data_packet = self._input_buffer.get_nowait()
                 data_packets.append(data_packet)
             except QueueEmpty:
-                if len(data_packets) == 0:
-                    # logger.warning('No audio packets found in buffer', flush=True)
-                    return
+                # if len(data_packets) == 0:
+                #     # logger.warning('No audio packets found in buffer', flush=True)
+                #     return
                 break
 
         complete_data_packet = data_packets[0]
@@ -99,9 +101,35 @@ class PipelineStage(metaclass=ABCMeta):
         
         return complete_data_packet
 
+    def start(self, host):
+        """Start processing thread"""
+        logger.info(f'Starting {self}')
+
+        self._host = host
+
+        self.on_start()
+
+        def _start_thread():
+            while True:
+                with self._lock:
+                    data = self._unpack()
+                    assert isinstance(data, DataPacket), f"Expected DataPacket, got {type(data)}"
+                    data_packet = self._process(data)
+                    
+                    if self._is_interrupt_signal_pending:
+                        logger.warning(f"Interrupt signal pending in {self.__class__.__name__}, calling on_interrupt")
+                        self.on_interrupt()
+
+                    if data_packet is not None and not isinstance(data_packet, bool):
+                        # TODO this is just hacky way.. use proper standards
+                        self.on_ready(data_packet)
+                    
+
+        self._processor = self._host.start_background_task(_start_thread)
+
 
     @abstractmethod
-    def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, List[DataPacket]]]:
+    def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, Generator[DataPacket, None, None]]]:
         raise NotImplementedError()
 
     def on_sleep(self) -> None:
@@ -118,33 +146,6 @@ class PipelineStage(metaclass=ABCMeta):
 
     def on_ready(self, inference) -> None:
         self.on_ready_callback(inference)
-
-    def start(self, host):
-        """Start processing thread"""
-        logger.info(f'Starting {self}')
-
-        self._host = host
-
-        self.on_start()
-
-        def _start_thread():
-            while True:
-                with self._lock:
-                    data = self._unpack()
-                    data_packet = self._process(data)
-                    
-                    if self._is_interrupt_signal_pending:
-                        self.on_interrupt()
-
-                if data_packet is None:
-                    self._host.sleep(0.05)
-                    self.on_sleep()
-                elif not isinstance(data_packet, bool):
-                    # TODO this is just hacky way.. use proper standards
-                    self.on_ready(data_packet)
-                    
-
-        self._processor = self._host.start_background_task(_start_thread)
 
     def feed(self, data_packet: DataPacket) -> None:
         self._input_buffer.put(data_packet)

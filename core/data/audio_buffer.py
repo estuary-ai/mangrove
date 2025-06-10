@@ -92,27 +92,14 @@ class AudioBuffer:
         Raises:
             StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
         """
-        return self._get(frame_size, timeout=-1)
+        return self.get(frame_size, timeout=-1)
 
-    def get(self, frame_size=None, timeout=0.5) -> AudioPacket:
+    def get(self, frame_size=None, timeout=None) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
 
         Args:
             frame_size (int, optional): Number of bytes to read from queue. Defaults to self.default_frame_size.
-
-        Returns:
-            AudioPacket: Audio packet of size frame_size
-
-        Raises:
-            StopIteration: If queue is empty or if there is not enough data in queue to read frame_size bytes
-        """
-        return self._get(frame_size, timeout)
-
-    def _get(self, frame_size=None, timeout=0.5) -> AudioPacket:
-        """Get next frame of audio packets from queue given frame size
-
-        Args:
-            frame_size (int, optional): Number of bytes to read from queue. Defaults to self.default_frame_size.
+            timeout (float, optional): Timeout for getting data from queue. Defaults to None, which means no timeout.
 
         Returns:
             AudioPacket: Audio packet of size frame_size
