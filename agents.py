@@ -1,4 +1,6 @@
 import warnings
+from typing import Dict, Callable
+
 from mangrove import (
     VADStage,
     STTStage,
@@ -6,8 +8,8 @@ from mangrove import (
     TTSStage,
 )
 from storage_manager import StorageManager
-from core import AudioBuffer
-from core.stage import PipelineSequence
+from core import AudioBuffer, DataPacket
+from core.stage import PipelineSequence, PipelineStage
 from core.utils import logger
 
 # TODO check on this later
@@ -37,10 +39,19 @@ class BasicConversationalAgent(PipelineSequence):
                 as_generator=False
             )
 
-        self.add_stage(vad)
-        self.add_stage(stt)
-        self.add_stage(bot)
-        self.add_stage(tts)
+        self.add_stage(vad, name="vad")
+        self.add_stage(stt, name="stt")
+        self.add_stage(bot, name="bot")
+        self.add_stage(tts, name="tts")
+
+    @property
+    def response_emission_mapping(self) -> Dict[PipelineStage, Callable[[DataPacket], None]]:
+        """Mapping of stages to their response emission functions"""
+        return {
+            "stt": self.host.emit_stt_response,
+            "bot": self.host.emit_bot_response,
+            "tts": self.host.emit_bot_voice,
+        }
 
     def on_start(self):
         super().on_start()

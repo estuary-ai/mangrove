@@ -1,4 +1,4 @@
-from typing import Optional, List, Generator, Union
+from typing import Optional, List, Generator, Union, Callable, Dict
 from core.utils import logger
 from core.stage.base import PipelineStage
 from core.data import DataPacket
@@ -21,12 +21,23 @@ class PipelineSequence(PipelineStage):
         **kwargs
     ):
         self._stages: List[PipelineStage] = stages
+        self._stages_names: List[str] = [stage.__class__.__name__ for stage in stages] # TODO enumerate redundant types
         self._verbose = verbose
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
+    
+    @property
+    def response_emission_mapping(self) -> Dict[PipelineStage, Callable[[DataPacket], None]]:
+        """Mapping of stages to their response emission functions"""
+        return {}
 
-    def add_stage(self, stage: PipelineStage):
+    def add_stage(self, stage: PipelineStage, name: Optional[str] = None):
         self._stages.append(stage)
+        if name is not None:
+            stage.name = name
+        else:
+            stage.name = stage.__class__.__name__
+        self._stages_names.append(stage.name)
 
     def _unpack(self):
         # NOT CALLED
@@ -49,8 +60,6 @@ class PipelineSequence(PipelineStage):
                 Raises:
                     ValueError: If data packet type does not match the expected type of the next stage.
                 """
-                from mangrove import STTStage, BotStage, TTSStage
-
                 if not isinstance(data_packet, DataPacket):
                     logger.debug(f"Data packet is not a DataPacket, but a {type(data_packet)}, unpacking it")
                     assert isinstance(data_packet, Generator), f"Expected DataPacket or Generator, got {type(data_packet)}"
@@ -80,18 +89,15 @@ class PipelineSequence(PipelineStage):
                 else:
                     logger.trace(f"Final stage in {self.__class__.__name__} reached, emitting response through host")
 
-                if isinstance(stage, STTStage):
-                    assert isinstance(data_packet, STTStage.output_type), f"Expected {STTStage.output_type}, got {type(data_packet)}"
-                    self._host.emit_stt_response(data_packet)
-                elif isinstance(stage, BotStage):
-                    assert isinstance(data_packet, BotStage.output_type), f"Expected {BotStage.output_type}, got {type(data_packet)}"
-                    self._host.emit_bot_response(data_packet)
-                elif isinstance(stage, TTSStage):
-                    assert isinstance(data_packet, TTSStage.output_type), f"Expected {TTSStage.output_type}, got {type(data_packet)}"
-                    self._host.emit_bot_voice(data_packet)
+
+                # Emit response through host
+                stage_name = self._stages_names[self._stages.index(stage)]
+                if stage_name in self.response_emission_mapping:
+                    logger.debug(f"Emitting response for {stage_name} through host")
+                    self.response_emission_mapping[stage_name](data_packet)
                 else:
-                    logger.info(f"Unknown stage type {type(stage)}, not emitting response")    
-                    # raise ValueError("Unknown Pipeline Stage Type")
+                    pass  # No emission mapping defined for this stage
+
             return _callback
 
         for stage, next_stage in zip(self._stages, self._stages[1:] + [None]):
