@@ -54,9 +54,6 @@ class STTStage(AudioToTextStage):
             self.log("[stt-soft-reset]", end=" ")
         self._recorded_audio_length = 0
 
-    def on_sleep(self):
-        self.log('<stt>')
-
     def _process(self, audio_packet) -> Optional[TextPacket]:
         """Process audio buffer and return transcription if any found"""
         assert isinstance(audio_packet, AudioPacket), f"Expected AudioPacket, got {type(audio_packet)}"

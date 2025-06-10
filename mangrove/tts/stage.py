@@ -131,9 +131,6 @@ class TTSStage(TextToAudioStage):
         if in_text_packet: # and no audio is being generated at the moment
             return True # Meaning that the dispatching is still ongoing
 
-    def on_sleep(self):
-        self.log('<tts>')
-
     def on_interrupt(self):
         super().on_interrupt()
         self._audiopacket_generator = None

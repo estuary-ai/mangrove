@@ -91,9 +91,6 @@ class BotStage(TextToTextStage):
         #     logger.warning('Interrupting conversation, removing last AIMessage')
         #     self._chat_history.pop()
 
-    def on_sleep(self) -> None:
-        return self.log('<bot>')
-
     def _process_stream_chunk(self, chunk: str) -> tuple[str, list[str]]:
         clean_text = ""
         commands = []

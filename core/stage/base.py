@@ -136,9 +136,6 @@ class PipelineStage(metaclass=ABCMeta):
     def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, Iterator[DataPacket]]]:
         raise NotImplementedError()
 
-    def on_sleep(self) -> None:
-        pass
-
     def on_connect(self) -> None:
         pass
 

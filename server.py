@@ -39,11 +39,6 @@ class DigitalAssistant(Namespace):
             raise RuntimeError("Server is not initialized yet")
         self.agent.start(self)
 
-    def sleep(self, seconds) -> None:
-        if self.server is None:
-            raise RuntimeError("Server is not initialized yet")
-        self.server.sleep(seconds)
-
     def start_background_task(self, target, *args, **kwargs): # TODO find convenient generic type hinting
         if self.server is None:
             raise RuntimeError("Server is not initialized yet")

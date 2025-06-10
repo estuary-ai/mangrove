@@ -36,10 +36,6 @@ class PipelineSequence(PipelineStage):
         # NOT CALLED
         pass
 
-    def on_sleep(self):
-        # NOT CALLED
-        pass
-
     def on_start(self):
         def _build_on_ready_callback(
             stage: PipelineStage,
