@@ -16,9 +16,9 @@ class VoiceActivityDetector(metaclass=ABCMeta):
 
     def __init__(
         self,
-        head_silence_buffer_size: int = 200,
-        tail_silence_threshold: int = 300,
-        threshold_to_determine_speaking: int = 500,
+        head_silence_buffer_size: int = 200, # to buffer some silence at the head of the utterance
+        tail_silence_threshold: int = 300, # to cut off the utterance and send it off
+        threshold_to_determine_speaking: int = 1000, # 1 second
         frame_size: int = 320 * 3,
         verbose: bool = False
     ):
