@@ -6,7 +6,6 @@ from functools import reduce
 from core.utils import logger
 from core.data import AudioPacket, TextPacket
 from core.stage import TextToAudioStage
-from core.stage.base import SequenceMismatchException, QueueEmpty
 from .endpoints.base import TTSEndpoint
 
 
@@ -52,7 +51,7 @@ class TTSStage(TextToAudioStage):
 
         self.debug = False
 
-    def _process(self, in_text_packet: TextPacket):
+    def process(self, in_text_packet: TextPacket) -> None:
         # accepts a stream of text packets
         # upon completion of a sentence (detection component), a stream is yielded
         # sends a stream of audio packets
@@ -73,7 +72,7 @@ class TTSStage(TextToAudioStage):
             self._sentence_text_packet = None
 
         if in_text_packet is None and self._audiopacket_generator is None:
-            return None
+            return # TODO completely remove this check, as it is not needed
 
         if in_text_packet:
             logger.success(f"Processing: {in_text_packet}")
@@ -123,13 +122,13 @@ class TTSStage(TextToAudioStage):
                 out_audio_packet: AudioPacket = next(self._audiopacket_generator)
                 out_audio_packet._id = self._generated_audio_packet_per_sentence_count
                 self._generated_audio_packet_per_sentence_count += 1
-                return out_audio_packet
+                self.pack(out_audio_packet)
 
             except StopIteration:
                 self._audiopacket_generator = None
 
-        if in_text_packet: # and no audio is being generated at the moment
-            return True # Meaning that the dispatching is still ongoing
+        # if in_text_packet: # and no audio is being generated at the moment
+        #     return True # Meaning that the dispatching is still ongoing
 
     def on_interrupt(self):
         super().on_interrupt()

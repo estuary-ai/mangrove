@@ -1,24 +1,17 @@
 import numpy as np
 import sounddevice as sd
 from functools import reduce
-from queue import PriorityQueue, Queue
-from queue import Empty as QueueEmpty
-from queue import Full as QueueFull
-
+from queue import (
+    PriorityQueue, 
+    Queue,
+)
 from core.utils import logger
 from .audio_packet import AudioPacket
+from .base_data_buffer import BaseDataBuffer, DataBufferEmpty, DataBufferFull
 
 
-class AudioBuffer:
+class AudioBuffer(BaseDataBuffer):
     """Data buffer for audio packets"""
-
-    class Empty(QueueEmpty):
-        """Exception raised when queue is empty"""
-        pass
-
-    class Full(QueueFull):
-        """Exception raised when queue is full"""
-        pass
 
     def __init__(self, frame_size=320, max_queue_size=0):
         """Initialize data buffer
@@ -35,6 +28,14 @@ class AudioBuffer:
         self.queue_before_reset = None
         self._len = 0
 
+    def set_frame_size(self, frame_size: int) -> None:
+        """Set frame size for audio packets
+
+        Args:
+            frame_size (int): Number of bytes to read from queue
+        """
+        self.default_frame_size = frame_size
+
     def reset(self) -> None:
         """Reset queue to empty state"""
         with self.queue.mutex:
@@ -44,22 +45,33 @@ class AudioBuffer:
     def __str__(self):
         return " ".join([str(packet) for packet in self.queue.queue])
     
-    def __len__(self) -> int:
-        """Get length of queue"""
+    # def __len__(self) -> int:
+    #     """Get length of queue"""
+    #     return self._len
+    
+    def qsize(self) -> int:
+        """Get size of queue"""
         return self._len
+    
+    def full(self) -> bool:
+        """Check if queue is full"""
+        return self.queue.full()
 
-    def put(self, audio_packet: AudioPacket, timeout=0.5) -> None:
+    def put(self, audio_packet: AudioPacket, timeout=None) -> None:
         """Add audio packet to queue
 
         Args:
             audio_packet (AudioPacket): Audio packet to add to queue
+            timeout (float, optional): Timeout for adding data to queue. Defaults to None, which means no timeout.
+        Raises:
+            DataBufferFull: If queue is full and timeout is reached
         """
         try:
             # self._len += len(audio_packet)/self.default_frame_size
             self._len += len(audio_packet)
             self.queue.put(audio_packet, timeout=timeout)
-        except QueueFull:
-            raise AudioBuffer.Full
+        except DataBufferFull:
+            raise DataBufferFull
 
     def get_nowait(self, frame_size=None) -> AudioPacket:
         """Get next frame of audio packets from queue given frame size
@@ -105,12 +117,12 @@ class AudioBuffer:
                     new_packet = self.queue.get(timeout=timeout)
                 # if resample is not None:
                 #     new_packet = new_packet.resample(resample)
-            except QueueEmpty:
+            except DataBufferEmpty:
                 # if len(data_packets) == 0:
                 if data_packets.qsize() == 0:
                     if timeout != -1:
                         logger.warning("AudioBuffer Queue is empty")
-                    raise AudioBuffer.Empty
+                    raise DataBufferEmpty
                 else:
                     break
             data_packets.put_nowait(new_packet)
@@ -121,11 +133,11 @@ class AudioBuffer:
         while True:
             try:
                 _data_packet_list.append(data_packets.get_nowait())
-            except QueueEmpty:
+            except DataBufferEmpty:
                 break
 
         if len(_data_packet_list) == 0:
-            raise AudioBuffer.Empty
+            raise DataBufferEmpty
 
         data = reduce(lambda x, y: x + y, _data_packet_list)
         frame, leftover = data[:frame_size], data[frame_size:]
@@ -197,7 +209,7 @@ class AudioBuffer:
         while not self.is_empty():
             try:
                 data_packets.put_nowait(self.get(frame_size=-1))
-            except AudioBuffer.Empty:
+            except DataBufferEmpty:
                 break
         data_packets = [data_packets.get_nowait() for _ in range(data_packets.qsize())]
         data = reduce(lambda x, y: x + y, data_packets)

@@ -1,11 +1,10 @@
 from abc import ABCMeta, abstractmethod
 from typing import Callable, List, Optional, Union, Iterator
 from threading import Lock
-from multiprocessing import JoinableQueue
-from queue import Empty as QueueEmpty
 
 from core.utils import logger
-from ..data.data_packet import DataPacket
+from core.data import DataBuffer, DataBufferEmpty, DataPacket
+from core.data.base_data_buffer import BaseDataBuffer
 from ..data.exceptions import SequenceMismatchException
 
 from typing import TYPE_CHECKING
@@ -45,8 +44,10 @@ class PipelineStage(metaclass=ABCMeta):
         verbose=False,
         **kwargs
     ):
-        self._input_buffer = JoinableQueue()
         self._intermediate_input_buffer = []
+        self._input_buffer: DataBuffer = None # Assigned based on the previous stage in the pipeline
+        self._offloading_buffer: DataBuffer = DataBuffer()  # Buffer for offloading data packets to be processed in a separate thread then sent off to output buffer
+        self._output_buffer: DataBuffer = DataBuffer()  # Output buffer for the next stage in the pipeline
 
         self._verbose = verbose
         self._lock = Lock() # TODO option to disable lock
@@ -55,6 +56,23 @@ class PipelineStage(metaclass=ABCMeta):
         self._is_interrupt_forward_pending: bool = False
         self._is_interrupt_signal_pending: bool = False
 
+    @property
+    def input_buffer(self) -> BaseDataBuffer:
+        """Input buffer for the stage"""
+        return self._input_buffer
+    
+    @input_buffer.setter
+    def input_buffer(self, buffer: BaseDataBuffer):
+        # if not isinstance(buffer, BaseDataBuffer):
+        #     raise ValueError(f"Expected BaseDataBuffer, got {type(buffer)}")
+        logger.debug(f"Setting input buffer for {self.__class__.__name__} to {buffer}")
+        self._input_buffer = buffer
+
+    @property
+    def output_buffer(self) -> BaseDataBuffer:
+        """Output buffer for the stage"""
+        return self._output_buffer
+    
     @property
     def host(self):
         return self._host
@@ -69,16 +87,18 @@ class PipelineStage(metaclass=ABCMeta):
             raise ValueError("Callback must be callable")
         self._on_ready_callback = callback
 
-    def _unpack(self) -> DataPacket:
+    def unpack(self) -> DataPacket:
         """Unpack data from input buffer and return a complete DataPacket
         This method collects data packets from the input buffer and combines them into a single DataPacket, that can be processed by the next stage in the pipeline.
         """
-
+        if self._input_buffer is None:
+            raise RuntimeError("Input buffer is not set. Please set the input buffer before unpacking data.")
+        
         data_packets: List[DataPacket] = self._intermediate_input_buffer
         self._intermediate_input_buffer = []
 
-        if not self._intermediate_input_buffer: # if intermediate buffer is empty, we need to get at least one packet from input buffer
-            data_packet = self._input_buffer.get() # blocking call at least for the first time
+        if not data_packets:  # if intermediate buffer is empty, we need to get at least one packet from input buffer
+            data_packet = self._input_buffer.get()  # blocking call at least for the first time
             data_packets.append(data_packet)
         else:
             logger.debug("Intermediate buffer is not empty, skipping first get from input buffer")
@@ -88,7 +108,7 @@ class PipelineStage(metaclass=ABCMeta):
             try:
                 data_packet = self._input_buffer.get_nowait()
                 data_packets.append(data_packet)
-            except QueueEmpty:
+            except DataBufferEmpty:
                 # if len(data_packets) == 0:
                 #     # logger.warning('No audio packets found in buffer', flush=True)
                 #     return
@@ -104,6 +124,15 @@ class PipelineStage(metaclass=ABCMeta):
                 break
         
         return complete_data_packet
+        
+    def pack(self, data_packet: Union[DataPacket, Iterator[DataPacket]]) -> None:
+        """Queue data packet to an offloading buffer to (processing can be done in a separate thread), then it will be on output buffer"""
+        # if not isinstance(data_packet, self.output_type):
+        #     raise ValueError(f"Expected {self.output_type}, got {type(data_packet)}")
+        if self._offloading_buffer.full():
+            logger.warning(f"Output buffer is full, dropping data packet: {data_packet}")
+            return
+        self._offloading_buffer.put(data_packet)  # Offload the data packet to the output buffer
 
     def start(self, host):
         """Start processing thread"""
@@ -113,27 +142,40 @@ class PipelineStage(metaclass=ABCMeta):
 
         self.on_start()
 
-        def _start_thread():
+        def _producer_thread():
             while True:
-                with self._lock:
-                    data = self._unpack()
-                    assert isinstance(data, DataPacket), f"Expected DataPacket, got {type(data)}"
-                    data_packet = self._process(data)
-                    
-                    if self._is_interrupt_signal_pending:
-                        logger.warning(f"Interrupt signal pending in {self.__class__.__name__}, calling on_interrupt")
-                        self.on_interrupt()
+                # with self._lock:
+                data = self.unpack() # blocking call: unpacking data from the previous output buffer (input buffer)
+                assert isinstance(data, DataPacket), f"Expected DataPacket at {self.__class__.__name__}, got {type(data)}"
+                # NOTE: start producing task for the stage TODO rename
+                self.process(data)
+                
+                # TODO rethink the interrupt handling
+                # if self._is_interrupt_signal_pending:
+                #     logger.warning(f"Interrupt signal pending in {self.__class__.__name__}, calling on_interrupt")
+                #     self.on_interrupt()
 
-                    if data_packet is not None and not isinstance(data_packet, bool):
-                        # TODO this is just hacky way.. use proper standards
-                        self.on_ready(data_packet)
-                    
+        def _consumer_thread():
+            def _postprocess(packet: DataPacket):
+                assert isinstance(packet, DataPacket), f"Expected DataPacket at {self.__class__.__name__}, got {type(packet)}"
+                # TODO: check if data_packet is invalid for some reason!
+                self.on_ready_callback(packet)
+                self._output_buffer.put(packet)
 
-        self._processor = self._host.start_background_task(_start_thread)
+            while True:
+                data_packet = self._offloading_buffer.get()  # blocking call
+                if isinstance(data_packet, Iterator):
+                    for packet in data_packet: # TODO they are being processed right here
+                        _postprocess(packet)
+                else:
+                    _postprocess(data_packet)
 
+        self._producer = self._host.start_background_task(_producer_thread)
+        self._consumer = self._host.start_background_task(_consumer_thread)
 
     @abstractmethod
-    def _process(self, data_packet: DataPacket) -> Optional[Union[DataPacket, Iterator[DataPacket]]]:
+    def process(self, data_packet: DataPacket) -> None:
+        """Issue processing task for the stage"""
         raise NotImplementedError()
 
     def on_connect(self) -> None:
@@ -144,9 +186,6 @@ class PipelineStage(metaclass=ABCMeta):
 
     def on_start(self) -> None:
         pass
-
-    def on_ready(self, inference) -> None:
-        self.on_ready_callback(inference)
 
     def feed(self, data_packet: DataPacket) -> None:
         self._input_buffer.put(data_packet)

@@ -1,13 +1,12 @@
-from queue import Queue, Empty
 from abc import ABCMeta, abstractmethod
 from typing import Optional
 from functools import reduce
 
-from core import AudioPacket, TextPacket
+from core.data import AudioPacket, TextPacket, DataBuffer, DataBufferEmpty
 
 class STTEndpoint(metaclass=ABCMeta):
     def __init__(self, **kwargs):
-        self.input_queue = Queue()
+        self.input_queue = DataBuffer()
 
     def feed(self, audio_packet: AudioPacket) -> None:
         self.input_queue.put(audio_packet)
@@ -23,7 +22,7 @@ class STTEndpoint(metaclass=ABCMeta):
                 try:
                     audio_packet = self.input_queue.get_nowait()
                     audio_packets.append(audio_packet)
-                except Empty:
+                except DataBufferEmpty:
                     break
 
         audio_packet: AudioPacket = reduce(lambda x, y: x + y, audio_packets)

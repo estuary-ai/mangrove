@@ -13,12 +13,12 @@ class AudioToAudioStage(PipelineStage, metaclass=ABCMeta):
     def __init__(self, frame_size=512*4, **kwargs):
         super().__init__(**kwargs)
         self._frame_size = frame_size
-        self._input_buffer = AudioBuffer(self._frame_size)
-
+        self._output_buffer = AudioBuffer()
+        
     @property
-    def frame_size(self):
+    def frame_size(self) -> int:
         return self._frame_size
 
     @abstractmethod
-    def _process(self, audio_packet: AudioPacket) -> Optional[TextPacket]:
+    def process(self, audio_packet: AudioPacket) -> None:
         raise NotImplementedError()

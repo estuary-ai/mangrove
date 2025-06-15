@@ -2,8 +2,6 @@ import collections
 from typing import Union, List
 from abc import ABCMeta, abstractmethod
 from functools import reduce
-from queue import Queue, Empty
-
 from storage_manager import write_output
 from core import AudioBuffer, AudioPacket
 from core.utils import logger
@@ -17,7 +15,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
     def __init__(
         self,
         head_silence_buffer_size: int = 200, # to buffer some silence at the head of the utterance
-        tail_silence_threshold: int = 300, # to cut off the utterance and send it off
+        tail_silence_threshold: int = 750, # to cut off the utterance and send it off
         threshold_to_determine_speaking: int = 1000, # 1 second
         frame_size: int = 320 * 3,
         verbose: bool = False
@@ -44,7 +42,7 @@ class VoiceActivityDetector(metaclass=ABCMeta):
         self._reset_head_silences_buffer()
 
         self._command_audio_packet: AudioPacket = None
-        self._output_queue: Queue[AudioPacket] = Queue()
+        self._output_queue: AudioBuffer = AudioBuffer()
 
     @property
     def frame_size(self):
