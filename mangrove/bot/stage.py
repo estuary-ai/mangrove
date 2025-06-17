@@ -10,16 +10,17 @@ from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
 
 class BotStage(TextToTextStage):
     
-    def __init__(self, endpoint: str='openai', endpoint_kwargs: Dict={}, persona_kwargs: Dict={}, verbose: bool=False):
+    def __init__(self, name: str, endpoint: str='openai', endpoint_kwargs: Dict={}, persona_kwargs: Dict={}, verbose: bool=False):
         """Initialize Bot Stage
 
         Args:
+            name (str): Name of the stage.
             endpoint (str, optional): Endpoint to use for the bot. Defaults to 'openai'.
             endpoint_kwargs (Dict, optional): Additional keyword arguments for the endpoint. Defaults to {}.
             persona_kwargs (Dict, optional): Additional keyword arguments for the persona. Defaults to {}.
             verbose (bool, optional): Whether to print debug messages. Defaults to False.
         """
-        super().__init__(verbose=verbose)
+        super().__init__(name=name, verbose=verbose)
         
         if endpoint == 'openai':
             self._persona = ProtectorOfMangrove(**persona_kwargs)

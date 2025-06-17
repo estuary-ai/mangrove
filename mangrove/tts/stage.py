@@ -17,6 +17,7 @@ class TTSStage(TextToAudioStage):
 
     def __init__(
         self,
+        name: str,
         endpoint="pyttsx3",
         endpoint_kwargs={
             "voice_rate": 140,
@@ -24,7 +25,7 @@ class TTSStage(TextToAudioStage):
         },
         verbose=False,
     ):
-        super().__init__(verbose=verbose)
+        super().__init__(name=name, verbose=verbose)
         self.endpoint: TTSEndpoint
         # TODO select in dynamic cleaner way
         if endpoint == "pyttsx3":

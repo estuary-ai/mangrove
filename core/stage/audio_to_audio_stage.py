@@ -10,8 +10,8 @@ class AudioToAudioStage(PipelineStage, metaclass=ABCMeta):
     input_type = AudioPacket
     output_type = AudioPacket
 
-    def __init__(self, frame_size=512*4, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, name:str, frame_size=512*4, **kwargs):
+        super().__init__(name=name, **kwargs)
         self._frame_size = frame_size
         self._output_buffer = AudioBuffer()
         

@@ -13,6 +13,7 @@ class STTStage(AudioToTextStage):
 
     def __init__(
         self,
+        name: str,
         frame_size=512 * 4,
         device=None,
         verbose=False,
@@ -20,6 +21,7 @@ class STTStage(AudioToTextStage):
         """Initialize STT Stage
 
         Args:
+            name (str): Name of the stage
             frame_size (int, optional): audio frame size. Defaults to 320.
             device (str, optional): Device to use. Defaults to None.
             verbose (bool, optional): Whether to print debug messages. Defaults to False.
@@ -27,7 +29,7 @@ class STTStage(AudioToTextStage):
         Raises:
             ValueError: If custom scorer is defined but not found
         """
-        super().__init__(frame_size=frame_size, verbose=verbose)
+        super().__init__(name=name, frame_size=frame_size, verbose=verbose)
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"

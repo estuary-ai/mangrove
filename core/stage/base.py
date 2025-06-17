@@ -41,6 +41,7 @@ class PipelineStage(metaclass=ABCMeta):
 
     def __init__(
         self,
+        name: str,
         verbose=False,
         **kwargs
     ):
@@ -48,13 +49,19 @@ class PipelineStage(metaclass=ABCMeta):
         self._input_buffer: DataBuffer = None # Assigned based on the previous stage in the pipeline
         self._offloading_buffer: DataBuffer = DataBuffer()  # Buffer for offloading data packets to be processed in a separate thread then sent off to output buffer
         self._output_buffer: DataBuffer = DataBuffer()  # Output buffer for the next stage in the pipeline
-
+        
+        self._name = name
         self._verbose = verbose
         self._lock = Lock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
         self._is_interrupt_forward_pending: bool = False
         self._is_interrupt_signal_pending: bool = False
+
+    @property
+    def name(self) -> str:
+        """Name of the stage"""
+        return self._name
 
     @property
     def input_buffer(self) -> BaseDataBuffer:

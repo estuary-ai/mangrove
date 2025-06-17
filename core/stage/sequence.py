@@ -14,13 +14,13 @@ class PipelineSequence(PipelineStage):
 
     def __init__(
         self,
+        name: str,
         stages: PipelineStage=[],
         verbose=False,
         **kwargs
     ):
+        super().__init__(name=name, **kwargs)
         self._stages: List[PipelineStage] = stages
-        self._stages_names: List[str] = [stage.__class__.__name__ for stage in stages] # TODO enumerate redundant types
-
         self._verbose = verbose
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
@@ -30,13 +30,11 @@ class PipelineSequence(PipelineStage):
         """Mapping of stages to their response emission functions"""
         return {}
 
-    def add_stage(self, stage: PipelineStage, name: Optional[str] = None):
+    def add_stage(self, stage: PipelineStage):
         self._stages.append(stage)
-        if name is not None:
-            stage.name = name
-        else:
-            stage.name = stage.__class__.__name__
-        self._stages_names.append(stage.name)
+        # ensure the new stage has a unique name
+        if stage.name in [s.name for s in self._stages[:-1]]:
+            raise ValueError(f"Stage with name {stage.name} already exists in the pipeline sequence")
 
     def unpack(self):
         # NOT CALLED
@@ -85,22 +83,18 @@ class PipelineSequence(PipelineStage):
             else:
                 assert isinstance(stage.output_buffer, DataBuffer), f"Output buffer for stage {stage} must be DataBuffer, got {type(stage.output_buffer)}"
         logger.success(f"All stages in {self.__class__.__name__} have valid input/output buffers")
-
+        
         for stage in self._stages:
             logger.info(f"Starting stage {stage} with input type {stage.input_type} and output type {stage.output_type}")
             # Set the on_ready_callback for each stage based on the response_emission_mapping
             # If a stage has a response emission mapping, use it
-            stage_name = self._stages_names[self._stages.index(stage)]
-            if stage_name in self.response_emission_mapping:
-                logger.debug(f"Setting up response emission for {stage_name}")
-                # If a response emission mapping is defined for this stage, use it
-                stage.on_ready_callback = self.response_emission_mapping[stage_name]
+            if stage.name in self.response_emission_mapping:
+                logger.debug(f"Setting up response emission for {stage.name}")
+                stage.on_ready_callback = self.response_emission_mapping[stage.name]
             else:
-                logger.debug(f"No response emission mapping defined for {stage_name}, using default callback")
-                # Otherwise, use a default callback that emits the data packet through the host
-                # null callback (doing nothing)
-                stage.on_ready_callback = lambda data_packet: None
+                logger.debug(f"No response emission mapping defined for {stage.name}, using default callback")
             stage.start(host=self._host)
+
         logger.success(f"All stages in {self.__class__.__name__} are ready and started")
 
 

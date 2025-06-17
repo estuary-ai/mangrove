@@ -11,6 +11,7 @@ from .endpoints.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
+        name: str,
         device: str = None,
         verbose: bool = False,
         **endpoint_kwargs
@@ -24,7 +25,7 @@ class VADStage(AudioToAudioStage):
             verbose=verbose
         )
         # self._endpoint._output_queue = self._output_buffer # TODO the output queue is set to the stage's output buffer
-        super().__init__(frame_size=self._endpoint.frame_size, verbose=verbose)
+        super().__init__(name=name, frame_size=self._endpoint.frame_size, verbose=verbose)
         
     def process(self, audio_packet: AudioPacket) -> None:
         assert isinstance(audio_packet, AudioPacket), f"Expected AudioPacket, got {type(audio_packet)}"
