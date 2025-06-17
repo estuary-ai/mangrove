@@ -38,7 +38,7 @@ class BotStage(TextToTextStage):
         self._chat_history: List[BaseMessage] = []
         self._in_progress_human_message: Optional[HumanMessage] = None
 
-        self._output_text_packet_generator: Iterator[TextPacket] = None
+        # self._output_text_packet_generator: Iterator[TextPacket] = None
         self._partial_command = ""
         self._in_command = False
 
@@ -46,49 +46,50 @@ class BotStage(TextToTextStage):
         assert isinstance(in_text_packet, TextPacket), f"Expected TextPacket, got {type(in_text_packet)}"
         logger.success(f"Processing: {in_text_packet}")
         
+        _output_text_packet_generator: Iterator[TextPacket] = self.respond(in_text_packet)
+
         # if the input is empty, just return an empty generator
-        if self._output_text_packet_generator is None:
-            self._output_text_packet_generator = self.respond(in_text_packet)
+        # if self._output_text_packet_generator is None:
+        #     self._output_text_packet_generator = self.respond(in_text_packet)
 
-        else:
-            # interrupt the current conversation and replace with new input
-            # self.schedule_forward_interrupt() # TODO review the interrupt logic
-            logger.warning('Interrupting current conversation with new input')
-            self._output_text_packet_generator = None
-            # if chat history has ended with an AIMessage, delete it
-            if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
-                self._chat_history.pop()
+        # else:
+        #     # interrupt the current conversation and replace with new input
+        #     # self.schedule_forward_interrupt() # TODO review the interrupt logic
+        #     logger.warning('Interrupting current conversation with new input')
+        #     self._output_text_packet_generator = None
+        #     # if chat history has ended with an AIMessage, delete it
+        #     if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
+        #         self._chat_history.pop()
             
-            if self._in_progress_human_message is not None:
-                logger.warning(f'Interrupting current conversation with in-progress human message: {self._in_progress_human_message}')
-                # self._chat_history.append(self._in_progress_human_message)
-                # TODO just old input be attached to new input?
+        #     if self._in_progress_human_message is not None:
+        #         logger.warning(f'Interrupting current conversation with in-progress human message: {self._in_progress_human_message}')
+        #         # self._chat_history.append(self._in_progress_human_message)
+        #         # TODO just old input be attached to new input?
 
-            self._output_text_packet_generator = self.respond(in_text_packet)
-            logger.warning(f'Interrupting current conversation with new input: {in_text_packet}')
+        #     self._output_text_packet_generator = self.respond(in_text_packet)
+        #     logger.warning(f'Interrupting current conversation with new input: {in_text_packet}')
 
-            # TODO remove the below code if not needed
-            # assumption that it has already generating, ignore new input for now
-            # logger.warning(f'Dropping new input, already generating: {in_text_packet}')     
+        #     # TODO remove the below code if not needed
+        #     # assumption that it has already generating, ignore new input for now
+        #     # logger.warning(f'Dropping new input, already generating: {in_text_packet}')     
 
-        self.pack(self._output_text_packet_generator)
-        logger.warning("PACKING OBJECT OF TYPE: " + str(type(self._output_text_packet_generator)))
+        self.pack(_output_text_packet_generator)
 
-    def on_interrupt(self):
-        super().on_interrupt()
-        if self._output_text_packet_generator is not None:
-            assert self._in_progress_human_message is not None, \
-                "In progress human message should not be None when interrupting"
-            logger.warning(f'Interrupting conversation, dropping in progress human message: {self._in_progress_human_message}')
-            logger.warning('Interrupting conversation, dropping text packet generator')
-            self._output_text_packet_generator = None
-            # TODO adjust new input to include the in-progress human message as well as the new input
-            self._in_progress_human_message = None # TODO for now, just drop the in-progress human message
+    # def on_interrupt(self):
+    #     super().on_interrupt()
+    #     if self._output_text_packet_generator is not None:
+    #         assert self._in_progress_human_message is not None, \
+    #             "In progress human message should not be None when interrupting"
+    #         logger.warning(f'Interrupting conversation, dropping in progress human message: {self._in_progress_human_message}')
+    #         logger.warning('Interrupting conversation, dropping text packet generator')
+    #         self._output_text_packet_generator = None
+    #         # TODO adjust new input to include the in-progress human message as well as the new input
+    #         self._in_progress_human_message = None # TODO for now, just drop the in-progress human message
             
-        # TODO review since that does not make sense apparently?
-        # if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
-        #     logger.warning('Interrupting conversation, removing last AIMessage')
-        #     self._chat_history.pop()
+    #     # TODO review since that does not make sense apparently?
+    #     # if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
+    #     #     logger.warning('Interrupting conversation, removing last AIMessage')
+    #     #     self._chat_history.pop()
 
     # refactor it as local scope method
     def _process_stream_chunk(self, chunk: str) -> tuple[str, list[str]]:
