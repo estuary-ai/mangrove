@@ -7,10 +7,11 @@ from core.stage import TextToTextStage
 from core.data.text_packet import TextPacket
 from .persona.protector_of_mangrove import ProtectorOfMangrove
 from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
+from .persona.protector_of_mangrove_qwen3 import ProtectorOfMangroveQwen3
 
 class BotStage(TextToTextStage):
     
-    def __init__(self, endpoint: str='openai', endpoint_kwargs: Dict={}, persona_kwargs: Dict={}, verbose: bool=False):
+    def __init__(self, endpoint: str='openai', endpoint_kwargs: Dict={}, persona_kwargs: Dict={}, persona_file: str=None, verbose: bool=False):
         """Initialize Bot Stage
 
         Args:
@@ -26,7 +27,7 @@ class BotStage(TextToTextStage):
             from .endpoints.chat_openai import ChatOpenAIEndpoint
             self._endpoint = ChatOpenAIEndpoint(**endpoint_kwargs)
         elif endpoint == 'ollama':
-            self._persona = ProtectorOfMangroveNemotron()
+            self._persona = ProtectorOfMangroveQwen3(persona_file=persona_file)
             from .endpoints.chat_ollama import ChatOllamaEndpoint
             self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
         else:

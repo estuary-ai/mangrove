@@ -23,6 +23,7 @@ class BasicConversationalAgent(PipelineSequence):
         device=None,
         bot_endpoint="openai",
         tts_endpoint="gtts",
+        persona: str="protector_of_mangrove_qwen3",
         welcome_msg: str="Welcome, AI server connection is succesful.",
         verbose=False,
     ):
@@ -30,7 +31,7 @@ class BasicConversationalAgent(PipelineSequence):
 
         vad = VADStage(device=device)
         stt = STTStage(device=device)
-        bot = BotStage(endpoint=bot_endpoint)
+        bot = BotStage(endpoint=bot_endpoint, persona_file=persona)
         tts = TTSStage(endpoint=tts_endpoint)
         self.startup_audiopacket = None
         if welcome_msg:
