@@ -5,6 +5,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import format_document, ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough, Runnable
 from langchain_core.prompts.prompt import PromptTemplate
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from operator import itemgetter
 from .base import BotPersona
 from .protector_of_mangrove import *
@@ -37,7 +38,14 @@ class ProtectorOfMangroveQwen3(ProtectorOfMangrove):
         ).partial(
             assistant_name=self.assistant_name
         )
-        self.vectorstore = FAISS.from_texts(KNOWLEDGE_BASE, embedding=OllamaEmbeddings(model="qwen3:8b"))
+        splitter = RecursiveCharacterTextSplitter(
+            separators=["\n\n", "\n", ".", "!", "?"], 
+            chunk_size=200, 
+            chunk_overlap=0
+        )
+        self.KNOWLEDGE_BASE =  [chunk.strip() for chunk in splitter.split_text(self.persona.get("background"))]
+        print(f"Knowledge base: {self.KNOWLEDGE_BASE}")
+        self.vectorstore = FAISS.from_texts(self.KNOWLEDGE_BASE, embedding=OllamaEmbeddings(model="qwen3:8b"))
 
     def _create_system_prompt(self) -> str:
         """Create a dynamic system prompt using the JSON persona fields"""
