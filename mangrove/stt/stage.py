@@ -38,48 +38,6 @@ class STTStage(AudioToTextStage):
 
         self._recorded_audio_length: int = 0  # FOR DEBUGGING
         self._interrupted_audio_packet: Optional[AudioPacket] = None
-        
-    def unpack(self) -> TextPacket:
-        """Unpack data from input buffer and return a complete DataPacket
-        This method collects data packets from the input buffer and combines them into a single DataPacket, that can be processed by the next stage in the pipeline.
-        """
-        if self.input_buffer is None:
-            raise RuntimeError("Input buffer is not set. Please set the input buffer before unpacking data.")
-        
-        logger.warning("Unpacking data from input buffer")
-
-        data_packets: List[TextPacket] = self._intermediate_input_buffer
-        self._intermediate_input_buffer = []
-
-        if not data_packets:  # if intermediate buffer is empty, we need to get at least one packet from input buffer
-            logger.warning("Intermediate buffer is empty, getting first data packet from input buffer")
-            data_packet = self.input_buffer.get()  # blocking call at least for the first time
-            data_packets.append(data_packet)
-            logger.warning(f"Got first data packet: {data_packet}")
-        else:
-            logger.debug("Intermediate buffer is not empty, skipping first get from input buffer")
-
-        # Now we have at least one packet in data_packets, we can try to get more packets
-        while True:
-            try:
-                data_packet = self.input_buffer.get_nowait()
-                data_packets.append(data_packet)
-            except DataBufferEmpty:
-                # if len(data_packets) == 0:
-                #     # logger.warning('No audio packets found in buffer', flush=True)
-                #     return
-                break
-
-        complete_data_packet = data_packets[0]
-        for i, data_packet in enumerate(data_packets[1:], start=1):
-            try:
-                complete_data_packet += data_packet
-            except SequenceMismatchException as e:
-                for j in range(i, len(data_packets)):
-                    self._intermediate_input_buffer.append(data_packets[j])
-                break
-        
-        return complete_data_packet
 
     def on_start(self):
         self._recorded_audio_length = 0  # FOR DEBUGGING
