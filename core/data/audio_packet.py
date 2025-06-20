@@ -443,7 +443,7 @@ class AudioPacket(DataPacket):
         
     
     def __str__(self) -> str:
-        return f"{self.timestamp}, {self._duration}, {len(self.bytes)}"
+        return f"AudioPacket(t={self.timestamp}, d={self._duration}, s={len(self.bytes)})"
 
     def __eq__(self, __o: object) -> bool:
         return self.timestamp == __o.timestamp
