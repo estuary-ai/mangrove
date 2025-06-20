@@ -115,7 +115,11 @@ if __name__ == "__main__":
     parser.add_argument("--log", dest="log", type=bool, default=False, help="Log mode")
     parser.add_argument(
         "--flask_secret_key", dest="flask_secret_key", type=str, default="secret!",
-        help="Flask secret key",
+        help="Flask secret key"
+    )
+    parser.add_argument(
+        "--persona", dest="persona", type=str, default="protector_of_mangrove_qwen3",
+        help="File path to persona json file"
     )
     args = parser.parse_args()
 
@@ -144,6 +148,7 @@ if __name__ == "__main__":
         namespace="/",
         bot_endpoint=args.bot_endpoint,
         tts_endpoint=args.tts_endpoint,
+        persona=args.persona,
         device=device,
     )
     socketio.on_namespace(digital_assistant)
