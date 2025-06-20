@@ -77,7 +77,8 @@ class AssistantClient(socketio.ClientNamespace):
             data (dict): bot response received from the server
         """
         # Handle response here
-        logger.debug(f"SENVA: {data}")
+        if not data['partial']:
+            logger.debug(f"Bot: {data}")
 
 
 def close_callback():
