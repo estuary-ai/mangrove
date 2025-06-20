@@ -55,35 +55,43 @@ class TTSStage(TextToAudioStage):
             in_text_packet (TextPacket): The incoming text packet to process.
         """ 
         assert isinstance(in_text_packet, TextPacket), f"Expected TextPacket, got {type(in_text_packet)}"
-
         logger.success(f"Processing: {in_text_packet}")
+
         if in_text_packet.partial:
+            if in_text_packet.start:
+                # if this is the start of a new sentence, reset the sentence_text_packet
+                if self._sentence_text_packet is not None:
+                    logger.error(f"Unexpected start in partial response: {in_text_packet}, resetting sentence_text_packet")
+                    self._sentence_text_packet = None
+                    self.log("SENVA: ")
+                    
             self.log(f"{in_text_packet.text}")
 
             if self._sentence_text_packet is None:
                 if in_text_packet.start:
                     self.log("SENVA: ")
-                # implement SentenceTextDataBuffer
+                # TODO implement SentenceTextDataBuffer
                 self._sentence_text_packet: TextPacket = in_text_packet
+
             else:
                 if in_text_packet.start:
                     self._sentence_text_packet = in_text_packet
-                    self.schedule_forward_interrupt()
+                    # self.schedule_forward_interrupt()
                     # TODO investigate this
                     logger.error(f"Partial response should not have start: {in_text_packet}, interrupting and starting new")
                 else:
                     self._sentence_text_packet += in_text_packet
 
-            if self._sentence_text_packet.text.endswith(('?', '!', '.')):
-                # TODO prompt engineer '.' and check other options
-                _new_audiopacket_generator = self.read(
-                    self._sentence_text_packet,
-                    as_generator=True
-                )
-                logger.debug(f"Packing audiopacket generator corresponding to sentence: {self._sentence_text_packet.text}")
-                self.pack(_new_audiopacket_generator)
-                # NOTE: reset complete_segment because you got a complete response
-                self._sentence_text_packet = None
+            # TODO uncomment this back
+            # if self._sentence_text_packet.text.endswith(('?', '!', '.')):
+            #     # TODO prompt engineer '.' and check other options
+            #     _new_audiopacket_generator = self.read(
+            #         self._sentence_text_packet,
+            #         as_generator=True
+            #     )
+            #     logger.debug(f"Packing audiopacket generator corresponding to sentence: {self._sentence_text_packet.text}")
+            #     self._sentence_text_packet = None  # NOTE: reset complete_segment because you got a complete response
+            #     self.pack(_new_audiopacket_generator)
 
         else:
             # NOTE: _process leftover sentence_text_packet if any
@@ -96,9 +104,8 @@ class TTSStage(TextToAudioStage):
                         as_generator=True
                     )
                     logger.debug(f"Packing audiopacket generator corresponding to sentence: {self._sentence_text_packet.text}")
+                    self._sentence_text_packet = None  # NOTE: reset complete_segment because you got a complete response
                     self.pack(_new_audiopacket_generator)
-                    # NOTE: reset complete_segment because you got a complete response
-                    self._sentence_text_packet = None
 
             # NOTE: This must be true.. as if not partial, then it is a final complete response, which also is a start
             # This is here just to debug the logic of previous pipeline stage
@@ -111,9 +118,9 @@ class TTSStage(TextToAudioStage):
             # NOTE: next partial_bot_res.get('start') is gonna be True
             self.log("", end='\n')
 
-    def on_interrupt(self):
-        super().on_interrupt()
-        self._sentence_text_packet = None
+    # def on_interrupt(self):
+    #     super().on_interrupt()
+    #     self._sentence_text_packet = None
 
     def read(self, text: Union[TextPacket, str], as_generator=False) -> Generator[AudioPacket, None, None]:
         if not isinstance(text, TextPacket):

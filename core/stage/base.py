@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from typing import Callable, List, Optional, Union, Iterator
+from typing import Callable, List, Union, Iterator
 from threading import Lock
 
 from core.utils import logger
-from core.data import DataBuffer, DataBufferEmpty, DataPacket
+from core.data import DataBuffer, DataBufferEmpty, DataPacket, DataPacketStream
 from core.data.base_data_buffer import BaseDataBuffer
 from ..data.exceptions import SequenceMismatchException
 
@@ -52,7 +52,7 @@ class PipelineStage(metaclass=ABCMeta):
         
         self._name = name
         self._verbose = verbose
-        self._lock = Lock() # TODO option to disable lock
+        self.__lock__ = Lock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
         self._host: 'DigitalAssistant' = None
         self._is_interrupt_forward_pending: bool = False
@@ -108,8 +108,9 @@ class PipelineStage(metaclass=ABCMeta):
             data_packet = self._input_buffer.get()  # blocking call at least for the first time
             data_packets.append(data_packet)
         else:
-            logger.debug("Intermediate buffer is not empty, skipping first get from input buffer")
-
+            # logger.debug("Intermediate buffer is not empty, skipping first get from input buffer")
+            pass
+            
         # Now we have at least one packet in data_packets, we can try to get more packets
         while True:
             try:
@@ -132,14 +133,27 @@ class PipelineStage(metaclass=ABCMeta):
         
         return complete_data_packet
         
-    def pack(self, data_packet: Union[DataPacket, Iterator[DataPacket]]) -> None:
-        """Queue data packet to an offloading buffer to (processing can be done in a separate thread), then it will be on output buffer"""
+    def pack(self, data: Union[DataPacket, Iterator[DataPacket]]) -> None:
+        """Queue data to an offloading buffer to (processing can be done in a separate thread), then it will be on output buffer"""
         # if not isinstance(data_packet, self.output_type):
         #     raise ValueError(f"Expected {self.output_type}, got {type(data_packet)}")
+        if isinstance(data, Iterator):
+            # if data is an iterator, we need to convert it to a DataPacketStream
+            data = DataPacketStream(data, source=self.name)
+
         if self._offloading_buffer.full():
-            logger.warning(f"Output buffer is full, dropping data packet: {data_packet}")
-            return
-        self._offloading_buffer.put(data_packet)  # Offload the data packet to the output buffer
+            raise NotImplementedError(
+                f"Offloading buffer is full for {self.__class__.__name__}, cannot pack data: {data}. Consider increasing the buffer size or processing speed."
+            )
+        self._offloading_buffer.put(data)  # Offload the data packet to the output buffer
+        # We mark the complete data packet at the context of the stage as under digestion
+        from ..context import Context
+        # Context().set(
+        #     key=f"digesting_{self.name}",
+        #     value=data
+        # )
+        logger.debug(f"Packed data into offloading buffer for {self.__class__.__name__}: {data}")
+        Context().record_invalidating_timestamp(data)
 
     def start(self, host):
         """Start processing thread"""
@@ -151,12 +165,14 @@ class PipelineStage(metaclass=ABCMeta):
 
         def _producer_thread():
             while True:
-                # with self._lock:
                 data = self.unpack() # blocking call: unpacking data from the previous output buffer (input buffer)
+                assert data is not None, f"Unpacked data is None at {self.__class__.__name__}, this should not happen"
+
                 assert isinstance(data, DataPacket), f"Expected DataPacket at {self.__class__.__name__}, got {type(data)}"
                 # NOTE: start producing task for the stage TODO rename
-                self.process(data)
-                
+                with self.__lock__:
+                    self.process(data)
+                    
                 # TODO rethink the interrupt handling
                 # if self._is_interrupt_signal_pending:
                 #     logger.warning(f"Interrupt signal pending in {self.__class__.__name__}, calling on_interrupt")
@@ -165,17 +181,22 @@ class PipelineStage(metaclass=ABCMeta):
         def _consumer_thread():
             def _postprocess(packet: DataPacket):
                 assert isinstance(packet, DataPacket), f"Expected DataPacket at {self.__class__.__name__}, got {type(packet)}"
-                # TODO: check if data_packet is invalid for some reason!
-                self.on_ready_callback(packet)
-                self._output_buffer.put(packet)
+                with self.__lock__:
+                    self.on_ready_callback(packet)
+                    self._output_buffer.put(packet)
+                logger.debug(f"Processed data packet: {packet} at {self.__class__.__name__}")
 
             while True:
-                data_packet = self._offloading_buffer.get()  # blocking call
-                if isinstance(data_packet, Iterator):
-                    for packet in data_packet: # TODO they are being processed right here
+                logger.debug(f"Waiting for data in offloading buffer at {self.__class__.__name__}")
+                data = self._offloading_buffer.get()  # blocking call
+                if isinstance(data, DataPacketStream):
+                    logger.debug(f"Processing DataPacketStream at {self.__class__.__name__}: {data}")
+                    for packet in data: # TODO they are being processed right here
                         _postprocess(packet)
+                    logger.debug(f"Processed DataPacketStream at {self.__class__.__name__}")
                 else:
-                    _postprocess(data_packet)
+                    logger.debug(f"Processing DataPacket at {self.__class__.__name__}: {data}")
+                    _postprocess(data)
 
         self._producer = self._host.start_background_task(_producer_thread)
         self._consumer = self._host.start_background_task(_consumer_thread)
@@ -209,19 +230,34 @@ class PipelineStage(metaclass=ABCMeta):
         if self._verbose or force:
             print(msg, end=end, flush=True)
 
-    def is_interrupt_forward_pending(self):
-        return self._is_interrupt_forward_pending
+    # def is_interrupt_forward_pending(self):
+    #     return self._is_interrupt_forward_pending
 
-    def schedule_forward_interrupt(self):
-        self._is_interrupt_forward_pending = True
+    # def schedule_forward_interrupt(self):
+    #     self._is_interrupt_forward_pending = True
 
-    def acknowledge_interrupt_forwarded(self):
-        self._is_interrupt_forward_pending = False
+    # def acknowledge_interrupt_forwarded(self):
+    #     self._is_interrupt_forward_pending = False
 
-    def signal_interrupt(self, timestamp: int):
-        self._is_interrupt_signal_pending = True
-        # TODO use timestamp
+    # def signal_interrupt(self, timestamp: int):
+    #     self._is_interrupt_signal_pending = True
+    #     # TODO use timestamp
 
-    def on_interrupt(self):
-        self._is_interrupt_signal_pending = False
-        self.schedule_forward_interrupt()
+    # def on_interrupt(self):
+    #     pass
+        # self._is_interrupt_signal_pending = False
+        # self.schedule_forward_interrupt()
+
+    # def invoke_wait_for_incoming_packets_logic(self) -> bool:
+    #     """Invoke wait for incoming packets
+        
+    #     This method is overridden in the stages that need to implement logic to adjust to too slow incoming inputs which has a behavior similar to interruption logic. 
+
+    #     It is called by the orchestrator when it detects through a context manager that the stage is about send off an output packet too soon, and it needs to wait for more input packets to be processed before sending off the output packet. This particularly called when the on_ready_callback is invoked by the processer thread of the stage.
+
+    #     The default logic is to do nothing, but it can be overridden in the subclasses to implement specific logic, such as waiting for more input packets or adjusting the output packet generation logic.
+
+    #     Returns:
+    #         bool: True if the stage is waiting for incoming packets, False otherwise.
+    #     """
+    #     return False

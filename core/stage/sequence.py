@@ -43,6 +43,72 @@ class PipelineSequence(PipelineStage):
     def process(self, _) -> None:
         # NOT CALLED
         pass
+    
+    def build_custom_on_ready_callback(self, stage: PipelineStage) -> Callable[[DataPacket], None]:
+        """Build a custom on_ready_callback for each stage"""
+        
+        response_emission_callback: Callable[[DataPacket], None] = self.response_emission_mapping.get(stage.name, None)
+
+        def custom_on_ready_callback(data_packet: DataPacket):
+            """Custom callback to handle data packet when stage is done with producing data packet and about to send it off"""
+            from ..context import Context
+
+            # TODO: check if data_packet is invalid for some reason!
+            # TODO: data_packet being processed here should be notified to the context manager
+            # so that we are able to to know that a new data packet at an earlier stage should make this data packet invalid            
+
+            logger.debug(f"Stage {stage.name} sending off {data_packet}")
+            # check on context associated from previous stages, is there any packets that has not been digested yet?
+            # if so, current packets here should be invalidated so that their content somehow gets merged first with the recent produced packets from the previous stages
+
+            # logger.debug(f"Checking previous stages while at {stage.name}")
+            # stage_idx = self._stages.index(stage)
+            # for stage_x_idx, (stage_x, stage_x_plus_1) in enumerate(zip(self._stages, self._stages[1:])):
+            #     if stage_x_idx >= stage_idx:
+            #         break
+            
+            #     stage_x_digesting_data = Context().get(f"digesting_{stage_x.name}")
+            #     stage_x_plus_1_digesting_data = Context().get(f"digesting_{stage_x_plus_1.name}")
+            #     if len(stage_x_digesting_data) != len(stage_x_plus_1_digesting_data):
+            #         assert len(stage_x_digesting_data) > len(stage_x_plus_1_digesting_data), \
+            #             f"Stage {stage_x.name} has {len(stage_x_digesting_data)} digested data pieces, while stage {stage_x_plus_1.name} has {len(stage_x_plus_1_digesting_data)} digested data pieces. This may lead to invalid data packets."
+            #         logger.warning(f"Stage {stage_x.name} has {len(stage_x_digesting_data)} digested data pieces, while stage {stage_x_plus_1.name} has {len(stage_x_plus_1_digesting_data)} digested data pieces. This may lead to invalid data packets.")
+            #         the_extra_data = stage_x_digesting_data[len(stage_x_plus_1_digesting_data):]
+            #         last_timestamp = the_extra_data[-1].timestamp
+            #         # TODO call a custom callback to handle this case if needed
+            #         # This means that the current stage is emitting a data packet while there are previous stages with undigested packets
+            #         # This may lead to invalid data packets
+            #         logger.warning(f"Data packet {data_packet} from stage {stage.name} is being emitted, but there are previous stages with undigested packets. This packet may be invalidated.")
+            #         logger.info(f"Invoking wait for incoming packets logic for stage {stage.name} to handle this case")
+                    
+            #         Context().record_invalidating_timestamp(last_timestamp)
+
+                    # backtrack to this stage_x_plus_1, giving it all information propagated too fast
+                    # then stage_x_plus_1 should handle repropagating them again properly with any changes necessary to insure healthy digestion,
+                    # healthy digestion meaning that there is no lost of mismatched data
+                    # stage_x_plus_1.on_digesting_too_fast_callback(stage_x_digesting_data, stage_x_plus_1_digesting_data)
+                    # break            
+            
+            # is this stage the last stage in the pipeline?
+            # is_last_stage = stage == self._stages[-1]
+            # if is_last_stage:
+            #     # TODO that is temporary, we should check if the previous stages have undigested packets
+            #     # if this is the last stage, we can safely emit the data packet
+            #     logger.debug(f"Last stage {stage.name} is emitting data packet {data_packet}, no need to check for previous stages")
+            #     Context().clear() # NOTE: clearing the whole context here, as this is the last stage and we are done with processing
+            #     # TODO should should only happen when there is no previous stages with undigested packets but that is to be implemented later (for now we have this exception)
+            #     # If the stage is the last stage, we can safely emit the data packet
+            
+            # If there is a response emission mapping for this stage, use it
+            if response_emission_callback is not None:
+                logger.debug(f"Emitting response for stage {stage.name} with data packet {data_packet}")
+                # Call the custom response emission function for this stage
+                # This function should be defined in the response_emission_mapping
+                # and should handle the emission of the data packet through the host
+                # This is a custom callback that emits the data packet through the host
+                response_emission_callback(data_packet)
+
+        return custom_on_ready_callback
 
     def on_start(self):
         """Setting up the pipeline sequence"""
@@ -90,9 +156,9 @@ class PipelineSequence(PipelineStage):
             # If a stage has a response emission mapping, use it
             if stage.name in self.response_emission_mapping:
                 logger.debug(f"Setting up response emission for {stage.name}")
-                stage.on_ready_callback = self.response_emission_mapping[stage.name]
             else:
                 logger.debug(f"No response emission mapping defined for {stage.name}, using default callback")
+            stage.on_ready_callback = self.build_custom_on_ready_callback(stage)
             stage.start(host=self._host)
 
         logger.success(f"All stages in {self.__class__.__name__} are ready and started")

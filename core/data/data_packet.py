@@ -2,6 +2,7 @@ import functools
 from typing import Type
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
+from copy import deepcopy
 
 @functools.total_ordering
 class DataPacket(metaclass=ABCMeta):
@@ -67,3 +68,10 @@ class DataPacket(metaclass=ABCMeta):
     @abstractmethod
     def __add__(self, _data_packet: Type["DataPacket"]):
         raise NotImplementedError()
+
+    def copy(self) -> "DataPacket":
+        """Create a copy of the DataPacket instance.
+        Returns:
+            DataPacket: A new instance of the same type with the same attributes.
+        """
+        return deepcopy(self)
