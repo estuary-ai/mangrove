@@ -1,6 +1,6 @@
 import sys
 import os, argparse
-from typing import Union, Iterator, Optional
+from typing import Optional
 from flask import Flask
 from flask_socketio import SocketIO, Namespace
 from dotenv import load_dotenv
@@ -44,20 +44,12 @@ class DigitalAssistant(Namespace):
             raise RuntimeError("Server is not initialized yet")
         return self.server.start_background_task(target, *args, **kwargs)
 
-    def __emit__(self, event, data: Union[Iterator[DataPacket], DataPacket]) -> None:
-        if hasattr(data, "__next__"):
-            # if data is generator
-            logger.trace(f"Emitting generator {event}")
-            for d in data:
-                write_output(">", end="")
-                if hasattr(d, "to_dict"):
-                    d = d.to_dict()
-                self.server.emit(event, d)
-        else:
-            logger.trace(f"Emitting {event}")
-            if hasattr(data, "to_dict"):
-                data = data.to_dict()
-            self.server.emit(event, data)
+    def __emit__(self, event, data: DataPacket) -> None:
+        assert isinstance(data, DataPacket), f"Expected DataPacket, got {type(data)}"
+        logger.trace(f"Emitting {event}")
+        if hasattr(data, "to_dict"):
+            data = data.to_dict()
+        self.server.emit(event, data)
 
     def emit_bot_voice(self, audio_packet: AudioPacket) -> None:
         self.__emit__("bot_voice", audio_packet)
