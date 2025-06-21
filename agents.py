@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 
 from mangrove import (
     VADStage,
@@ -23,7 +23,7 @@ class BasicConversationalAgent(PipelineSequence):
         device=None,
         bot_endpoint="openai",
         tts_endpoint="gtts",
-        persona: str="protector_of_mangrove_qwen3",
+        persona_configs: Union[str, Dict] = None,
         welcome_msg: str="Welcome, AI server connection is succesful.",
         verbose=False,
     ):
@@ -31,7 +31,7 @@ class BasicConversationalAgent(PipelineSequence):
 
         vad = VADStage(name="vad", device=device)
         stt = STTStage(name="stt", device=device)
-        bot = BotStage(name="bot", endpoint=bot_endpoint, persona_kwargs={"persona_file": persona}, verbose=verbose)
+        bot = BotStage(name="bot", endpoint=bot_endpoint, persona_configs=persona_configs, verbose=verbose)
         tts = TTSStage(name="tts", endpoint=tts_endpoint)
         self.startup_audiopacket = None
         # if welcome_msg:

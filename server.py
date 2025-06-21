@@ -79,7 +79,7 @@ class DigitalAssistant(Namespace):
             # Feeding in audio stream
             write_output("-", end="")
             from core import AudioPacket
-            self.agent.feed(AudioPacket(audio_data))
+            self.agent.feed(AudioPacket(data_json=audio_data))
 
     # def on_trial(self, data):
     #     write_output(f"received trial: {data}")
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         help="Flask secret key"
     )
     parser.add_argument(
-        "--persona", dest="persona", type=str, default="protector_of_mangrove_qwen3",
+        "--persona", dest="persona", type=str, default=None,
         help="File path to persona json file"
     )
     args = parser.parse_args()
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         namespace="/",
         bot_endpoint=args.bot_endpoint,
         tts_endpoint=args.tts_endpoint,
-        persona=args.persona,
+        persona_configs=args.persona,
         device=device,
     )
     socketio.on_namespace(digital_assistant)

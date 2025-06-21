@@ -11,8 +11,7 @@ from .persona.protector_of_mangrove_nemotron import ProtectorOfMangroveNemotron
 from .persona.protector_of_mangrove_qwen3 import ProtectorOfMangroveQwen3
 
 class BotStage(TextToTextStage):
-    
-    def __init__(self, name: str, endpoint: str='openai', endpoint_kwargs: Dict={},  persona_kwargs: Dict={}, verbose: bool=False):
+    def __init__(self, name: str, endpoint: str='openai', persona_configs: Union[Dict[str, str], str]={},  endpoint_kwargs: Dict={}, verbose: bool=False):
         """Initialize Bot Stage
 
         Args:
@@ -25,11 +24,14 @@ class BotStage(TextToTextStage):
         super().__init__(name=name, verbose=verbose)
         
         if endpoint == 'openai':
+            from .persona.protector_of_mangrove import ProtectorOfMangrove
+            persona_kwargs = persona_configs if isinstance(persona_configs, dict) else {}
             self._persona = ProtectorOfMangrove(**persona_kwargs)
             from .endpoints.chat_openai import ChatOpenAIEndpoint
             self._endpoint = ChatOpenAIEndpoint(**endpoint_kwargs)
         elif endpoint == 'ollama':
-            self._persona = ProtectorOfMangroveQwen3(**persona_kwargs)
+            from .persona.protector_of_mangrove_qwen3 import ProtectorOfMangroveQwen3
+            self._persona = ProtectorOfMangroveQwen3(persona_file=persona_configs)
             from .endpoints.chat_ollama import ChatOllamaEndpoint
             self._endpoint = ChatOllamaEndpoint(**endpoint_kwargs)
         else:
