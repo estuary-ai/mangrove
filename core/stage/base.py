@@ -3,8 +3,10 @@ from typing import Callable, List, Union, Iterator
 from threading import Lock
 
 from core.utils import logger
-from core.data import DataBuffer, DataBufferEmpty, DataPacket, DataPacketStream
+from core.data import DataBuffer, DataBufferEmpty, DataPacket, DataPacketStream, AnyData
 from core.data.base_data_buffer import BaseDataBuffer
+from core.context import OutcomingStreamContext, IncomingPacketWhileProcessingException
+
 from ..data.exceptions import SequenceMismatchException
 
 from typing import TYPE_CHECKING
@@ -132,7 +134,7 @@ class PipelineStage(metaclass=ABCMeta):
                 break
         
         return complete_data_packet
-        
+    
     def pack(self, data: Union[DataPacket, Iterator[DataPacket]]) -> None:
         """Queue data to an offloading buffer to (processing can be done in a separate thread), then it will be on output buffer"""
         # if not isinstance(data_packet, self.output_type):
@@ -140,6 +142,9 @@ class PipelineStage(metaclass=ABCMeta):
         if isinstance(data, Iterator):
             # if data is an iterator, we need to convert it to a DataPacketStream
             data = DataPacketStream(data, source=self.name)
+        else:
+            assert data.source is None, f"DataPacket source should be None, got {data.source} at {self.__class__.__name__}"
+            data.source = self.name  # Set the source of the data packet to the stage name
 
         if self._offloading_buffer.full():
             raise NotImplementedError(
@@ -147,13 +152,10 @@ class PipelineStage(metaclass=ABCMeta):
             )
         self._offloading_buffer.put(data)  # Offload the data packet to the output buffer
         # We mark the complete data packet at the context of the stage as under digestion
-        from ..context import Context
-        # Context().set(
-        #     key=f"digesting_{self.name}",
-        #     value=data
-        # )
         logger.debug(f"Packed data into offloading buffer for {self.__class__.__name__}: {data}")
-        Context().record_invalidating_timestamp(data)
+        from ..context import Context
+        Context().record_data_pack(data)
+        logger.debug(f"Recorded data packet in context for {self.__class__.__name__}: {data}")
 
     def start(self, host):
         """Start processing thread"""
@@ -177,6 +179,7 @@ class PipelineStage(metaclass=ABCMeta):
                 # if self._is_interrupt_signal_pending:
                 #     logger.warning(f"Interrupt signal pending in {self.__class__.__name__}, calling on_interrupt")
                 #     self.on_interrupt()
+            logger.debug(f"Producer thread for {self.__class__.__name__} stopped")
 
         def _consumer_thread():
             def _postprocess(packet: DataPacket):
@@ -184,22 +187,65 @@ class PipelineStage(metaclass=ABCMeta):
                 with self.__lock__:
                     self.on_ready_callback(packet)
                     self._output_buffer.put(packet)
-                logger.debug(f"Processed data packet: {packet} at {self.__class__.__name__}")
 
             while True:
                 logger.debug(f"Waiting for data in offloading buffer at {self.__class__.__name__}")
                 data = self._offloading_buffer.get()  # blocking call
+                logger.debug(f"Received data from offloading buffer at {self.__class__.__name__}: {data}")
                 if isinstance(data, DataPacketStream):
                     logger.debug(f"Processing DataPacketStream at {self.__class__.__name__}: {data}")
-                    for packet in data: # TODO they are being processed right here
-                        _postprocess(packet)
+                    _current_packet = None
+                    while True:
+                        try:
+                            if _current_packet is not None:
+                                # If we have a current packet, we need to post-process it before processing the next one
+                                _postprocess(_current_packet)
+                                _current_packet = None
+                            with OutcomingStreamContext(data) as stream_context:
+                                for packet in data: # TODO they are being processed right here
+                                    _current_packet = packet
+                                    stream_context.raise_error_if_any()
+                                    _postprocess(packet)
+                            break
+                            logger.debug(f"Stream processed successfully at {self.__class__.__name__}")
+                        except IncomingPacketWhileProcessingException as e:
+                            invalidated = self.on_incoming_packet_while_processing(e, data)
+                            if invalidated:
+                                logger.warning(f"Invalidating timestamp exception in {self.__class__.__name__}: {e}")
+                                # If the stream is invalidated, we skip processing it
+                                break
+                            else:
+                                logger.warning(f"Incoming packet while processing in {self.__class__.__name__}: {e}, but stream is not invalidated, continuing processing")
+                                # we are good to go, continue processing the stream
+                                pass
                     logger.debug(f"Processed DataPacketStream at {self.__class__.__name__}")
                 else:
-                    logger.debug(f"Processing DataPacket at {self.__class__.__name__}: {data}")
                     _postprocess(data)
+
+            logger.debug(f"Consumer thread for {self.__class__.__name__} stopped")
 
         self._producer = self._host.start_background_task(_producer_thread)
         self._consumer = self._host.start_background_task(_consumer_thread)
+
+
+    def on_incoming_packet_while_processing(self, exception: IncomingPacketWhileProcessingException, data: AnyData) -> bool:
+        """Handle incoming packet while processing
+        This method is called when an incoming packet is received while the stage is processing a data packet or stream.
+        It can be used to invalidate the current stream or data packet being processed, and to handle the incoming packet accordingly.
+        This method should be overridden in subclasses to implement specific logic for handling incoming packets while processing.
+        If the stream is invalidated, it should return True, otherwise it should return False.
+
+        Args:
+            exception (IncomingPacketWhileProcessingException): Exception that contains the incoming (possibly invalidating) record.
+            data (AnyData): The data packet or stream that is being processed when the exception occurred.
+
+        Returns:
+            bool: True if the stream was invalidated, False otherwise
+        """
+        assert data.timestamp < exception.timestamp, f"Invalidating timestamp should be greater than or equal to the text packet timestamp {data.timestamp}, got {exception.timestamp}"
+        
+        return False  # Default behavior is to not invalidate the stream
+
 
     @abstractmethod
     def process(self, data_packet: DataPacket) -> None:
