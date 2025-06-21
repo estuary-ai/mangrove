@@ -1,3 +1,4 @@
+from .any_data import AnyData
 from .data_packet import DataPacket
 from .data_packet_stream import DataPacketStream
 from .text_packet import TextPacket

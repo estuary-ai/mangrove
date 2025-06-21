@@ -11,7 +11,7 @@ class AudioPacket(DataPacket):
     """Represents a "Packet" of audio data."""
     resampling = 0
 
-    def __init__(self, data_json, resample: bool = True, is_processed: bool = False, target_sample_rate: int = 16000):
+    def __init__(self, data_json, source: str=None, resample: bool = True, is_processed: bool = False, target_sample_rate: int = 16000):
         """Initialize AudioPacket from json data or bytes
 
         Args:
@@ -32,7 +32,7 @@ class AudioPacket(DataPacket):
 
         # self._start = data_json.get("start", False)
         self._id: str = data_json.get("packetID")
-        self._source: str = data_json.get("source", None)
+        # self._source: str = data_json.get("source", None)
 
 
         # NOTE: we do not keep the src_bytes as they might not be even there
@@ -60,7 +60,7 @@ class AudioPacket(DataPacket):
             if not Decimal(self._duration).compare(Decimal(_calculated_duration)) == 0:
                 logger.warning(f"Duration mismatch: {self._duration} != {_calculated_duration}")    
             
-        super().__init__(timestamp=data_json.get("timestamp"))
+        super().__init__(source=source, timestamp=data_json.get("timestamp"))
 
     def generate_timestamp(self):
         """Generate timestamp for AudioPacket based on its duration, given that a timestamp is not provided"""
@@ -342,6 +342,7 @@ class AudioPacket(DataPacket):
         assert self.sample_rate == _audio_packet.sample_rate, f"Sample rates do not match: {self.sample_rate} != {_audio_packet.sample_rate}"
         assert self.num_channels == _audio_packet.num_channels, f"Num channels do not match: {self.num_channels} != {_audio_packet.num_channels}"
         assert self.sample_width == _audio_packet.sample_width, f"Sample width do not match: {self.sample_width} != {_audio_packet.sample_width}"
+        assert self.source == _audio_packet.source, f"Sources do not match: {self._source} != {_audio_packet._source}"
         # assert self.timestamp + self.duration <= _other.timestamp, f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} = {self.timestamp + self.duration} > {_other.timestamp}"
         # if self.timestamp + self.duration > _other.timestamp:
         #     import math
@@ -357,7 +358,7 @@ class AudioPacket(DataPacket):
             timestamp = _audio_packet.timestamp
 
         concat_audio_packet = AudioPacket(
-            {
+            data_json={
                 "bytes": self.bytes + _audio_packet.bytes,
                 "timestamp": timestamp,
                 "sampleRate": _audio_packet.sample_rate,
@@ -366,6 +367,7 @@ class AudioPacket(DataPacket):
                 # "start": self._start,
                 "packetID": self.id
             },
+            source=self.source,
             resample=False,
             is_processed=True,
         )
@@ -430,6 +432,7 @@ class AudioPacket(DataPacket):
                     # "start": self._start,
                     "packetID": self._id
                 },
+                source=self.source,
                 resample=False,
                 is_processed=True,
             )
@@ -443,7 +446,7 @@ class AudioPacket(DataPacket):
         
     
     def __str__(self) -> str:
-        return f"AudioPacket(t={self.timestamp}, d={self._duration}, s={len(self.bytes)})"
+        return f"AudioPacket(t={self.timestamp}, d={self._duration}, s={len(self.bytes)}, src={self.source}, id={self.id})"
 
     def __eq__(self, __o: object) -> bool:
         return self.timestamp == __o.timestamp

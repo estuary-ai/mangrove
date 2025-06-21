@@ -1,9 +1,10 @@
 import time
 from typing import Generator, Iterator
 from .data_packet import DataPacket
+from .any_data import AnyData
 
 # TODO allow annotating it to a particular type of DataPacket
-class DataPacketStream(Iterator[DataPacket]):
+class DataPacketStream(Iterator[DataPacket], AnyData):
     """
     A class to represent a stream of data packets. A wrapper around a generator that yields DataPacket objects.
     """
@@ -15,31 +16,12 @@ class DataPacketStream(Iterator[DataPacket]):
         Args:
             generator (Generator[DataPacket, None, None]): A generator that yields DataPacket objects.
         """
-        self._creation_time = int(time.time()* 1000)  # Store creation time in milliseconds
+        super().__init__(source=source, timestamp=int(time.time() * 1000))  # Store creation time in milliseconds
         self._generator = generator
         self._current_packet = None
-        self._source = source
-
-    @property
-    def source(self) -> str:
-        """Get the source of the DataPacketStream."""
-        return self._source
-
-    @property
-    def creation_time(self) -> int:
-        """Get the creation time of the DataPacketStream."""
-        return self._creation_time
     
-    @property
-    def timestamp(self) -> int:
-        return self._creation_time
-
-    # @property
-    # def timestamp(self) -> int:
-    #     """Get the timestamp of the DataPacketStream. It is dynamically updated to the timestamp of the current packet."""
-    #     if self._current_packet is not None:
-    #         return self._current_packet.timestamp
-    #     return self._creation_time
+    def generate_timestamp(self):
+        return self.creation_time
     
     def __iter__(self):
         """Return the iterator for the DataPacketStream."""
