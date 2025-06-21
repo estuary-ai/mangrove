@@ -213,4 +213,4 @@ class AudioBuffer(BaseDataBuffer):
                 break
         data_packets = [data_packets.get_nowait() for _ in range(data_packets.qsize())]
         data = reduce(lambda x, y: x + y, data_packets)
-        return AudioPacket(data)
+        return data
