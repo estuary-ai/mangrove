@@ -83,15 +83,15 @@ class TTSStage(TextToAudioStage):
                     self._sentence_text_packet += in_text_packet
 
             # TODO uncomment this back
-            # if self._sentence_text_packet.text.endswith(('?', '!', '.')):
-            #     # TODO prompt engineer '.' and check other options
-            #     _new_audiopacket_generator = self.read(
-            #         self._sentence_text_packet,
-            #         as_generator=True
-            #     )
-            #     logger.debug(f"Packing audiopacket generator corresponding to sentence: {self._sentence_text_packet.text}")
-            #     self._sentence_text_packet = None  # NOTE: reset complete_segment because you got a complete response
-            #     self.pack(_new_audiopacket_generator)
+            if self._sentence_text_packet.text.endswith(('?', '!', '.')):
+                # TODO prompt engineer '.' and check other options
+                _new_audiopacket_generator = self.read(
+                    self._sentence_text_packet,
+                    as_generator=True
+                )
+                logger.debug(f"Packing audiopacket generator corresponding to sentence: {self._sentence_text_packet.text}")
+                self._sentence_text_packet = None  # NOTE: reset complete_segment because you got a complete response
+                self.pack(_new_audiopacket_generator)
 
         else:
             # NOTE: _process leftover sentence_text_packet if any
