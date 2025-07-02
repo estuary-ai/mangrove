@@ -8,15 +8,18 @@ from mangrove import (
     TTSStage,
 )
 from storage_manager import StorageManager
-from core import AudioBuffer, DataPacket
+from core import AudioBuffer, DataPacket, AudioPacket
 from core.stage import PipelineSequence, PipelineStage
 from core.utils import logger
 
 # TODO check on this later
 warnings.filterwarnings("ignore", category=UserWarning)
 
-class BasicConversationalAgent(PipelineSequence):
+class VoiceBasedConversationalAgent(PipelineSequence):
     """Agent controller for the conversational AI server."""
+
+    input_type = AudioPacket
+    output_type = AudioPacket
 
     def __init__(
         self,
@@ -27,7 +30,7 @@ class BasicConversationalAgent(PipelineSequence):
         welcome_msg: str="Welcome, AI server connection is succesful.",
         verbose=False,
     ):
-        super().__init__(name=BasicConversationalAgent.__class__.__name__, verbose=verbose)
+        super().__init__(name=VoiceBasedConversationalAgent.__class__.__name__, verbose=verbose)
 
         vad = VADStage(name="vad", device=device)
         stt = STTStage(name="stt", device=device)

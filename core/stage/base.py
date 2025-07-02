@@ -12,7 +12,7 @@ from ..data.exceptions import SequenceMismatchException
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from server import DigitalAssistant
+    from host import HostNamespace
 
 class PipelineStage(metaclass=ABCMeta):
 
@@ -24,10 +24,10 @@ class PipelineStage(metaclass=ABCMeta):
             raise NotImplementedError(
                 f"Attribute 'input_type' has not been overwritten in class '{cls.__name__}'"
             )
-        # ensure that input_type is not None
-        if cls.input_type is None:
-            raise NotImplementedError(
-                f"Attribute 'input_type' has not been set in class '{cls.__name__}'"
+
+        if not issubclass(cls.input_type, DataPacket):
+            raise TypeError(
+                f"Attribute 'input_type' should be a subclass of DataPacket, got {cls.input_type}"
             )
 
         # same for output_type
@@ -56,7 +56,7 @@ class PipelineStage(metaclass=ABCMeta):
         self._verbose = verbose
         self.__lock__ = Lock() # TODO option to disable lock
         self._on_ready_callback = lambda x: None
-        self._host: 'DigitalAssistant' = None
+        self._host: 'HostNamespace' = None
         self._is_interrupt_forward_pending: bool = False
         self._is_interrupt_signal_pending: bool = False
 

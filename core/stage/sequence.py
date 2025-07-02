@@ -1,3 +1,4 @@
+from abc import ABCMeta
 from typing import Optional, List, Callable, Dict
 from core.utils import logger
 from core.stage.base import PipelineStage
@@ -6,9 +7,10 @@ from core.context import IncomingPacketWhileProcessingException
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from server import DigitalAssistant
+    from host import HostNamespace
 
-class PipelineSequence(PipelineStage):
+class PipelineSequence(PipelineStage, metaclass=ABCMeta):
+    """PipelineSequence is a sequence of stages that can be processed in order."""
 
     input_type = DataPacket
     output_type = DataPacket
@@ -24,7 +26,7 @@ class PipelineSequence(PipelineStage):
         self._stages: List[PipelineStage] = stages
         self._verbose = verbose
         self._on_ready_callback = lambda x: None
-        self._host: 'DigitalAssistant' = None
+        self._host: 'HostNamespace' = None
     
     @property
     def response_emission_mapping(self) -> Dict[PipelineStage, Callable[[DataPacket], None]]:
