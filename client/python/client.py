@@ -58,7 +58,6 @@ class AssistantClient(socketio.ClientNamespace):
 
     def on_interrupt(self, timestamp: int):
         """Handles the interrupt signal received from the server"""
-        logger.warning("Interrupt signal received!")
         self.sound_manager.interrupt(timestamp)
 
     def on_bot_voice(self, partial_audio_dict):
@@ -67,7 +66,6 @@ class AssistantClient(socketio.ClientNamespace):
         Args:
             partial_audio_dict (dict): bot voice received from the server
         """
-        logger.debug(f"Playing bot_voice {partial_audio_dict['timestamp']}")
         self.sound_manager.play_audio_packet(partial_audio_dict)
 
     def on_bot_response(self, data):
@@ -77,9 +75,26 @@ class AssistantClient(socketio.ClientNamespace):
             data (dict): bot response received from the server
         """
         # Handle response here
-        if not data['partial']:
-            logger.debug(f"Bot: {data}")
+        if data['partial']:
+            if data['start']:
+                self.print("=" * 20)
+                self.print("AI:", end=" ")
+            self.print(data['text'], end="")
 
+    def on_stt_response(self, data):
+        """Handles the STT response received from the server
+
+        Args:
+            data (dict): STT response received from the server
+        """
+        # Handle response here
+        if data['start']:
+            self.print("You:", end=" ")
+        self.print(data['text'], end="")
+
+    def print(self, *args, **kwargs):
+        """Prints the message to the console"""
+        print(*args, **kwargs, flush=True)
 
 def close_callback():
     """Callback to be called when the application is about to be closed"""
