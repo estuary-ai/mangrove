@@ -122,16 +122,16 @@ class TTSStage(TextToAudioStage):
     #     super().on_interrupt()
     #     self._sentence_text_packet = None
 
-    def read(self, text: Union[TextPacket, str], as_generator=False) -> Generator[AudioPacket, None, None]:
+    def read(self, text: Union[TextPacket, str], as_generator=False) -> Iterator[AudioPacket]:
         if not isinstance(text, TextPacket):
             if isinstance(text, str):
                 text = TextPacket(text, partial=False, start=False)
             else:
                 raise Exception(f"Unsupported text type: {type(text)}")
 
-        audio_bytes_generator: Generator[AudioPacket, None, None] = self.endpoint.text_to_audio(text)
+        audio_bytes_generator: Iterator[AudioPacket] = self.endpoint.text_to_audio(text)
         if as_generator:
-            def _generator_with_identification() -> Generator[AudioPacket, None, None]:
+            def _generator_with_identification() -> Iterator[AudioPacket]:
                 """Generator that yields AudioPacket objects from the audio bytes generator."""
                 for idx, audio_packet in enumerate(audio_bytes_generator):
                     audio_packet._id = idx
