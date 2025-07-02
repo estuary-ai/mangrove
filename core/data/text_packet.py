@@ -11,17 +11,19 @@ class TextPacket(DataPacket):
         text: str,
         partial: bool,
         start: bool,
+        source: str = None,
         commands: List[str]=[],
         timestamp=None,
         **metadata # TODO add metadata to all packets
     ):
         super().__init__(
+            source=source,
             timestamp=timestamp,
             start=start,
             partial=partial
         )
         self._text = text
-        assert isinstance(self._text, str), "Text must be a string"
+        assert isinstance(self._text, str), f"Text must be a string, got {type(self._text)}"
         self.commands = commands if commands else []
         for key, value in metadata.items():
             setattr(self, key, value)
@@ -52,7 +54,7 @@ class TextPacket(DataPacket):
         return self._start
 
     def __str__(self):
-        return f'TextPacket(ts={self.timestamp}, text="{self._text}", partial={self._partial}, start={self._start})'
+        return f'TextPacket(ts={self.timestamp}, text="{self._text}", partial={self._partial}, start={self._start}, src="{self.source})'
 
     def __eq__(self, other: 'TextPacket'):
         return self.timestamp == other.timestamp and self._text == other._text

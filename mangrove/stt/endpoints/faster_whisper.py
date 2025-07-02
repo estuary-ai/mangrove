@@ -1,9 +1,8 @@
 from typing import Optional
-from queue import Empty
 from faster_whisper import WhisperModel
 
 from core.utils import logger
-from core import AudioPacket
+from core.data import AudioPacket, DataBufferEmpty
 from core.utils import Timer
 from .base import STTEndpoint
 
@@ -70,6 +69,6 @@ class FasterWhisperEndpoint(STTEndpoint):
         while True:
             try:
                 self.input_queue.get_nowait()
-            except Empty:
+            except DataBufferEmpty:
                 break
         logger.debug(f"Resetting {self.__class__.__name__} endpoint")

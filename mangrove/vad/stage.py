@@ -2,7 +2,8 @@ import torch
 from typing import Optional
 
 from core.stage import AudioToAudioStage
-from core import AudioPacket
+from core import AudioBuffer, AudioPacket
+from core.utils import logger
 from .endpoints.silero import SileroVAD
 
 
@@ -10,6 +11,7 @@ from .endpoints.silero import SileroVAD
 class VADStage(AudioToAudioStage):
     def __init__(
         self,
+        name: str,
         device: str = None,
         verbose: bool = False,
         **endpoint_kwargs
@@ -22,24 +24,23 @@ class VADStage(AudioToAudioStage):
             device=device,
             verbose=verbose
         )
-
-        super().__init__(frame_size=self._endpoint.frame_size, verbose=verbose)
-
-    def _process(self, audio_packet: AudioPacket) -> Optional[AudioPacket]:
+        # self._endpoint._output_queue = self._output_buffer # TODO the output queue is set to the stage's output buffer
+        super().__init__(name=name, frame_size=self._endpoint.frame_size, verbose=verbose)
+        
+    def process(self, audio_packet: AudioPacket) -> None:
         assert isinstance(audio_packet, AudioPacket), f"Expected AudioPacket, got {type(audio_packet)}"
-
         if len(audio_packet) < self.frame_size:
             raise NotImplementedError("Partial audio packet found; this should not happen")
-        
         self._endpoint.feed(audio_packet)
 
-        if self._endpoint.is_speaking():
-            self.schedule_forward_interrupt()
+        # if self._endpoint.is_speaking():
+        #     self.schedule_forward_interrupt()
 
         audio_packet_utterance = self._endpoint.get_utterance_if_any() 
         if audio_packet_utterance:
             # self.refresh()
-            return audio_packet_utterance
+            logger.debug(f"VADStage: Detected utterance of duration {audio_packet_utterance.duration}")
+            self.pack(audio_packet_utterance)
 
     def reset_audio_stream(self) -> None:
         """Reset audio stream context"""

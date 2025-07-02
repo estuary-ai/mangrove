@@ -11,5 +11,5 @@ class TextToTextStage(PipelineStage, metaclass=ABCMeta):
     output_type = TextPacket
 
     @abstractmethod
-    def _process(self, text_packet: TextPacket) -> Optional[TextPacket]:
+    def process(self, text_packet: TextPacket) -> None:
         raise NotImplementedError()

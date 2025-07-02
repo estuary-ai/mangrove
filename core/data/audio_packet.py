@@ -11,7 +11,7 @@ class AudioPacket(DataPacket):
     """Represents a "Packet" of audio data."""
     resampling = 0
 
-    def __init__(self, data_json, resample: bool = True, is_processed: bool = False, target_sample_rate: int = 16000):
+    def __init__(self, data_json, source: str=None, resample: bool = True, is_processed: bool = False, target_sample_rate: int = 16000):
         """Initialize AudioPacket from json data or bytes
 
         Args:
@@ -32,7 +32,7 @@ class AudioPacket(DataPacket):
 
         # self._start = data_json.get("start", False)
         self._id: str = data_json.get("packetID")
-        self._source: str = data_json.get("source", None)
+        # self._source: str = data_json.get("source", None)
 
 
         # NOTE: we do not keep the src_bytes as they might not be even there
@@ -60,9 +60,7 @@ class AudioPacket(DataPacket):
             if not Decimal(self._duration).compare(Decimal(_calculated_duration)) == 0:
                 logger.warning(f"Duration mismatch: {self._duration} != {_calculated_duration}")    
             
-        self._duration: int = np.ceil(self._duration)  # ensure duration is int
-
-        super().__init__(timestamp=data_json.get("timestamp"))
+        super().__init__(source=source, timestamp=data_json.get("timestamp"))
 
     def generate_timestamp(self):
         """Generate timestamp for AudioPacket based on its duration, given that a timestamp is not provided"""
@@ -324,7 +322,7 @@ class AudioPacket(DataPacket):
 
         return audio_resampled
 
-    def __add__(self, _audio_packet: Type["AudioPacket"]):
+    def __add__(self, _audio_packet: "AudioPacket") -> "AudioPacket":
         """Add two audio packets together and return new packet with combined bytes
 
         Args:
@@ -344,6 +342,7 @@ class AudioPacket(DataPacket):
         assert self.sample_rate == _audio_packet.sample_rate, f"Sample rates do not match: {self.sample_rate} != {_audio_packet.sample_rate}"
         assert self.num_channels == _audio_packet.num_channels, f"Num channels do not match: {self.num_channels} != {_audio_packet.num_channels}"
         assert self.sample_width == _audio_packet.sample_width, f"Sample width do not match: {self.sample_width} != {_audio_packet.sample_width}"
+        assert self.source == _audio_packet.source, f"Sources do not match: {self._source} != {_audio_packet._source}"
         # assert self.timestamp + self.duration <= _other.timestamp, f"Audio Packets are not consecutive: {self.timestamp} + {self.duration} = {self.timestamp + self.duration} > {_other.timestamp}"
         # if self.timestamp + self.duration > _other.timestamp:
         #     import math
@@ -358,8 +357,8 @@ class AudioPacket(DataPacket):
         if self.bytes == b"":  # DUMMY AUX PACKET
             timestamp = _audio_packet.timestamp
 
-        new_audio_packet = AudioPacket(
-            {
+        concat_audio_packet = AudioPacket(
+            data_json={
                 "bytes": self.bytes + _audio_packet.bytes,
                 "timestamp": timestamp,
                 "sampleRate": _audio_packet.sample_rate,
@@ -368,29 +367,25 @@ class AudioPacket(DataPacket):
                 # "start": self._start,
                 "packetID": self.id
             },
+            source=self.source,
             resample=False,
             is_processed=True,
         )
 
-        assert new_audio_packet.timestamp == self.timestamp, f"Timestamp mismatch: {new_audio_packet.timestamp} != {self.timestamp}"
-        assert new_audio_packet.sample_rate == self.sample_rate, f"Sample rate mismatch: {new_audio_packet.sample_rate} != {self.sample_rate}"
-        assert new_audio_packet.num_channels == self.num_channels, f"Num channels mismatch: {new_audio_packet.num_channels} != {self.num_channels}"
-        assert new_audio_packet.sample_width == self.sample_width, f"Sample width mismatch: {new_audio_packet.sample_width} != {self.sample_width}"
-        assert new_audio_packet.id == self.id, f"Packet ID mismatch: {new_audio_packet.id} != {self.id}"
-        assert new_audio_packet.duration == self.duration + _audio_packet.duration, f"Duration mismatch: {new_audio_packet.duration} != {self.duration + _audio_packet.duration}"
+        assert concat_audio_packet.timestamp == self.timestamp, f"Timestamp mismatch: {concat_audio_packet.timestamp} != {self.timestamp}"
 
-        difference_between_packets = self.ending_timestamp - _audio_packet.timestamp
-        
+        assert np.isclose(concat_audio_packet.duration, self.duration + _audio_packet.duration, atol=1e-1), f"Duration mismatch: {concat_audio_packet.duration} != {self.duration + _audio_packet.duration}"
 
-        difference_between_endings_timestamps = new_audio_packet.ending_timestamp - _audio_packet.ending_timestamp
+        difference_between_packets = np.abs(self.ending_timestamp - _audio_packet.timestamp)
+        difference_between_endings_timestamps = np.abs(concat_audio_packet.ending_timestamp - _audio_packet.ending_timestamp)
         assert difference_between_endings_timestamps == difference_between_packets, \
             f"Difference between ending timestamps mismatch: {difference_between_endings_timestamps} != {difference_between_packets}"
         
         # TODO review again
         # assert difference_between_endings_timestamps == 0, \
-        #     f"Ending timestamp mismatch: {_audio_packet.ending_timestamp} != {new_audio_packet.ending_timestamp}, with difference between original packets {difference_between_packets}."
+        #     f"Ending timestamp mismatch: {_audio_packet.ending_timestamp} != {concat_audio_packet.ending_timestamp}, with difference between original packets {difference_between_packets}."
 
-        return new_audio_packet
+        return concat_audio_packet
     
     @property
     def ending_timestamp(self):
@@ -437,6 +432,7 @@ class AudioPacket(DataPacket):
                     # "start": self._start,
                     "packetID": self._id
                 },
+                source=self.source,
                 resample=False,
                 is_processed=True,
             )
@@ -450,7 +446,7 @@ class AudioPacket(DataPacket):
         
     
     def __str__(self) -> str:
-        return f"{self.timestamp}, {self._duration}, {len(self.bytes)}"
+        return f"AudioPacket(t={self.timestamp}, d={self._duration}, s={len(self.bytes)}, src={self.source}, id={self.id})"
 
     def __eq__(self, __o: object) -> bool:
         return self.timestamp == __o.timestamp

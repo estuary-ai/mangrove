@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 
 from mangrove import (
     VADStage,
@@ -23,26 +23,26 @@ class BasicConversationalAgent(PipelineSequence):
         device=None,
         bot_endpoint="openai",
         tts_endpoint="gtts",
+        persona_configs: Union[str, Dict] = None,
         welcome_msg: str="Welcome, AI server connection is succesful.",
         verbose=False,
     ):
-        super().__init__(verbose=verbose)
+        super().__init__(name=BasicConversationalAgent.__class__.__name__, verbose=verbose)
 
-        vad = VADStage(device=device)
-        stt = STTStage(device=device)
-        bot = BotStage(endpoint=bot_endpoint)
-        tts = TTSStage(endpoint=tts_endpoint)
+        vad = VADStage(name="vad", device=device)
+        stt = STTStage(name="stt", device=device)
+        bot = BotStage(name="bot", endpoint=bot_endpoint, persona_configs=persona_configs, verbose=verbose)
+        tts = TTSStage(name="tts", endpoint=tts_endpoint)
         self.startup_audiopacket = None
-        if welcome_msg:
-            self.startup_audiopacket = tts.read(
-                welcome_msg,
-                as_generator=False
-            )
-
-        self.add_stage(vad, name="vad")
-        self.add_stage(stt, name="stt")
-        self.add_stage(bot, name="bot")
-        self.add_stage(tts, name="tts")
+        # if welcome_msg:
+        #     self.startup_audiopacket = tts.read(
+        #         welcome_msg,
+        #         as_generator=False
+        #     )
+        self.add_stage(vad)
+        self.add_stage(stt)
+        self.add_stage(bot)
+        self.add_stage(tts)
 
     @property
     def response_emission_mapping(self) -> Dict[PipelineStage, Callable[[DataPacket], None]]:

@@ -151,7 +151,8 @@ class SoundManager:
             func (function): function to be executed
             *args: arguments to be passed to function
         """
-        thread = Thread(target=func, args=args)
+        thread = Thread(target=func, args=args, daemon=True)
+        thread.name = f"SoundManagerThread-{len(self.threads_pool)}"
         thread.start()
         self.threads_pool.append(thread)
 
