@@ -209,7 +209,7 @@ class PipelineStage(metaclass=ABCMeta):
                             break
                             logger.debug(f"Stream processed successfully at {self.__class__.__name__}")
                         except IncomingPacketWhileProcessingException as e:
-                            invalidated = self.on_incoming_packet_while_processing(e, data)
+                            invalidated = self._on_incoming_packet_while_processing(e, data)
                             if invalidated:
                                 logger.warning(f"Invalidating timestamp exception in {self.__class__.__name__}: {e}")
                                 # If the stream is invalidated, we skip processing it
@@ -227,6 +227,33 @@ class PipelineStage(metaclass=ABCMeta):
         self._producer = self._host.start_background_task(_producer_thread)
         self._consumer = self._host.start_background_task(_consumer_thread)
 
+    def _on_incoming_packet_while_processing(self, exception: IncomingPacketWhileProcessingException, data: AnyData) -> bool:
+        """Internal method to handle incoming packet while processing
+        This method is called when an incoming packet is received while the stage is processing a data packet or stream.
+        It calls the on_incoming_packet_while_processing method, which should be overridden in subclasses to implement specific logic for handling incoming packets while processing.
+        If the stream is invalidated, it should return True, otherwise it should return False.
+        Args:
+            exception (IncomingPacketWhileProcessingException): Exception that contains the incoming (possibly invalidating) record.
+            data (AnyData): The data packet or stream that is being processed when the exception occurred.
+        Returns:
+            bool: True if the stream was invalidated, False otherwise
+        """
+        if self.on_incoming_packet_while_processing_callback is None:
+            self.on_incoming_packet_while_processing_callback(exception, data)
+        is_invalidated: bool = self.on_incoming_packet_while_processing(exception, data)
+        if is_invalidated:
+            if self.on_invalidated_packet_callback is not None:
+                self.on_invalidated_packet_callback(exception=exception, invalid_data=data, dst_stage=self)
+    
+    def on_interrupt(self, timestamp: int) -> None:
+        """Handle interrupt signal
+        This method is called when an interrupt signal is received. It can be used to handle the interrupt signal, such as stopping the processing of the current data packet or stream.
+        The default implementation does nothing, but it can be overridden in subclasses to implement specific logic for handling interrupts.
+        
+        Args:
+            timestamp (int): Timestamp of the interrupt signal
+        """
+        pass  # Default implementation does nothing
 
     def on_incoming_packet_while_processing(self, exception: IncomingPacketWhileProcessingException, data: AnyData) -> bool:
         """Handle incoming packet while processing
@@ -243,9 +270,31 @@ class PipelineStage(metaclass=ABCMeta):
             bool: True if the stream was invalidated, False otherwise
         """
         assert data.timestamp < exception.timestamp, f"Invalidating timestamp should be greater than or equal to the text packet timestamp {data.timestamp}, got {exception.timestamp}"
-        
         return False  # Default behavior is to not invalidate the stream
 
+    @property
+    def on_incoming_packet_while_processing_callback(self) -> Callable:
+        """Callback to handle incoming packet while processing"""
+        return self._on_incoming_packet_while_processing_callback
+    
+    @on_incoming_packet_while_processing_callback.setter
+    def on_incoming_packet_while_processing_callback(self, callback: Callable) -> None:
+        """Set the callback to handle incoming packet while processing"""
+        if not callable(callback):
+            raise ValueError("Callback must be callable")
+        self._on_incoming_packet_while_processing_callback = callback
+
+    @property
+    def on_invalidated_packet_callback(self) -> Callable:
+        """Callback to handle invalidated data packet"""
+        return self._on_invalidated_packet_callback
+    
+    @on_invalidated_packet_callback.setter
+    def on_invalidated_packet_callback(self, callback: Callable) -> None:
+        """Set the callback to handle invalidated data packet"""
+        if not callable(callback):
+            raise ValueError("Callback must be callable")
+        self._on_invalidated_packet_callback = callback
 
     @abstractmethod
     def process(self, data_packet: DataPacket) -> None:

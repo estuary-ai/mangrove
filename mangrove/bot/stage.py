@@ -1,11 +1,10 @@
 from typing import Iterator, Optional, List, Union, Dict
-from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
-from threading import Lock
+from langchain.schema import BaseMessage, HumanMessage, AIMessage
 
 from core.utils import logger
 from core.stage import TextToTextStage
 from core.data import TextPacket, DataPacketStream
-from core.context import IncomingPacketWhileProcessingException, Context
+from core.context import IncomingPacketWhileProcessingException
 
 class BotStage(TextToTextStage):
     def __init__(self, name: str, endpoint: str='openai', persona_configs: Union[Dict[str, str], str]={},  endpoint_kwargs: Dict={}, verbose: bool=False):
@@ -41,7 +40,6 @@ class BotStage(TextToTextStage):
 
         self._partial_command = ""
         self._in_command = False
-        self._is_supplementary_input_in_progress: bool = False
 
     def process(self, in_text_packet: TextPacket) -> None:
         assert isinstance(in_text_packet, TextPacket), f"Expected TextPacket, got {type(in_text_packet)}"
@@ -149,22 +147,19 @@ class BotStage(TextToTextStage):
         # TODO note tho that the incoming packet, could have been before then concatenated with the in-progress user text packet
         return True # stop current response generation
 
-    def process_procedures_if_on(self):
-        # TODO: Implement in different stage
-        pass
+    # def process_procedures_if_on(self):
+    #     # TODO: Implement in different stage
+    #     pass
 
-    # def on_interrupt(self):
-    #     super().on_interrupt()
-    #     if self._output_text_packet_generator is not None:
-    #         assert self._in_progress_user_text_packet is not None, \
-    #             "In progress human text packet should not be None when interrupting"
-    #         logger.warning(f'Interrupting conversation, dropping in progress human text packet: {self._in_progress_user_text_packet}')
-    #         logger.warning('Interrupting conversation, dropping text packet generator')
-    #         self._output_text_packet_generator = None
-    #         # TODO adjust new input to include the in-progress human text packet as well as the new input
-    #         self._in_progress_user_text_packet = None # TODO for now, just drop the in-progress human text packet
-            
-    #     # TODO review since that does not make sense apparently?
-    #     # if len(self._chat_history) > 0 and isinstance(self._chat_history[-1], AIMessage):
-    #     #     logger.warning('Interrupting conversation, removing last AIMessage')
-    #     #     self._chat_history.pop()
+    def on_interrupt(self, timestamp: int) -> None:
+        if self._in_progress_user_text_packet is not None:
+            # CASE 1: assuming that the interrupt is called while the bot is generating a response (This is handled by on_incoming_packet_while_processing)
+            logger.warning(f"Interrupting current conversation with in-progress user text packet: {self._in_progress_user_text_packet}, handled by on_incoming_packet_while_processing")
+            return
+        
+        # CASE 2: assuming that the interrupt is called while the bot is waiting for a new input;
+        # in such case the bot chat history should be fixed by removing the last AIMessage message if it is the last message in the chat history
+        logger.warning(f"Interrupting current conversation, removing last AIMessage from chat history")
+        assert len(self._chat_history) > 0, "Chat history should not be empty when interrupting"
+        assert isinstance(self._chat_history[-1], AIMessage), "Last message in chat history should be AIMessage when interrupting"
+        self._chat_history.pop()  # remove the last AIMessage from the chat history

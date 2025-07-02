@@ -56,7 +56,7 @@ class Context(metaclass=SingletonMeta):
             Optional[AnyData]: The most recent data packet or stream, or None if no records exist.
         """
         with self._lock:
-            if self._incoming_packets_records:
+            if self._incoming_packets_records: # TODO note this for now can be from the future (for instance, pack from a follow up stream rather than the past (which we actually want))
                 return self._incoming_packets_records[-1]  # Return the last recorded data packet/stream
             return None
         

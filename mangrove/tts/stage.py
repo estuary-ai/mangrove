@@ -1,11 +1,11 @@
 from string import punctuation
-from typing import Generator, Union, List
-from itertools import chain
+from typing import Iterator, Union
 from functools import reduce
 
 from core.utils import logger
-from core.data import AudioPacket, TextPacket
+from core.data import AudioPacket, TextPacket, DataPacketStream
 from core.stage import TextToAudioStage
+from core.context import IncomingPacketWhileProcessingException
 from .endpoints.base import TTSEndpoint
 
 
@@ -140,3 +140,11 @@ class TTSStage(TextToAudioStage):
         else:
             audio_packet = reduce(lambda x, y: x + y, audio_bytes_generator)
             return audio_packet
+        
+    def on_incoming_packet_while_processing(self, e: IncomingPacketWhileProcessingException, data: DataPacketStream) -> None:
+        # TODO maybe we should consider taking values that have been propagated although not yet processed by next stage
+        logger.warning(f"Invalidating stream due to: {e}, hence stopping this stream: {data}")      
+        # TODO if some chunk has been been processed by this, as well as by next stage, we should take the part that has been,
+        # TODO then we should append it to the history, and reset the in-progress user text packet!
+        # TODO note tho that the incoming packet, could have been before then concatenated with the in-progress user text packet
+        return True # stop current response generation

@@ -1,7 +1,8 @@
-from typing import Optional, List, Generator, Union, Callable, Dict
+from typing import Optional, List, Callable, Dict
 from core.utils import logger
 from core.stage.base import PipelineStage
 from core.data import AudioBuffer, DataBuffer, AudioPacket, DataPacket
+from core.context import IncomingPacketWhileProcessingException
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -45,63 +46,18 @@ class PipelineSequence(PipelineStage):
         pass
     
     def build_custom_on_ready_callback(self, stage: PipelineStage) -> Callable[[DataPacket], None]:
-        """Build a custom on_ready_callback for each stage"""
-        
+        """Build a custom on_ready_callback for each stage"""        
         response_emission_callback: Callable[[DataPacket], None] = self.response_emission_mapping.get(stage.name, None)
 
         def custom_on_ready_callback(data_packet: DataPacket):
             """Custom callback to handle data packet when stage is done with producing data packet and about to send it off"""
-            from ..context import Context
-
-            # TODO: check if data_packet is invalid for some reason!
-            # TODO: data_packet being processed here should be notified to the context manager
-            # so that we are able to to know that a new data packet at an earlier stage should make this data packet invalid            
-
-            logger.debug(f"Stage {stage.name} sending off {data_packet}")
-            # check on context associated from previous stages, is there any packets that has not been digested yet?
-            # if so, current packets here should be invalidated so that their content somehow gets merged first with the recent produced packets from the previous stages
-
-            # logger.debug(f"Checking previous stages while at {stage.name}")
-            # stage_idx = self._stages.index(stage)
-            # for stage_x_idx, (stage_x, stage_x_plus_1) in enumerate(zip(self._stages, self._stages[1:])):
-            #     if stage_x_idx >= stage_idx:
-            #         break
-            
-            #     stage_x_digesting_data = Context().get(f"digesting_{stage_x.name}")
-            #     stage_x_plus_1_digesting_data = Context().get(f"digesting_{stage_x_plus_1.name}")
-            #     if len(stage_x_digesting_data) != len(stage_x_plus_1_digesting_data):
-            #         assert len(stage_x_digesting_data) > len(stage_x_plus_1_digesting_data), \
-            #             f"Stage {stage_x.name} has {len(stage_x_digesting_data)} digested data pieces, while stage {stage_x_plus_1.name} has {len(stage_x_plus_1_digesting_data)} digested data pieces. This may lead to invalid data packets."
-            #         logger.warning(f"Stage {stage_x.name} has {len(stage_x_digesting_data)} digested data pieces, while stage {stage_x_plus_1.name} has {len(stage_x_plus_1_digesting_data)} digested data pieces. This may lead to invalid data packets.")
-            #         the_extra_data = stage_x_digesting_data[len(stage_x_plus_1_digesting_data):]
-            #         last_timestamp = the_extra_data[-1].timestamp
-            #         # TODO call a custom callback to handle this case if needed
-            #         # This means that the current stage is emitting a data packet while there are previous stages with undigested packets
-            #         # This may lead to invalid data packets
-            #         logger.warning(f"Data packet {data_packet} from stage {stage.name} is being emitted, but there are previous stages with undigested packets. This packet may be invalidated.")
-            #         logger.info(f"Invoking wait for incoming packets logic for stage {stage.name} to handle this case")
-                    
-            #         Context().record_invalidating_timestamp(last_timestamp)
-
-                    # backtrack to this stage_x_plus_1, giving it all information propagated too fast
-                    # then stage_x_plus_1 should handle repropagating them again properly with any changes necessary to insure healthy digestion,
-                    # healthy digestion meaning that there is no lost of mismatched data
-                    # stage_x_plus_1.on_digesting_too_fast_callback(stage_x_digesting_data, stage_x_plus_1_digesting_data)
-                    # break            
-            
             # is this stage the last stage in the pipeline?
             # is_last_stage = stage == self._stages[-1]
-            # if is_last_stage:
-            #     # TODO that is temporary, we should check if the previous stages have undigested packets
-            #     # if this is the last stage, we can safely emit the data packet
-            #     logger.debug(f"Last stage {stage.name} is emitting data packet {data_packet}, no need to check for previous stages")
-            #     Context().clear() # NOTE: clearing the whole context here, as this is the last stage and we are done with processing
-            #     # TODO should should only happen when there is no previous stages with undigested packets but that is to be implemented later (for now we have this exception)
-            #     # If the stage is the last stage, we can safely emit the data packet
+            if stage == self._stages[0]:
+                self._host.emit_interrupt(data_packet.timestamp)
             
             # If there is a response emission mapping for this stage, use it
             if response_emission_callback is not None:
-                logger.debug(f"Emitting response for stage {stage.name} with data packet {data_packet}")
                 # Call the custom response emission function for this stage
                 # This function should be defined in the response_emission_mapping
                 # and should handle the emission of the data packet through the host
@@ -150,6 +106,34 @@ class PipelineSequence(PipelineStage):
                 assert isinstance(stage.output_buffer, DataBuffer), f"Output buffer for stage {stage} must be DataBuffer, got {type(stage.output_buffer)}"
         logger.success(f"All stages in {self.__class__.__name__} have valid input/output buffers")
         
+
+        def on_incoming_packet_while_processing_callback(exception: DataPacket, data: DataPacket) -> bool:
+            """Callback to handle incoming packets while processing"""
+            logger.warning(f"Received incoming packet while processing: {data} with exception: {exception}")
+            self._host.emit_interrupt(exception.timestamp)
+
+        def get_stage_index(stage_name: str) -> int:
+            """Get the index of a stage by its name"""
+            for i, stage in enumerate(self._stages):
+                if stage.name == stage_name:
+                    return i
+            raise ValueError(f"Stage with name {stage_name} not found in the pipeline sequence")
+
+        def on_invalidated_packet_callback(exception: IncomingPacketWhileProcessingException, invalid_data: DataPacket, dst_stage: PipelineStage) -> None:
+            """Callback to handle invalidated data packets"""
+            src_stage_index: int = get_stage_index(exception.incoming_packet.source)
+            dst_stage_index: int = get_stage_index(dst_stage.name)
+            # resolve index of src_stage
+            if src_stage_index > dst_stage_index:
+                return
+            # assert src_stage_index < dst_stage_index, f"Source stage {exception.incoming_packet.source} must be before destination stage {dst_stage.name} in the pipeline sequence"
+
+            # call on_interrupt on every stage before the dst_stage and after the src_stage
+            for stage in self._stages[src_stage_index:dst_stage_index]:
+                logger.warning(f"Invalidated packet {invalid_data} in stage {stage}, calling on_interrupt")
+                stage.on_interrupt(exception.timestamp)
+
+
         for stage in self._stages:
             logger.info(f"Starting stage {stage} with input type {stage.input_type} and output type {stage.output_type}")
             # Set the on_ready_callback for each stage based on the response_emission_mapping
@@ -159,6 +143,9 @@ class PipelineSequence(PipelineStage):
             else:
                 logger.debug(f"No response emission mapping defined for {stage.name}, using default callback")
             stage.on_ready_callback = self.build_custom_on_ready_callback(stage)
+            stage.on_incoming_packet_while_processing_callback = on_incoming_packet_while_processing_callback
+            stage.on_invalidated_packet_callback = on_invalidated_packet_callback
+            # Start the stage
             stage.start(host=self._host)
 
         logger.success(f"All stages in {self.__class__.__name__} are ready and started")
