@@ -42,6 +42,10 @@ class SileroVAD(VoiceActivityDetector):
             self.device = "cpu"
 
         self.is_speech_threshold = is_speech_threshold
+        super().__init__(frame_size=frame_size, **kwargs)
+
+    def on_start(self) -> None:
+        """Initialize the VAD model"""
         self.model, utils = torch.hub.load(
             repo_or_dir="snakers4/silero-vad",
             model="silero_vad",
@@ -57,7 +61,7 @@ class SileroVAD(VoiceActivityDetector):
         # VADIterator,
         # collect_chunks) = utils
         # vad_iterator = VADIterator(model)
-        super().__init__(frame_size=frame_size, **kwargs)
+
 
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech

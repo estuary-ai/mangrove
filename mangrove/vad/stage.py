@@ -26,6 +26,10 @@ class VADStage(AudioToAudioStage):
         )
         # self._endpoint._output_queue = self._output_buffer # TODO the output queue is set to the stage's output buffer
         super().__init__(name=name, frame_size=self._endpoint.frame_size, verbose=verbose)
+
+    def on_start(self) -> None:
+        """Initialize the VAD endpoint"""
+        self._endpoint.on_start()
         
     def process(self, audio_packet: AudioPacket) -> None:
         assert isinstance(audio_packet, AudioPacket), f"Expected AudioPacket, got {type(audio_packet)}"

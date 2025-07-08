@@ -1,6 +1,7 @@
 import webrtcvad
 from typing import Union, List
 from core import AudioPacket
+from core.utils import logger
 from .base import VoiceActivityDetector
 
 class WebRTCVAD(VoiceActivityDetector):
@@ -15,12 +16,17 @@ class WebRTCVAD(VoiceActivityDetector):
         if frame_size not in [320, 640, 960]:
             raise ValueError("Frame size must be 320, 640 or 960 with WebRTC VAD")
         self.aggressiveness = aggressiveness
-        self.model = webrtcvad.Vad(aggressiveness)
         super().__init__(
             tail_silence_threshold=silence_threshold,
             frame_size=frame_size,
             verbose=verbose
         )
+
+    def on_start(self) -> None:
+        """Initialize the VAD model"""
+        self.model = webrtcvad.Vad(self.aggressiveness)
+        if self.verbose:
+            logger.info(f"WebRTCVAD initialized with aggressiveness {self.aggressiveness} and frame size {self.frame_size}")
 
     def is_speech(self, audio_packets: Union[List[AudioPacket], AudioPacket]) -> Union[bool, List[bool]]:
         """Check if audio is speech
