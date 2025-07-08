@@ -2,7 +2,7 @@ from abc import ABCMeta
 from typing import Optional, List, Callable, Dict
 from core.utils import logger
 from core.stage.base import PipelineStage
-from core.data import AudioBuffer, DataBuffer, AudioPacket, DataPacket
+from core.data import AudioBuffer, DataBuffer, AudioPacket, DataPacket, TextPacket
 from core.context import IncomingPacketWhileProcessingException
 
 from typing import TYPE_CHECKING
@@ -27,11 +27,19 @@ class PipelineSequence(PipelineStage, metaclass=ABCMeta):
         self._verbose = verbose
         self._on_ready_callback = lambda x: None
         self._host: 'HostNamespace' = None
+        self._response_emission_mapping: Dict[str, Callable[[DataPacket], None]] = {}
     
     @property
-    def response_emission_mapping(self) -> Dict[PipelineStage, Callable[[DataPacket], None]]:
+    def response_emission_mapping(self) -> Dict[str, Callable[[DataPacket], None]]:
         """Mapping of stages to their response emission functions"""
-        return {}
+        return self._response_emission_mapping
+
+    @response_emission_mapping.setter
+    def response_emission_mapping(self, mapping: Dict[str, Callable[[DataPacket], None]]):
+        """Setter for response emission mapping"""
+        if not isinstance(mapping, dict):
+            raise ValueError("Response emission mapping must be a dictionary.")
+        self._response_emission_mapping = mapping
 
     def add_stage(self, stage: PipelineStage):
         self._stages.append(stage)
@@ -70,6 +78,7 @@ class PipelineSequence(PipelineStage, metaclass=ABCMeta):
 
     def on_start(self):
         """Setting up the pipeline sequence"""
+        logger.info(f"Starting pipeline sequence {self.name} with stages: {[stage.name for stage in self._stages]}")
         input_stage = self._stages[0]
         if input_stage.input_type == AudioPacket: # it is an AudioToAnyStage
             logger.info(f"Initializing input buffer for {input_stage}")
@@ -77,6 +86,13 @@ class PipelineSequence(PipelineStage, metaclass=ABCMeta):
             # the pipeline and the first stage share the same input buffer
             self.input_buffer = AudioBuffer(frame_size=input_stage.frame_size) # Created on the fly for the first stage
             input_stage.input_buffer = self.input_buffer
+        elif input_stage.input_type == TextPacket: # it is a TextToAnyStage
+            logger.info(f"Initializing input buffer for {input_stage}")
+            # the pipeline and the first stage share the same input buffer
+            self.input_buffer = DataBuffer() # Created on the fly for the first stage
+            input_stage.input_buffer = self.input_buffer
+        else:
+            raise ValueError(f"Input stage {input_stage} must have input type AudioPacket or TextPacket, got {input_stage.input_type}")
 
         assert self._stages[0].input_buffer is not None, f"Input buffer for the first stage {self._stages[0]} must be set before starting the pipeline sequence"
 

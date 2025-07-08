@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 from core.utils import logger
 from host import FlaskSocketIOHost
-from agents import VoiceBasedConversationalAgent
+from agents import BasicConversationalAgent
 
 load_dotenv(override=True)
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--log", dest="log", type=bool, default=False, help="Log mode")
     parser.add_argument(
-        "--flask_secret_key", dest="flask_secret_key", type=str, default="secret!",
+        "--flask-secret-key", dest="flask_secret_key", type=str, default="secret!",
         help="Flask secret key"
     )
     parser.add_argument(
@@ -41,11 +41,20 @@ if __name__ == "__main__":
         help="File path to persona json file"
     )
     parser.add_argument(
-        "--name_space", dest="namespace", type=str, default="/",
+        "--namespace", dest="namespace", type=str, default="/",
         help="SocketIO namespace"
+    )
+    parser.add_argument(
+        "--text-only", dest="text_only", action="store_true", default=False,
+        help="Run in text-only mode (no audio processing)"
     )
     args = parser.parse_args()
 
+    # Show up to DEBUG logger level in console
+    logger.remove()
+    logger.add(sys.stdout, level="DEBUG", enqueue=True)
+
+    
     if args.cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # force CPU
 
@@ -56,22 +65,20 @@ if __name__ == "__main__":
     #     # # TODO reset anything
 
     device = "cuda" if not args.cpu else "cpu"
-    hosted_agent = FlaskSocketIOHost(
-        agent=VoiceBasedConversationalAgent(
-            bot_endpoint=args.bot_endpoint,
-            tts_endpoint=args.tts_endpoint,
-            persona_configs=args.persona,
-            device=device,
-            verbose=args.debug,
-        ),
-        namespace=args.namespace,
-    )
-    # Show up to DEBUG logger level in console
-    logger.remove()
-    logger.add(sys.stdout, level="DEBUG", enqueue=True)
+    host = FlaskSocketIOHost()
 
-    
-    _msg = (
+    agent = BasicConversationalAgent(
+        text_only=args.text_only,
+        endpoints=dict(
+            bot=args.bot_endpoint,
+            tts=args.tts_endpoint
+        ),
+        persona_configs=args.persona,
+        device=device,
+        verbose=args.debug,
+    )
+
+    logger.success(
         f"\nYour Digital Assistant is running on port {args.port}."
         "\n# Hints:"
         + '1. Run "ipconfig" in your terminal and use Wireless LAN adapter Wi-Fi IPv4 Address.\n'
@@ -80,6 +87,10 @@ if __name__ == "__main__":
         + "4. Ensure your client microphone is not used by any other services such as windows speech-to-text api.\n"
         + "Fight On!"
     )
-    logger.success(_msg)
 
-    hosted_agent.run(host="0.0.0.0", port=args.port)
+    host.run(
+        agent=agent,
+        namespace=args.namespace,
+        host="0.0.0.0",
+        port=args.port
+    )

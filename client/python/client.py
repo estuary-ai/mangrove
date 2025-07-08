@@ -9,14 +9,16 @@ from loguru import logger
 class AssistantClient(socketio.ClientNamespace):
     """Assistant Client class. Handles the communication with the server."""
 
-    def __init__(self, namespace):
+    def __init__(self, namespace, text_based: bool = False):
         """Constructor
 
         Args:
             namespace (str): namespace to connect to
         """
         super().__init__(namespace)
-        self.sound_manager = SoundManager(self._emit_audio_packet)
+        self.text_based = text_based
+        if not self.text_based:
+            self.sound_manager = SoundManager(self._emit_audio_packet)
         self.is_connected = False
 
     def _emit_audio_packet(self, audio_packet):
@@ -32,13 +34,15 @@ class AssistantClient(socketio.ClientNamespace):
     def on_connect(self):
         sio.emit("trial", "test")
         self.is_connected = True
-        self.sound_manager.open_mic()
+        if not self.text_based:
+            self.sound_manager.open_mic()
         logger.success("I'm connected!")
 
     def on_disconnect(self):
         logger.success("I'm disconnected!")
         self.is_connected = False
-        self.sound_manager.close_mic()
+        if not self.text_based:
+            self.sound_manager.close_mic()
 
     def on_connect_error(self, data):
         logger.warning(f"The connection failed!: {data}")
@@ -58,7 +62,9 @@ class AssistantClient(socketio.ClientNamespace):
 
     def on_interrupt(self, timestamp: int):
         """Handles the interrupt signal received from the server"""
-        self.sound_manager.interrupt(timestamp)
+        if not self.text_based:
+            # Interrupt the audio playback
+            self.sound_manager.interrupt(timestamp)
 
     def on_bot_voice(self, partial_audio_dict):
         """Handles the bot voice received from the server
@@ -66,7 +72,8 @@ class AssistantClient(socketio.ClientNamespace):
         Args:
             partial_audio_dict (dict): bot voice received from the server
         """
-        self.sound_manager.play_audio_packet(partial_audio_dict)
+        if not self.text_based:
+            self.sound_manager.play_audio_packet(partial_audio_dict)
 
     def on_bot_response(self, data):
         """Handles the bot response received from the server
@@ -80,6 +87,8 @@ class AssistantClient(socketio.ClientNamespace):
                 self.print("=" * 20)
                 self.print("AI:", end=" ")
             self.print(data['text'], end="")
+        else:
+            self.print()
 
     def on_stt_response(self, data):
         """Handles the STT response received from the server
@@ -117,6 +126,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port", type=int, default=4000, help="server port to connect to"
     )
+    parser.add_argument(
+        "--text", action="store_true", default=False, help="text-based client mode"
+    )
     parser.add_argument("--timeout", type=int, default=10, help="connection timeout")
     parser.add_argument("--verbose", action="store_true", help="verbose mode")
     args = parser.parse_args()
@@ -124,7 +136,20 @@ if __name__ == "__main__":
     logger.add(sys.stderr, level="DEBUG")
 
     sio = socketio.Client(logger=args.debug, engineio_logger=args.debug)
-    sio.register_namespace(AssistantClient(args.namespace))
+    sio.register_namespace(AssistantClient(args.namespace, text_based=args.text))
     sio.connect(f"ws://{args.address}:{args.port}", wait_timeout=args.timeout)
     setup_terminate_signal_if_win(close_callback)
-    sio.wait()
+
+    if args.text:
+        print("Text-based client mode enabled. Type your messages below:")
+        while True:
+            try:
+                message = input("You: ")
+                if message.lower() in ["exit", "quit"]:
+                    break
+                sio.emit("text", {"text": message, "start": True, "partial": False})
+            except KeyboardInterrupt:
+                break
+    else:
+        print("Voice-based client mode enabled. Speak to the microphone.")
+        sio.wait()

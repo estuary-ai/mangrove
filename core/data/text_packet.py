@@ -28,6 +28,24 @@ class TextPacket(DataPacket):
         for key, value in metadata.items():
             setattr(self, key, value)
 
+    @classmethod
+    def from_dict(cls, json_data: dict):
+        """Create a TextPacket from a dictionary."""
+        text = json_data.get("text", "")
+        partial = json_data.get("partial", False)
+        start = json_data.get("start", True)
+        source = json_data.get("source", None)
+        commands = json_data.get("commands", [])
+        
+        return cls(
+            text=text,
+            partial=partial,
+            start=start,
+            source=source,
+            commands=commands,
+        )
+
+
     def generate_timestamp(self) -> int:
         """Generate a timestamp in milliseconds."""
         return int(time.time() * 1000)

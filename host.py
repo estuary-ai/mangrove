@@ -6,8 +6,8 @@ from flask_socketio import SocketIO, Namespace
 from storage_manager import StorageManager, write_output
 from multiprocessing import Lock
 from core import AudioPacket, TextPacket, DataPacket
-from core.stage import PipelineSequence
 from core.utils import logger
+from agents import Agent
 
 
 # TODO create feedback loop (ACK), and use it for interruption!! 
@@ -24,7 +24,7 @@ class SocketIONamespace(HostNamespace):
 
     def __init__(
         self,
-        agent: PipelineSequence,
+        agent: Agent,
         namespace="/",
     ):
         super().__init__(namespace)
@@ -80,6 +80,12 @@ class SocketIONamespace(HostNamespace):
             from core import AudioPacket
             self.agent.feed(AudioPacket(data_json=audio_data))
 
+    def on_text(self, text_data: Dict):
+        with self.__lock__:
+            # Feeding in text stream
+            write_output(f"received text: {text_data}")
+            self.agent.feed(TextPacket.from_dict(text_data))
+
     # def on_trial(self, data):
     #     write_output(f"received trial: {data}")
 
@@ -93,8 +99,6 @@ class FlaskSocketIOHost:
 
     def __init__(
         self, 
-        agent: PipelineSequence, 
-        namespace="/",
         flask_secret_key: str = "secret!",
         is_logging: bool = False,
     ):
@@ -107,18 +111,11 @@ class FlaskSocketIOHost:
             logger=is_logging,
             async_handlers=False
         )
-        self.agent = agent
+
+    def run(self, agent, namespace="/", host="0.0.0.0", port=5000):
+        logger.info("Starting the server...")
         self.host = SocketIONamespace(agent=agent, namespace=namespace)
         self.socketio.on_namespace(self.host)
-
-    @property
-    def namespace(self) -> str:
-        """Get the namespace of the host"""
-        return self.host.namespace
-
-    def run(self, host="0.0.0.0", port=5000):
-        logger.info("Starting the server...")
-        self.socketio.on_namespace(self.host)
         self.host.setup()
-        logger.info(f"Running server on {host}:{port} with namespace {self.namespace}")
+        logger.info(f"Running server on {host}:{port} with namespace {namespace}")
         self.socketio.run(self.app, host=host, port=port, use_reloader=False)
