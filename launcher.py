@@ -1,5 +1,6 @@
 import sys
 import os, argparse
+import torch
 from dotenv import load_dotenv
 
 from core.utils import logger
@@ -64,16 +65,42 @@ if __name__ == "__main__":
     #     # stt.reset_audio_stream()
     #     # # TODO reset anything
 
-    device = "cuda" if not args.cpu else "cpu"
+    if args.cpu:
+        device = "cpu"
+    elif torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+
     host = FlaskSocketIOHost()
+
+    # Set default persona configs if none provided
+    persona_configs = args.persona
+    if persona_configs is None:
+        if args.bot_endpoint == "openai":
+            # Default persona config for OpenAI endpoint
+            persona_configs = {"assistant_name": "Marvin"}
+        elif args.bot_endpoint == "ollama":
+            # Default persona config for Ollama endpoint - use a default persona file
+            persona_configs = "mangrove/bot/persona/default_persona.json"
+
+    # Configure endpoints based on text-only mode
+    if args.text_only:
+        # Text-only mode: only need bot endpoint
+        endpoints = {"bot": args.bot_endpoint}
+    else:
+        # Voice mode: need both bot and TTS endpoints
+        endpoints = {
+            "bot": args.bot_endpoint,
+            "tts": args.tts_endpoint
+        }
 
     agent = BasicConversationalAgent(
         text_only=args.text_only,
-        endpoints=dict(
-            bot=args.bot_endpoint,
-            tts=args.tts_endpoint
-        ),
-        persona_configs=args.persona,
+        endpoints=endpoints,
+        persona_configs=persona_configs,
         device=device,
         verbose=args.debug,
     )
