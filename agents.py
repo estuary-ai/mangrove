@@ -97,10 +97,11 @@ class BasicConversationalAgent(Agent):
     ):
         super().__init__()
 
-        vad = VADStage(name="vad", device=device)
-        stt = STTStage(name="stt", device=device)
         bot = BotStage(name="bot", endpoint=endpoints["bot"], persona_configs=persona_configs, verbose=verbose)
-        tts = TTSStage(name="tts", endpoint=endpoints["tts"])
+        if not text_only:
+            vad = VADStage(name="vad", device=device)
+            stt = STTStage(name="stt", device=device)
+            tts = TTSStage(name="tts", endpoint=endpoints["tts"])
 
         self.startup_audiopacket = None
         # if welcome_msg:
