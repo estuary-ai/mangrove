@@ -118,4 +118,4 @@ class FlaskSocketIOHost:
         self.socketio.on_namespace(self.host)
         self.host.setup()
         logger.info(f"Running server on {host}:{port} with namespace {namespace}")
-        self.socketio.run(self.app, host=host, port=port, use_reloader=False)
+        self.socketio.run(self.app, host=host, port=port, use_reloader=False, allow_unsafe_werkzeug=True)
